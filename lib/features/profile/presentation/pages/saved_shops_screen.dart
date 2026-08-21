@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -26,7 +27,7 @@ class SavedShopsScreen extends StatelessWidget {
         body: BlocBuilder<SavedBloc, SavedState>(
           builder: (context, state) {
             if (state is SavedLoaded && state.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const GenericListShimmer();
             }
             final shops = state is SavedLoaded ? state.savedShops ?? [] : [];
             if (shops.isEmpty) {

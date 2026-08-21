@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/network/api_constants.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_badge.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -66,6 +69,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   color: AppColors.white.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
+                child: const Icon(LucideIcons.share2,
+                    size: 20, color: AppColors.neutral900),
+              ),
+              onPressed: () {
+                Share.share('Check out this product on ShopSpot!\n${ApiConstants.webBaseUrl}/product-detail/${widget.productId}');
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.8),
+                  shape: BoxShape.circle,
+                ),
                 child: const Icon(LucideIcons.heart,
                     size: 20, color: AppColors.neutral900),
               ),
@@ -79,7 +99,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       body: BlocBuilder<ProductBloc, ProductState>(
         builder: (context, state) {
           if (state is ProductLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const DetailShimmer();
           } else if (state is ProductError) {
             return Center(
                 child: Text(state.failure.message,

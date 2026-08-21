@@ -10,3 +10,7 @@ abstract class NotificationEvent extends Equatable {
 class GetMyNotificationsRequested extends NotificationEvent {
   const GetMyNotificationsRequested();
 }
+
+class MarkAllAsReadRequested extends NotificationEvent {
+  const MarkAllAsReadRequested();
+}

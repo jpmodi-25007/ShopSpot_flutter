@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -207,7 +208,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                             ),
                             onPressed: _isLoading ? null : _submitForgotPassword,
                             child: _isLoading 
-                                ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                                ? const SizedBox(height: 24, width: 24, child: CupertinoActivityIndicator(color: AppColors.white))
                                 : Text('Send Reset Link', style: AppTextStyles.button.copyWith(color: AppColors.white)),
                           ),
                         ] else ...[

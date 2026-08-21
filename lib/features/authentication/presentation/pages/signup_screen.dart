@@ -1,8 +1,11 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/legal_document_bottom_sheet.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/utils/responsive_builder.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -128,17 +131,6 @@ class _SignupScreenState extends State<SignupScreen>
     return Scaffold(
       backgroundColor: AppColors.neutral50,
       extendBodyBehindAppBar: true,
-      appBar: ResponsiveBuilder.isMobile(context)
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(LucideIcons.arrowLeft,
-                    color: AppColors.white),
-                onPressed: () => context.pop(),
-              ),
-            )
-          : null,
       body: SafeArea(
         top: false,
         child: ResponsiveBuilder(
@@ -197,7 +189,7 @@ class _SignupScreenState extends State<SignupScreen>
             children: [
               // Transparent spacer to reveal the background image
               Container(
-                height: 180,
+                height: 150,
                 color: Colors.transparent,
               ),
               // Welcome text inside the scroll view so it scrolls naturally
@@ -247,7 +239,7 @@ class _SignupScreenState extends State<SignupScreen>
                 ),
                 padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 180 - 150,
+                  minHeight: MediaQuery.of(context).size.height - 150 - 150,
                 ),
                 child: _buildFormContent(isMobile: true),
               ),
@@ -497,13 +489,29 @@ class _SignupScreenState extends State<SignupScreen>
                                 : 'Terms of Service',
                             style: AppTextStyles.bodySmall.copyWith(
                                 color: _currentRole.color,
-                                fontWeight: FontWeight.w600)),
+                                fontWeight: FontWeight.w600),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                LegalDocumentBottomSheet.show(
+                                  context,
+                                  role: _selectedRole.toLowerCase(),
+                                  documentType: 'terms',
+                                );
+                              }),
                         const TextSpan(text: ' and '),
                         TextSpan(
                             text: 'Privacy Policy',
                             style: AppTextStyles.bodySmall.copyWith(
                                 color: _currentRole.color,
-                                fontWeight: FontWeight.w600)),
+                                fontWeight: FontWeight.w600),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                LegalDocumentBottomSheet.show(
+                                  context,
+                                  role: _selectedRole.toLowerCase(),
+                                  documentType: 'privacy',
+                                );
+                              }),
                         const TextSpan(text: '.'),
                       ],
                     ),
@@ -554,7 +562,7 @@ class _SignupScreenState extends State<SignupScreen>
                         }
                       : null,
                   child: state is AuthenticationLoading
-                      ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                      ? const SizedBox(height: 24, width: 24, child: CupertinoActivityIndicator(color: AppColors.white))
                       : Text(isRetailer ? 'Register Your Shop' : isInfluencer ? 'Join as Creator' : 'Create Account', style: AppTextStyles.button.copyWith(color: AppColors.white)),
                 );
               },

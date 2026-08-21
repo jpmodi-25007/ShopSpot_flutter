@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -34,7 +35,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              context.read<NotificationBloc>().add(const MarkAllAsReadRequested());
+            },
             child: Text('Mark all read', style: AppTextStyles.caption.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
           ),
         ],
@@ -42,7 +45,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: BlocBuilder<NotificationBloc, NotificationState>(
         builder: (context, state) {
           if (state is NotificationLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const GenericListShimmer();
           } else if (state is NotificationError) {
             return Center(child: Text(state.message));
           } else if (state is NotificationLoaded) {

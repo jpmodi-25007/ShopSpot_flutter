@@ -7,6 +7,9 @@ import '../../domain/usecases/update_profile_use_case.dart';
 import 'authentication_event.dart';
 import 'authentication_state.dart';
 
+import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/services/push_notification_service.dart';
+
 class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> {
   final LoginUseCase _loginUseCase;
   final RegisterUseCase _registerUseCase;
@@ -39,7 +42,10 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     final result = await _checkSessionUseCase.execute();
     result.fold(
       (failure) => emit(const AuthenticationUnauthenticated()),
-      (user) => emit(AuthenticationLoaded(user)),
+      (user) {
+        getIt<PushNotificationService>().initialize();
+        emit(AuthenticationLoaded(user));
+      },
     );
   }
 
@@ -48,7 +54,10 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     final result = await _loginUseCase.execute(event.emailOrPhone, event.password, event.role);
     result.fold(
       (failure) => emit(AuthenticationError(failure)),
-      (user) => emit(AuthenticationLoaded(user)),
+      (user) {
+        getIt<PushNotificationService>().initialize();
+        emit(AuthenticationLoaded(user));
+      },
     );
   }
 
@@ -57,11 +66,16 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     final result = await _registerUseCase.execute(event.name, event.emailOrPhone, event.password, event.role);
     result.fold(
       (failure) => emit(AuthenticationError(failure)),
-      (user) => emit(AuthenticationLoaded(user)),
+      (user) {
+        getIt<PushNotificationService>().initialize();
+        emit(AuthenticationLoaded(user));
+      },
     );
   }
 
   Future<void> _onGuestLoginRequested(GuestLoginRequested event, Emitter<AuthenticationState> emit) async {
+    emit(const AuthenticationLoading());
+    await Future.delayed(const Duration(milliseconds: 50));
     emit(const AuthenticationGuest());
   }
 

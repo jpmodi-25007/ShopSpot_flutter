@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -111,17 +112,6 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.neutral50,
-      appBar: ResponsiveBuilder.isMobile(context)
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(LucideIcons.arrowLeft,
-                    color: AppColors.white),
-                onPressed: () => context.pop(),
-              ),
-            )
-          : null,
       extendBodyBehindAppBar: true,
       body: SafeArea(
         top: false,
@@ -182,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen>
             children: [
               // Transparent spacer to reveal the background image
               Container(
-                height: 180,
+                height: 150,
                 color: Colors.transparent,
               ),
               // Welcome text inside the scroll view so it scrolls naturally
@@ -227,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - 180 - 150,
+                  minHeight: MediaQuery.of(context).size.height - 150 - 150,
                 ),
                 child: _buildFormContent(isMobile: true),
               ),
@@ -477,7 +467,7 @@ class _LoginScreenState extends State<LoginScreen>
                         }
                       },
                       child: isLoading 
-                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                          ? const SizedBox(height: 24, width: 24, child: CupertinoActivityIndicator(color: AppColors.white))
                           : Text(_selectedRole == 'SHOPKEEPER' ? 'Login to Dashboard' : 'Login', style: AppTextStyles.button.copyWith(color: AppColors.white)),
                     ),
                     if (_selectedRole == 'CUSTOMER') ...[

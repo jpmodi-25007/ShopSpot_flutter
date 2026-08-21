@@ -14,6 +14,7 @@ import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
 import '../../../../core/utils/guest_helper.dart';
+import '../../../../core/widgets/shimmer_effects.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -85,6 +86,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               floating: true,
               pinned: true,
               elevation: 0,
+              toolbarHeight: 70,
               backgroundColor: AppColors.neutral50.withValues(alpha: 0.95),
               surfaceTintColor: Colors.transparent,
               title: Row(
@@ -319,8 +321,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   BlocBuilder<ShopBloc, ShopState>(
                     builder: (context, state) {
                       if (state.isLoading) {
-                        return const Center(
-                            child: CircularProgressIndicator());
+                        return SizedBox(
+                          height: 240,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: 3,
+                            itemBuilder: (context, index) => const ShopCardShimmer(),
+                          ),
+                        );
                       } else if (state.failure != null) {
                         return Center(child: Text('Failed to load shops'));
                       } else if (state.nearbyShops != null) {
@@ -350,9 +360,16 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           ),
                         );
                       }
-                      return const SizedBox(
+                      return SizedBox(
                           height: 240,
-                          child: Center(child: Text("Loading boutiques...")));
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: 3,
+                            itemBuilder: (context, index) => const ShopCardShimmer(),
+                          ),
+                        );
                     },
                   ),
 
@@ -380,8 +397,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         return BlocBuilder<ProductBloc, ProductState>(
                           builder: (context, state) {
                             if (state is ProductLoading) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              return GridView.count(
+                                crossAxisCount: crossAxisCount,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: 0.58,
+                                children: List.generate(
+                                  crossAxisCount * 2,
+                                  (index) => const ProductCardShimmer(),
+                                ),
+                              );
                             } else if (state is ProductError) {
                               return Center(
                                   child: Text(state.failure.message));

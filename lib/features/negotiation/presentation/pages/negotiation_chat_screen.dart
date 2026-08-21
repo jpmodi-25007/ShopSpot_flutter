@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -247,7 +248,7 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
           }
 
           // Loading View
-          return const Center(child: CircularProgressIndicator());
+          return const GenericListShimmer();
         },
       ),
     );

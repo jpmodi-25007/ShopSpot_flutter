@@ -12,4 +12,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
     final models = await remoteDataSource.getMyNotifications();
     return models.map((e) => e.toEntity()).toList();
   }
+
+  @override
+  Future<void> markAllAsRead() async {
+    await remoteDataSource.markAllAsRead();
+  }
 }

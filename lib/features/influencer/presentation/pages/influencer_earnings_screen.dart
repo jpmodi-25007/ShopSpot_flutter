@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -182,7 +183,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                   BlocBuilder<InfluencerBloc, InfluencerState>(
                     builder: (context, state) {
                       if (state is InfluencerLoaded && state.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const GenericListShimmer();
                       }
                       final payouts = state is InfluencerLoaded ? (state.analytics?['payouts'] as List<dynamic>? ?? []) : [];
                       if (payouts.isEmpty) {

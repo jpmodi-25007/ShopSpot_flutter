@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,7 +29,7 @@ class ManageAddressesScreen extends StatelessWidget {
         body: BlocBuilder<AddressesBloc, AddressesState>(
           builder: (context, state) {
             if (state is AddressesLoaded && state.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const GenericListShimmer();
             }
             final addresses = state is AddressesLoaded ? state.addresses ?? [] : [];
             

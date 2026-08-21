@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:lucide_icons/lucide_icons.dart';
@@ -88,7 +89,7 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
           }
         },
         child: _isLoading 
-            ? const Center(child: CircularProgressIndicator()) 
+            ? const GenericListShimmer() 
             : Stack(
                 children: [
                   Column(

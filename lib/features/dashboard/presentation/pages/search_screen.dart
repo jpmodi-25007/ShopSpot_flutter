@@ -8,6 +8,8 @@ import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/widgets/shimmer_effects.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -24,13 +26,9 @@ class _SearchScreenState extends State<SearchScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   Timer? _debounce;
+  static const String _recentSearchesKey = 'recent_searches_key';
 
-  final List<String> _recentSearches = [
-    'Boutiques near me',
-    'Organic skincare',
-    'Handmade jewelry',
-    'Minimalist furniture',
-  ];
+  List<String> _recentSearches = [];
 
   final List<_SearchCategory> _categories = [
     _SearchCategory('Fashion', LucideIcons.shirt),
@@ -56,10 +54,51 @@ class _SearchScreenState extends State<SearchScreen>
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _controller.text = widget.initialQuery!;
       _hasQuery = true;
+      _addToRecentSearches(widget.initialQuery!);
       context
           .read<SearchBloc>()
           .add(PerformSearchRequested(widget.initialQuery!));
     }
+    _loadRecentSearches();
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches = prefs.getStringList(_recentSearchesKey) ?? [];
+    });
+  }
+
+  Future<void> _addToRecentSearches(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+    final searches = prefs.getStringList(_recentSearchesKey) ?? [];
+    searches.remove(query);
+    searches.insert(0, query);
+    if (searches.length > 10) {
+      searches.removeLast();
+    }
+    setState(() {
+      _recentSearches = searches;
+    });
+    await prefs.setStringList(_recentSearchesKey, searches);
+  }
+
+  Future<void> _clearRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_recentSearchesKey);
+    setState(() {
+      _recentSearches = [];
+    });
+  }
+
+  Future<void> _removeFromRecentSearches(String query) async {
+    final prefs = await SharedPreferences.getInstance();
+    final searches = prefs.getStringList(_recentSearchesKey) ?? [];
+    searches.remove(query);
+    setState(() {
+      _recentSearches = searches;
+    });
+    await prefs.setStringList(_recentSearchesKey, searches);
   }
 
   @override
@@ -71,6 +110,7 @@ class _SearchScreenState extends State<SearchScreen>
       if (_controller.text != widget.initialQuery) {
         _controller.text = widget.initialQuery!;
         setState(() => _hasQuery = true);
+        _addToRecentSearches(widget.initialQuery!);
         context
             .read<SearchBloc>()
             .add(PerformSearchRequested(widget.initialQuery!));
@@ -142,6 +182,7 @@ class _SearchScreenState extends State<SearchScreen>
                           context
                               .read<SearchBloc>()
                               .add(PerformSearchRequested(val));
+                          _addToRecentSearches(val);
                         });
                       },
                       decoration: InputDecoration(
@@ -192,37 +233,40 @@ class _SearchScreenState extends State<SearchScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Recent Searches
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Recent Searches',
-                  style: AppTextStyles.h4.copyWith(color: AppColors.neutral900)),
-              TextButton(
-                onPressed: () {},
-                child: Text('Clear',
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.neutral500)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: _recentSearches.map((search) {
-              return _AnimatedChip(
-                label: search,
-                icon: LucideIcons.clock,
-                onTap: () {
-                  _controller.text = search;
-                  setState(() => _hasQuery = true);
-                },
-                onDelete: () {},
-              );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 40),
+          if (_recentSearches.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Recent Searches',
+                    style: AppTextStyles.h4.copyWith(color: AppColors.neutral900)),
+                TextButton(
+                  onPressed: _clearRecentSearches,
+                  child: Text('Clear',
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.neutral500)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: _recentSearches.map((search) {
+                return _AnimatedChip(
+                  label: search,
+                  icon: LucideIcons.clock,
+                  onTap: () {
+                    _controller.text = search;
+                    setState(() => _hasQuery = true);
+                    context.read<SearchBloc>().add(PerformSearchRequested(search));
+                    _addToRecentSearches(search);
+                  },
+                  onDelete: () => _removeFromRecentSearches(search),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 40),
+          ],
 
           // Browse Categories
           Text('Categories',
@@ -278,7 +322,7 @@ class _SearchScreenState extends State<SearchScreen>
     return BlocBuilder<SearchBloc, SearchState>(
       builder: (context, state) {
         if (state is SearchLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const SearchResultListShimmer();
         } else if (state is SearchError) {
           return Center(
               child: Text(state.message,

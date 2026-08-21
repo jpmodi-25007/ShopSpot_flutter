@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -76,7 +77,7 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
             BlocBuilder<RetailerCampaignBloc, RetailerCampaignState>(
               builder: (context, state) {
                 if (state is RetailerCampaignLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const GenericListShimmer();
                 } else if (state is RetailerCampaignLoaded) {
                   if (state.campaigns.isEmpty) {
                     return const Center(child: Text("No campaigns found. Create one above!"));

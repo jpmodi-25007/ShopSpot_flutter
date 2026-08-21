@@ -16,8 +16,16 @@ import 'features/retailer_campaigns/presentation/bloc/retailer_campaign_bloc.dar
 import 'features/dashboard/presentation/bloc/search_bloc.dart';
 import 'features/dashboard/presentation/bloc/notification_bloc.dart';
 
+import 'core/widgets/mobile_web_app_banner.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await configureDependencies();
   runApp(const ShopSpotApp());
 }
@@ -46,6 +54,9 @@ class ShopSpotApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return MobileWebAppBanner(child: child!);
+        },
       ),
     );
   }

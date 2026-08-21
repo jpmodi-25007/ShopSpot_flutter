@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -66,7 +67,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
             },
             builder: (context, state) {
               if (state is RetailerCampaignLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const GenericListShimmer();
               } else if (state is RetailerCampaignBidsLoaded && state.campaignId == widget.campaignId) {
                 if (state.bids.isEmpty) {
                   return const Center(child: Text("No bids yet for this campaign."));

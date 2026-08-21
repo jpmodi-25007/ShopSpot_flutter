@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -57,7 +58,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
         body: BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
           builder: (context, state) {
             if (state is RetailerInventoryLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const GenericListShimmer();
             }
             if (state is RetailerInventoryError) {
               return Center(child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: Colors.red)));

@@ -7,6 +7,10 @@ import '../storage/local_storage.dart';
 import '../storage/secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:logger/logger.dart';
+
+import '../services/push_notification_service.dart';
+import '../../features/dashboard/domain/usecases/mark_all_as_read_usecase.dart';
 
 import '../../features/authentication/data/datasources/auth_remote_data_source.dart';
 import '../../features/authentication/data/repositories/auth_repository_impl.dart';
@@ -126,8 +130,8 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
     ));
     dio.interceptors.add(AuthInterceptor(getIt(), dio));
     dio.interceptors.add(LogInterceptor(
@@ -141,6 +145,12 @@ Future<void> configureDependencies() async {
     return dio;
   });
   getIt.registerLazySingleton<ApiClient>(() => DioApiClient(getIt()));
+
+  // Services
+  getIt.registerLazySingleton<Logger>(() => Logger());
+  getIt.registerLazySingleton<PushNotificationService>(
+    () => PushNotificationService(getIt<Dio>(), getIt<Logger>()),
+  );
 
   // Features (Auth)
   getIt.registerLazySingleton<AuthRemoteDataSource>(
@@ -383,5 +393,9 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<NotificationRepository>(
       () => NotificationRepositoryImpl(remoteDataSource: getIt()));
   getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
-  getIt.registerFactory(() => NotificationBloc(getMyNotifications: getIt()));
+  getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
+  getIt.registerFactory(() => NotificationBloc(
+    getMyNotifications: getIt(),
+    markAllAsRead: getIt(),
+  ));
 }

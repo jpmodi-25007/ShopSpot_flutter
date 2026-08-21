@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -122,7 +123,7 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                 BlocBuilder<RetailerNegotiationBloc, RetailerNegotiationState>(
                   builder: (context, state) {
                     if (state is RetailerNegotiationLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const GenericListShimmer();
                     }
                     if (state is RetailerNegotiationLoaded) {
                       final negotiations = state.negotiations ?? [];

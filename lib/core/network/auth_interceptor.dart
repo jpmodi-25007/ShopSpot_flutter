@@ -62,7 +62,11 @@ class AuthInterceptor extends Interceptor {
       _isRefreshing = true;
 
       try {
-        final refreshDio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+        final refreshDio = Dio(BaseOptions(
+          baseUrl: ApiConstants.baseUrl,
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ));
         final response = await refreshDio.post(
           ApiConstants.refresh,
           data: {'refreshToken': refreshToken},

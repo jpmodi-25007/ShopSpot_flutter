@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
@@ -65,7 +66,7 @@ class MyReservationsScreen extends StatelessWidget {
               child: BlocBuilder<ReservationBloc, ReservationState>(
                 builder: (context, state) {
                   if (state is ReservationLoading || state is ReservationInitial) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const GenericListShimmer();
                   } else if (state is ReservationError) {
                     return Center(
                       child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: AppColors.error500)),

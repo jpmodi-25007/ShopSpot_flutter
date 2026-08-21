@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -62,7 +63,7 @@ class _ChatsScreenState extends State<ChatsScreen> with TickerProviderStateMixin
       body: BlocBuilder<NegotiationBloc, NegotiationState>(
         builder: (context, state) {
           if (state is NegotiationLoaded && state.isSubmitting) {
-            return const Center(child: CircularProgressIndicator());
+            return const GenericListShimmer();
           }
           final negotiations = state is NegotiationLoaded ? state.negotiations ?? [] : [];
           final active = negotiations.where((n) => n.status != 'COMPLETED' && n.status != 'REJECTED').toList();

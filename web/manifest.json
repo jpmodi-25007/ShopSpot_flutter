@@ -1,11 +1,11 @@
 {
-    "name": "mobile_web",
-    "short_name": "mobile_web",
+    "name": "ShopSpot",
+    "short_name": "ShopSpot",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#5C2E0E",
+    "theme_color": "#5C2E0E",
+    "description": "ShopSpot — Discover local shops, deals and products near you.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

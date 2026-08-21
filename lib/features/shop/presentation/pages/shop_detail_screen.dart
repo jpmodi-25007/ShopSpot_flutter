@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_web/core/widgets/shimmer_effects.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_badge.dart';
+import '../../../../core/network/api_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/shop_entity.dart';
 import '../bloc/shop_bloc.dart';
@@ -47,7 +51,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
           child: BlocBuilder<ShopBloc, ShopState>(
         builder: (context, state) {
           if (state is ShopInitial || (state is ShopStateLoaded && state.shop == null && state.isLoading)) {
-            return const Center(child: CircularProgressIndicator());
+            return const ShopDetailShimmer();
           }
           if (state is ShopStateLoaded && state.failure != null && state.shop == null) {
             return Center(child: Text(state.failure!.message));
@@ -80,7 +84,11 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           decoration: BoxDecoration(color: AppColors.white.withValues(alpha: 0.8), shape: BoxShape.circle),
                           child: const Icon(LucideIcons.share2, color: AppColors.neutral900),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          if (shop != null) {
+                            Share.share('Check out ${shop.name} on ShopSpot!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                          }
+                        },
                       ),
                     ],
                     flexibleSpace: FlexibleSpaceBar(
@@ -105,43 +113,46 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Transform.translate(
-                      offset: const Offset(0, -20),
-                      child: Column(
-                        children: [
-                          // Logo and Title
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppColors.neutral300, width: 2),
-                                    image: DecorationImage(
-                                      image: NetworkImage(shop?.logoUrl ?? 'https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=100&auto=format&fit=crop'),
-                                      fit: BoxFit.cover,
-                                    ),
+                    child: Column(
+                      children: [
+                        // Logo and Title
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppColors.white, width: 4),
+                                  boxShadow: [
+                                    BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
+                                  ],
+                                  image: DecorationImage(
+                                    image: NetworkImage(shop?.logoUrl ?? 'https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=100&auto=format&fit=crop'),
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
-                                          Text(shop?.name ?? 'Shop Name', style: AppTextStyles.h2),
+                                          Expanded(child: Text(shop?.name ?? 'Shop Name', style: AppTextStyles.h2.copyWith(fontSize: 20), maxLines: 3, overflow: TextOverflow.ellipsis)),
                                           const SizedBox(width: 4),
                                           if (shop?.isKycVerified == true)
                                             const Icon(LucideIcons.shieldCheck, size: 20, color: AppColors.primary500),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6),
                                       Row(
                                         children: [
                                           const Icon(LucideIcons.star, size: 14, color: AppColors.secondary500),
@@ -151,20 +162,53 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                       ),
                                     ],
                                   ),
-                                )
-                              ],
-                            ),
+                                ),
+                              )
+                            ],
                           ),
-                          const SizedBox(height: 24),
+                        ),
+                        const SizedBox(height: 8),
                       
                       // Action Row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildActionItem(context, LucideIcons.phone, 'Call'),
-                          _buildActionItem(context, LucideIcons.messageCircle, 'Message'),
-                          _buildActionItem(context, LucideIcons.cornerUpRight, 'Directions'),
-                          _buildActionItem(context, LucideIcons.share, 'Share'),
+                          _buildActionItem(context, LucideIcons.phone, 'Call', onTap: () async {
+                            if (shop?.phone != null) {
+                              final uri = Uri.parse('tel:${shop!.phone}');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number not available')));
+                            }
+                          }),
+                          _buildActionItem(context, LucideIcons.messageCircle, 'Message', onTap: () async {
+                            if (shop?.whatsapp != null || shop?.phone != null) {
+                              final number = shop?.whatsapp ?? shop!.phone;
+                              final uri = Uri.parse('sms:$number');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact number not available')));
+                            }
+                          }),
+                          _buildActionItem(context, LucideIcons.cornerUpRight, 'Directions', onTap: () async {
+                            if (shop != null) {
+                              final addressQuery = Uri.encodeComponent('${shop.name}, ${shop.address}, ${shop.city}, ${shop.state}');
+                              final uri = (shop.latitude != 0 && shop.longitude != 0) 
+                                ? Uri.parse('https://www.google.com/maps/search/?api=1&query=${shop.latitude},${shop.longitude}') 
+                                : Uri.parse('https://www.google.com/maps/search/?api=1&query=$addressQuery');
+                              if (await canLaunchUrl(uri)) await launchUrl(uri);
+                            }
+                          }),
+                          _buildActionItem(context, LucideIcons.share, 'Share', onTap: () async {
+                            if (shop != null) {
+                              try {
+                                await Share.share('Check out ${shop.name} on ShopSpot!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                              } catch (e) {
+                                // Fallback if Share plugin is missing on this platform (e.g., dev environment)
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
+                              }
+                            }
+                          }),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -185,7 +229,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                   const Icon(LucideIcons.mapPin, size: 20, color: AppColors.neutral500),
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Text('102, Shivalik High Street, C.G. Road\nAhmedabad, Gujarat 380009', style: AppTextStyles.bodySmall),
+                                    child: Text('${shop?.address ?? ''}\n${shop?.city ?? ''}, ${shop?.state ?? ''} ${shop?.pincode ?? ''}', style: AppTextStyles.bodySmall),
                                   )
                                 ],
                               ),
@@ -195,10 +239,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                               ),
                               Row(
                                 children: [
-                                  const Icon(LucideIcons.clock, size: 20, color: AppColors.success500),
+                                  Icon(LucideIcons.clock, size: 20, color: shop?.isOpen == true ? AppColors.success500 : AppColors.error500),
                                   const SizedBox(width: 12),
-                                  Text('Open Now', style: AppTextStyles.bodySmall.copyWith(color: AppColors.success500, fontWeight: FontWeight.w600)),
-                                  Text(' • Closes 9:00 PM', style: AppTextStyles.bodySmall),
+                                  Text(shop?.isOpen == true ? 'Open Now' : 'Closed', style: AppTextStyles.bodySmall.copyWith(color: shop?.isOpen == true ? AppColors.success500 : AppColors.error500, fontWeight: FontWeight.w600)),
                                 ],
                               ),
                             ],
@@ -209,7 +252,6 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                     ],
                   ),
                 ),
-              ),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SliverAppBarDelegate(
@@ -249,9 +291,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
         ),
       );
   }
-  Widget _buildActionItem(BuildContext context, IconData icon, String label) {
+  Widget _buildActionItem(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
     return InkWell(
-      onTap: () {
+      onTap: onTap ?? () {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label action tapped')));
       },
       borderRadius: BorderRadius.circular(24),

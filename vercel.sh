@@ -2,7 +2,7 @@
 
 # Download Flutter SDK
 echo "Downloading Flutter..."
-git clone https://github.com/flutter/flutter.git -b stable
+git clone https://github.com/flutter/flutter.git -b 3.22.3
 
 # Add flutter to PATH
 export PATH="$PATH:`pwd`/flutter/bin"

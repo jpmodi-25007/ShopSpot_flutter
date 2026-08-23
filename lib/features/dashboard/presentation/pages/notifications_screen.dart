@@ -47,7 +47,53 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (state is NotificationLoading) {
             return const GenericListShimmer();
           } else if (state is NotificationError) {
-            return Center(child: Text(state.message));
+            bool isAuthError = state.message.contains('401') || state.message.toLowerCase().contains('unauthorized') || state.message.contains('minified');
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: const BoxDecoration(
+                        color: AppColors.error50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(isAuthError ? LucideIcons.lock : LucideIcons.alertCircle, size: 48, color: AppColors.error500),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      isAuthError ? 'Authentication Required' : 'Oops! Something went wrong',
+                      style: AppTextStyles.h4,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      isAuthError 
+                        ? 'Please sign in to view your personalized notifications and alerts.' 
+                        : 'We could not load your notifications right now. Please try again later.',
+                      style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (isAuthError) ...[
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary500,
+                          foregroundColor: AppColors.white,
+                          elevation: 0,
+                          minimumSize: const Size(200, 48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () => context.go('/login'),
+                        child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
           } else if (state is NotificationLoaded) {
             if (state.notifications.isEmpty) {
               return const Center(child: Text("No notifications."));

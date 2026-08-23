@@ -212,7 +212,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               if (campaign!.platforms.isNotEmpty)
-                                _buildRequirementRow(LucideIcons.instagram, 'Platform', campaign!.platforms.join(', ')),
+                                _buildRequirementRow(LucideIcons.camera, 'Platform', campaign!.platforms.join(', ')),
                               if (campaign!.contentTypes.isNotEmpty) ...[
                                 const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1)),
                                 _buildRequirementRow(LucideIcons.video, 'Content Type', campaign!.contentTypes.join(', ')),

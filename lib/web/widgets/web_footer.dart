@@ -54,9 +54,9 @@ class WebFooter extends StatelessWidget {
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          _SocialIcon(icon: LucideIcons.twitter, onPressed: () {}),
-                          _SocialIcon(icon: LucideIcons.instagram, onPressed: () {}),
-                          _SocialIcon(icon: LucideIcons.linkedin, onPressed: () {}),
+                          _SocialIcon(icon: LucideIcons.messageCircle, onPressed: () {}),
+                          _SocialIcon(icon: LucideIcons.camera, onPressed: () {}),
+                          _SocialIcon(icon: LucideIcons.briefcase, onPressed: () {}),
                         ],
                       ),
                     ],

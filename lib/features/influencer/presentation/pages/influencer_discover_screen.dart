@@ -346,7 +346,7 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(p.contains('Instagram') ? LucideIcons.instagram : LucideIcons.video, size: 14, color: AppColors.roleInfluencer),
+                            Icon(p.contains('Instagram') ? LucideIcons.camera : LucideIcons.video, size: 14, color: AppColors.roleInfluencer),
                             const SizedBox(width: 6),
                             Text(p, style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
                           ],

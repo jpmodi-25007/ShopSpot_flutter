@@ -9,7 +9,7 @@ class ProductCardSkeleton extends StatelessWidget {
     return AppShimmer(
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(

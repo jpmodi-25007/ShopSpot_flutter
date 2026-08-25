@@ -14,6 +14,8 @@ import '../../../shop/presentation/bloc/shop_state.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
+import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
+import '../../../../core/widgets/shimmer/skeletons/shop_card_skeleton.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -178,10 +180,16 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       BlocBuilder<ProductBloc, ProductState>(
                         builder: (context, state) {
                           if (state is ProductLoading) {
-                            return const SizedBox(
-                                height: 180,
-                                child: Center(
-                                    child: CircularProgressIndicator()));
+                            return SizedBox(
+                              height: 180,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: 3,
+                                separatorBuilder: (context, index) => const SizedBox(width: 16),
+                                itemBuilder: (context, index) => const ProductCardSkeleton(),
+                              ),
+                            );
                           } else if (state is ProductError) {
                             return SizedBox(
                                 height: 180,
@@ -230,8 +238,15 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       BlocBuilder<ShopBloc, ShopState>(
                         builder: (context, state) {
                           if (state.isLoading) {
-                            return const Center(
-                                child: CircularProgressIndicator());
+                            return Column(
+                              children: List.generate(
+                                3,
+                                (index) => const Padding(
+                                  padding: EdgeInsets.only(bottom: 16),
+                                  child: ShopCardSkeleton(),
+                                ),
+                              ),
+                            );
                           } else if (state.nearbyShops != null) {
                             final shops = state.nearbyShops!;
                             if (shops.isEmpty) {

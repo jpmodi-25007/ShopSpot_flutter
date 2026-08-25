@@ -10,7 +10,7 @@ class DashboardStatSkeleton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
         ),

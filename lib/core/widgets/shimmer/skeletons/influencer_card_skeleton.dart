@@ -9,7 +9,7 @@ class InfluencerCardSkeleton extends StatelessWidget {
     return AppShimmer(
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.grey.shade200),
         ),

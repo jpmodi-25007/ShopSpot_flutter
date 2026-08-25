@@ -25,7 +25,7 @@ class ShopDetailSkeleton extends StatelessWidget {
                     width: 88,
                     height: 88,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white, width: 4),
                     ),

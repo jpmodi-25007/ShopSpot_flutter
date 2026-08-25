@@ -11,7 +11,7 @@ class EventCardSkeleton extends StatelessWidget {
         width: 300,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Stack(

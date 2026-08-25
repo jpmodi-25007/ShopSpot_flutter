@@ -11,7 +11,7 @@ class ShopCardSkeleton extends StatelessWidget {
         width: 280,
         margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(

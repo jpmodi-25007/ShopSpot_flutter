@@ -130,9 +130,9 @@ class ProfileScreen extends StatelessWidget {
                   // Quick Links
                   _buildSectionContainer(
                     children: [
-                      _buildListTile(LucideIcons.shoppingBag, 'My Orders', badge: 'NEW', onTap: () => context.push('/my-orders')),
+                      _buildListTile(LucideIcons.shoppingBag, 'My Orders', onTap: () => context.push('/my-orders')),
                       const Divider(height: 1),
-                      _buildListTile(LucideIcons.calendarClock, 'My Reservations', badgeCount: 2, onTap: () => context.push('/reservations')),
+                      _buildListTile(LucideIcons.calendarClock, 'My Reservations', onTap: () => context.push('/reservations')),
                       const Divider(height: 1),
                       _buildListTile(LucideIcons.heart, 'Saved Products', onTap: () => context.push('/saved-products')),
                       const Divider(height: 1),

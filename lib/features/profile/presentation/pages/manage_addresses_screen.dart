@@ -50,13 +50,13 @@ class ManageAddressesScreen extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final addr = addresses[index];
-                final isDefault = addr['isDefault'] ?? false;
-                final label = addr['label'] ?? 'Address';
-                final line1 = addr['line1'] ?? '';
-                final line2 = addr['line2'];
-                final city = addr['city'] ?? '';
-                final stateName = addr['state'] ?? '';
-                final pincode = addr['pincode'] ?? '';
+                final isDefault = addr['isDefault'] == true || addr['isDefault'] == 1 || addr['isDefault'] == 'true';
+                final label = addr['label']?.toString() ?? 'Address';
+                final line1 = addr['line1']?.toString() ?? '';
+                final line2 = addr['line2']?.toString();
+                final city = addr['city']?.toString() ?? '';
+                final stateName = addr['state']?.toString() ?? '';
+                final pincode = addr['pincode']?.toString() ?? '';
                 
                 final fullAddressStr = [
                   line1,
@@ -102,10 +102,12 @@ class ManageAddressesScreen extends StatelessWidget {
                           PopupMenuButton<String>(
                             icon: const Icon(LucideIcons.moreVertical, size: 20),
                             onSelected: (value) {
+                              final addressIdStr = addr['id']?.toString() ?? '';
+                              if (addressIdStr.isEmpty) return;
                               if (value == 'delete') {
-                                context.read<AddressesBloc>().add(DeleteAddressRequested(addr['id']));
+                                context.read<AddressesBloc>().add(DeleteAddressRequested(addressIdStr));
                               } else if (value == 'set_default') {
-                                context.read<AddressesBloc>().add(UpdateAddressRequested(addr['id'], {'isDefault': true}));
+                                context.read<AddressesBloc>().add(UpdateAddressRequested(addressIdStr, {'isDefault': true}));
                               }
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[

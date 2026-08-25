@@ -21,6 +21,8 @@ import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
 import '../../../../core/utils/guest_helper.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -345,12 +347,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           ),
                         );
                       } else if (state.failure != null) {
-                        return Center(child: Text('Failed to load shops'));
+                        return const EmptyStateWidget(
+                          icon: LucideIcons.store,
+                          message: "Failed to load shops.",
+                          height: 240,
+                        );
                       } else if (state.nearbyShops != null) {
                         final shops = state.nearbyShops!;
                         if (shops.isEmpty) {
-                          return const Center(
-                              child: Text("No nearby shops found."));
+                          return const EmptyStateWidget(
+                            icon: LucideIcons.store,
+                            message: "No nearby boutiques found.",
+                            height: 240,
+                          );
                         }
                         return SizedBox(
                           height: 240,
@@ -464,7 +473,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                           ),
                         );
                       }
-                      return const SizedBox.shrink();
+                      return const EmptyStateWidget(
+                        icon: LucideIcons.calendar,
+                        message: "No upcoming events found.",
+                        height: 200,
+                      );
                     },
                   ),
 
@@ -509,8 +522,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   child: Text(state.failure.message));
                             } else if (state is ProductsLoaded) {
                               if (state.products.isEmpty) {
-                                return const Center(
-                                    child: Text("No trending products."));
+                                return const EmptyStateWidget(
+                                  icon: LucideIcons.packageSearch,
+                                  message: "No trending products right now.",
+                                );
                               }
                               return GridView.count(
                                 crossAxisCount: crossAxisCount,
@@ -576,6 +591,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Widget _buildCategoryItem(
       IconData icon, String label, Color bgColor, Color iconColor) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         context.go('/search?q=$label');
       },

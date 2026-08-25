@@ -127,7 +127,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _phoneController,
                     prefixIcon: const Icon(LucideIcons.phone),
                     keyboardType: TextInputType.phone,
-                    readOnly: true,
                   ),
                 ],
               ),

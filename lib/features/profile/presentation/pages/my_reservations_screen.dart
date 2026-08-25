@@ -12,8 +12,15 @@ import '../../../reservation/presentation/bloc/reservation_event.dart';
 import '../../../reservation/presentation/bloc/reservation_state.dart';
 import '../../../reservation/domain/entities/reservation_entity.dart';
 
-class MyReservationsScreen extends StatelessWidget {
+class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
+
+  @override
+  State<MyReservationsScreen> createState() => _MyReservationsScreenState();
+}
+
+class _MyReservationsScreenState extends State<MyReservationsScreen> {
+  int _tabIndex = 0; // 0 for Active, 1 for Past
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +67,8 @@ class MyReservationsScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Expanded(child: _buildTabItem('Active', true)),
-                  Expanded(child: _buildTabItem('Past', false)),
+                  Expanded(child: _buildTabItem('Active', 0)),
+                  Expanded(child: _buildTabItem('Past', 1)),
                 ],
               ),
             ),
@@ -82,17 +89,23 @@ class MyReservationsScreen extends StatelessWidget {
                       child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: AppColors.error500)),
                     );
                   } else if (state is ReservationsLoaded) {
-                    if (state.reservations.isEmpty) {
+                    final now = DateTime.now();
+                    final filtered = state.reservations.where((r) {
+                      final isExpired = r.expiresAt.difference(now).isNegative;
+                      return _tabIndex == 0 ? !isExpired : isExpired;
+                    }).toList();
+
+                    if (filtered.isEmpty) {
                       return Center(
                         child: Text('No reservations found.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
                       );
                     }
                     return ListView.separated(
                       padding: const EdgeInsets.all(16),
-                      itemCount: state.reservations.length,
+                      itemCount: filtered.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        return _buildReservationCard(context, state.reservations[index]);
+                        return _buildReservationCard(context, filtered[index]);
                       },
                     );
                   }
@@ -106,18 +119,27 @@ class MyReservationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTabItem(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: isActive ? AppColors.primary500 : Colors.transparent, width: 2)),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isActive ? AppColors.primary500 : AppColors.neutral500,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+  Widget _buildTabItem(String label, int index) {
+    final isActive = _tabIndex == index;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          _tabIndex = index;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: isActive ? AppColors.primary500 : Colors.transparent, width: 2)),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTextStyles.body.copyWith(
+              color: isActive ? AppColors.primary500 : AppColors.neutral500,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            ),
           ),
         ),
       ),

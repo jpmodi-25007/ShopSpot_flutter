@@ -15,6 +15,11 @@ flutter precache
 echo "Getting packages..."
 flutter pub get
 
+# Create dummy env files to satisfy pubspec.yaml asset requirements during build
+echo "Creating dummy .env files..."
+touch .env
+touch .env.production
+
 # Build web application with dynamic environment variables
 echo "Building Flutter Web App..."
 if [ -z "$NEXT_PUBLIC_API_URL" ]; then

@@ -32,13 +32,21 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables. In production you might load .env.production
-  const isProduction = bool.fromEnvironment('dart.vm.product');
-  await dotenv.load(fileName: isProduction ? ".env.production" : ".env");
+  // Load environment variables with fallback
+  try {
+    const isProduction = bool.fromEnvironment('dart.vm.product');
+    await dotenv.load(fileName: isProduction ? ".env.production" : ".env");
+  } catch (e) {
+    print('Failed to load .env file: $e');
+  }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+  }
   await configureDependencies();
   runApp(const FindivoApp());
 }

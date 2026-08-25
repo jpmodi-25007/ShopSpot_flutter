@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/storage/local_storage.dart';
@@ -118,7 +118,14 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                       ),
                       IconButton(
                         icon: const Icon(LucideIcons.edit2, color: Colors.white, size: 20),
-                        onPressed: () {},
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => EditRetailerProfileBottomSheet(shop: shop),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -393,4 +400,111 @@ class _SettingsRow extends StatelessWidget {
   }
 }
 
+class EditRetailerProfileBottomSheet extends StatefulWidget {
+  final dynamic shop;
+  const EditRetailerProfileBottomSheet({super.key, required this.shop});
 
+  @override
+  State<EditRetailerProfileBottomSheet> createState() => _EditRetailerProfileBottomSheetState();
+}
+
+class _EditRetailerProfileBottomSheetState extends State<EditRetailerProfileBottomSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _cityController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.shop?.name ?? '');
+    _descriptionController = TextEditingController(text: widget.shop?.description ?? '');
+    _cityController = TextEditingController(text: widget.shop?.city ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _cityController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    context.pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: AppColors.success500),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Edit Shop Profile', style: AppTextStyles.h3),
+                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Shop Name',
+                filled: true,
+                fillColor: AppColors.neutral50,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                filled: true,
+                fillColor: AppColors.neutral50,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _cityController,
+              decoration: InputDecoration(
+                labelText: 'City',
+                filled: true,
+                fillColor: AppColors.neutral50,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.roleRetailer,
+                foregroundColor: AppColors.white,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: _save,
+              child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}

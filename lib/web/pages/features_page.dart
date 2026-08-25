@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../sections/feature_section.dart';
 import '../sections/cta_section.dart';
 import '../../core/theme/app_colors.dart';
@@ -68,7 +68,7 @@ class _WebFeaturesPageState extends State<WebFeaturesPage>
           title: 'A complete toolkit for independent stores.',
           description:
               'From listing your first product to running city-wide influencer campaigns, '
-              'ShopSpot gives local retailers everything needed to grow without the complexity.',
+              'Findivo gives local retailers everything needed to grow without the complexity.',
           imagePath: 'assets/images/intro2.jpg',
           reversed: true,
           badgeValue: '500+',
@@ -90,7 +90,7 @@ class _WebFeaturesPageState extends State<WebFeaturesPage>
               'Discover campaigns from local brands you already love, submit bids, '
               'collaborate on content, and track your earnings—all in one seamless flow.',
           imagePath: 'assets/images/intro3.jpg',
-          badgeValue: '\$45K+',
+          badgeValue: '₹45K+',
           badgeLabel: 'Paid to creators',
           badgeIcon: LucideIcons.trendingUp,
           badgeColor: AppColors.secondary500,

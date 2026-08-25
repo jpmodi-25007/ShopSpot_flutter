@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -9,6 +9,9 @@ import '../../../../core/utils/validation_utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/network/api_client.dart';
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key});
 
@@ -29,6 +32,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _trackInventory = true;
   final ImagePicker _picker = ImagePicker();
   List<XFile> _selectedImages = [];
+  bool _isUploading = false;
+  final CloudinaryService _cloudinary = getIt<CloudinaryService>();
 
   @override
   void dispose() {
@@ -58,7 +63,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  void _publishProduct() {
+  Future<void> _publishProduct() async {
     if (!_formKey.currentState!.validate()) return;
     
     // Check selling price <= mrp
@@ -71,17 +76,68 @@ class _AddProductScreenState extends State<AddProductScreen> {
       return;
     }
 
-    // ScaffoldMessenger is used here to show visual feedback since backend is not yet fully integrated on the mobile side
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Product added successfully!'),
-        backgroundColor: AppColors.success500,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) context.pop();
-    });
+    if (_selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one product image.')),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final List<CloudinaryUploadResult> uploadResults = [];
+      
+      // Upload sequentially for stability (can be parallelized)
+      for (var img in _selectedImages) {
+        if (kIsWeb) {
+           // Skip direct upload for web mockup, would need bytes in real scenario
+           continue;
+        }
+        final result = await _cloudinary.uploadImage(
+          imageFile: File(img.path),
+          folder: 'products/temp', // Wait for actual product ID in real flow
+        );
+        uploadResults.add(result);
+      }
+
+      final payload = {
+        'name': _nameController.text,
+        'brand': _brandController.text.isNotEmpty ? _brandController.text : null,
+        'mrp': mrp ?? 0,
+        'sellingPrice': sp ?? 0,
+        'stockQuantity': int.tryParse(_stockController.text) ?? 0,
+        'description': _descController.text.isNotEmpty ? _descController.text : null,
+        'mediaAssets': uploadResults.map((r) => r.toJson()).toList(),
+      };
+      
+      final ApiClient apiClient = getIt<ApiClient>();
+      await apiClient.post('/shopkeeper/products', data: payload);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Product added successfully with \${uploadResults.length} images!'),
+            backgroundColor: AppColors.success500,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to upload images. Please try again.'),
+            backgroundColor: AppColors.error500,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
   }
 
   @override
@@ -294,10 +350,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
             const SizedBox(height: 32),
 
             AppButton(
-              text: 'Publish Product',
+              text: _isUploading ? 'Uploading & Publishing...' : 'Publish Product',
               icon: LucideIcons.uploadCloud,
               size: AppButtonSize.fullWidth,
-              onPressed: _publishProduct,
+              onPressed: _isUploading ? () {} : _publishProduct,
             ),
             const SizedBox(height: 32),
           ],

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -151,9 +152,15 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
             BlocBuilder<InfluencerBloc, InfluencerState>(
               builder: (context, state) {
                 if (state is InfluencerLoaded && state.isLoading) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: Center(child: CircularProgressIndicator(color: AppColors.roleInfluencer)),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+                    child: Column(
+                      children: const [
+                        CampaignCardSkeleton(),
+                        SizedBox(height: 24),
+                        CampaignCardSkeleton(),
+                      ],
+                    ),
                   );
                 }
                 final campaigns = state is InfluencerLoaded ? state.campaigns ?? [] : [];
@@ -180,7 +187,7 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                               title: campaign.title,
                               brand: campaign.city ?? 'Brand',
                               matchPercent: '98%',
-                              budget: '\$${campaign.budgetMin.toStringAsFixed(0)} - \$${campaign.budgetMax.toStringAsFixed(0)}',
+                              budget: '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
                               platforms: campaign.platforms,
                               imageUrl: 'invalid', // force errorBuilder
                             ),
@@ -207,9 +214,9 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  _buildPremiumMiniCard('Premium Watch Review', 'Chronos Lux', '\$2,000+', 'invalid'),
+                  _buildPremiumMiniCard('Premium Watch Review', 'Chronos Lux', '₹2,000+', 'invalid'),
                   const SizedBox(width: 16),
-                  _buildPremiumMiniCard('Skincare Routine Reel', 'Glow Botanica', '\$1,200', 'invalid'),
+                  _buildPremiumMiniCard('Skincare Routine Reel', 'Glow Botanica', '₹1,200', 'invalid'),
                 ],
               ),
             ),

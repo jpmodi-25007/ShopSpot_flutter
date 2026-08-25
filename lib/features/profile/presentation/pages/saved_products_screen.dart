@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -26,7 +26,17 @@ class SavedProductsScreen extends StatelessWidget {
         body: BlocBuilder<SavedBloc, SavedState>(
           builder: (context, state) {
             if (state is SavedLoaded && state.isLoading) {
-              return const GenericListShimmer();
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: 6,
+                itemBuilder: (context, index) => const ProductCardSkeleton(),
+              );
             }
             final products = state is SavedLoaded ? state.savedProducts ?? [] : [];
             if (products.isEmpty) {

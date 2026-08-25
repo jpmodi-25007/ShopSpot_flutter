@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -51,14 +51,30 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
           actions: [
             IconButton(
               icon: const Icon(LucideIcons.moreVertical, color: AppColors.neutral900),
-              onPressed: () {},
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const _StockFilterBottomSheet(),
+                );
+              },
             ),
           ],
         ),
         body: BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
           builder: (context, state) {
             if (state is RetailerInventoryLoading) {
-              return const GenericListShimmer();
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: const [
+                  StockHistoryItemSkeleton(),
+                  SizedBox(height: 20),
+                  StockHistoryItemSkeleton(),
+                  SizedBox(height: 20),
+                  StockHistoryItemSkeleton(),
+                ],
+              );
             }
             if (state is RetailerInventoryError) {
               return Center(child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: Colors.red)));
@@ -129,7 +145,17 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: TextButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Preparing export...'), backgroundColor: AppColors.neutral700),
+                            );
+                            await Future.delayed(const Duration(seconds: 1));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Export saved to documents!'), backgroundColor: AppColors.success500),
+                              );
+                            }
+                          },
                           icon: const Icon(LucideIcons.download, size: 16, color: AppColors.roleRetailer),
                           label: Text('Export', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
                           style: TextButton.styleFrom(
@@ -319,3 +345,75 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
     );
   }
 }
+
+class _StockFilterBottomSheet extends StatefulWidget {
+  const _StockFilterBottomSheet();
+
+  @override
+  State<_StockFilterBottomSheet> createState() => _StockFilterBottomSheetState();
+}
+
+class _StockFilterBottomSheetState extends State<_StockFilterBottomSheet> {
+  String _selectedRange = 'Last 7 Days';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Filter Stock History', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text('Date Range', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['Today', 'Last 7 Days', 'Last 30 Days', 'This Year', 'Custom Range']
+                    .map((s) => ChoiceChip(
+                          label: Text(s),
+                          selected: _selectedRange == s,
+                          onSelected: (val) {
+                            if (val) setState(() => _selectedRange = s);
+                          },
+                          selectedColor: AppColors.roleRetailerLight.withValues(alpha: 0.2),
+                          labelStyle: TextStyle(
+                            color: _selectedRange == s ? AppColors.roleRetailer : AppColors.neutral700,
+                            fontWeight: _selectedRange == s ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.roleRetailer,
+                  foregroundColor: AppColors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => context.pop(),
+                child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

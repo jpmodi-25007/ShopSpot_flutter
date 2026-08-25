@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter/foundation.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../bloc/authentication_bloc.dart';
 import '../bloc/authentication_state.dart';
 
@@ -211,7 +211,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                           // App Name
                           Text(
-                            'ShopSpot',
+                            'Findivo',
                             style: AppTextStyles.display.copyWith(
                               color: AppColors.white,
                               letterSpacing: 1.5,

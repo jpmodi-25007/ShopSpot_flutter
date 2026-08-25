@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../negotiation/presentation/bloc/negotiation_bloc.dart';
@@ -44,7 +44,14 @@ class _ChatsScreenState extends State<ChatsScreen> with TickerProviderStateMixin
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.edit, color: AppColors.primary500),
-            onPressed: () {},
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (ctx) => const _NewChatBottomSheet(),
+              );
+            },
           ),
         ],
         bottom: TabBar(
@@ -63,7 +70,12 @@ class _ChatsScreenState extends State<ChatsScreen> with TickerProviderStateMixin
       body: BlocBuilder<NegotiationBloc, NegotiationState>(
         builder: (context, state) {
           if (state is NegotiationLoaded && state.isSubmitting) {
-            return const GenericListShimmer();
+            return ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: 8,
+              separatorBuilder: (context, index) => const Divider(height: 1, indent: 80),
+              itemBuilder: (context, index) => const ChatListTileSkeleton(),
+            );
           }
           final negotiations = state is NegotiationLoaded ? state.negotiations ?? [] : [];
           final active = negotiations.where((n) => n.status != 'COMPLETED' && n.status != 'REJECTED').toList();
@@ -331,6 +343,80 @@ class _ChatTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NewChatBottomSheet extends StatelessWidget {
+  const _NewChatBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('New Chat', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search for a user or shop...',
+                  prefixIcon: const Icon(LucideIcons.search, color: AppColors.neutral400),
+                  filled: true,
+                  fillColor: AppColors.neutral50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('Suggested', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(backgroundColor: AppColors.primary100, child: Icon(LucideIcons.store, color: AppColors.primary500)),
+                title: const Text('Urban Boutique'),
+                subtitle: const Text('Recently viewed shop'),
+                onTap: () {
+                  context.pop();
+                  // In a real app this would route to a new chat screen passing the user ID
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Starting chat with Urban Boutique...'), backgroundColor: AppColors.primary500),
+                  );
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(backgroundColor: AppColors.neutral200, child: Icon(LucideIcons.user, color: AppColors.neutral600)),
+                title: const Text('Tech World'),
+                subtitle: const Text('You purchased from them'),
+                onTap: () {
+                  context.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Starting chat with Tech World...'), backgroundColor: AppColors.primary500),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );

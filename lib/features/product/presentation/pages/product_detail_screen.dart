@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/network/api_constants.dart';
@@ -13,6 +13,10 @@ import '../bloc/product_bloc.dart';
 import '../bloc/product_event.dart';
 import '../bloc/product_state.dart';
 import '../../../../core/utils/guest_helper.dart';
+import '../../../saved/presentation/bloc/saved_bloc.dart';
+import '../../../saved/presentation/bloc/saved_event.dart';
+import '../../../saved/presentation/bloc/saved_state.dart';
+import '../../../../core/dependency_injection/injection.dart';
 import 'dart:ui';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -23,380 +27,645 @@ class ProductDetailScreen extends StatefulWidget {
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class _ProductDetailScreenState extends State<ProductDetailScreen>
+    with TickerProviderStateMixin {
   bool _isDetailsExpanded = true;
+  bool _isSaved = false;
+  bool _isSavingInProgress = false;
+
+  // Animation controllers for the heart / save action
+  late AnimationController _heartController;
+  late Animation<double> _heartScale;
 
   @override
   void initState() {
     super.initState();
-    context
-        .read<ProductBloc>()
-        .add(GetProductDetailRequested(widget.productId));
+    context.read<ProductBloc>().add(GetProductDetailRequested(widget.productId));
+
+    final savedState = context.read<SavedBloc>().state;
+    if (savedState is SavedLoaded) {
+      _isSaved = savedState.savedProducts?.any((p) => p.id == widget.productId) ?? false;
+    }
+
+    _heartController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _heartScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 0.9), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.0), weight: 30),
+    ]).animate(CurvedAnimation(parent: _heartController, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _heartController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSaved(String productId) {
+    if (GuestHelper.checkGuestAndPrompt(context)) return;
+    if (_isSavingInProgress) return;
+
+    setState(() {
+      _isSavingInProgress = true;
+      _isSaved = !_isSaved; // Optimistic update
+    });
+
+    _heartController.forward(from: 0);
+
+    if (_isSaved) {
+      context.read<SavedBloc>().add(SaveProductRequested(productId));
+    } else {
+      context.read<SavedBloc>().add(RemoveSavedProductRequested(productId));
+    }
+
+    // Re-enable after a brief debounce
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) setState(() => _isSavingInProgress = false);
+    });
+  }
+
+  void _startNegotiation(BuildContext context, String productId, double sellingPrice) {
+    if (GuestHelper.checkGuestAndPrompt(context)) return;
+    _showNegotiationBottomSheet(context, productId, sellingPrice);
+  }
+
+  void _showNegotiationBottomSheet(
+      BuildContext context, String productId, double sellingPrice) {
+    final offerController =
+        TextEditingController(text: (sellingPrice * 0.85).toStringAsFixed(0));
+    final messageController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: AppColors.neutral300,
+                        borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text('Make an Offer', style: AppTextStyles.h3),
+                const SizedBox(height: 8),
+                Text(
+                  'Listed price: ₹${sellingPrice.toStringAsFixed(0)}',
+                  style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: offerController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Your Offer (₹)',
+                    prefixIcon: const Icon(LucideIcons.indianRupee,
+                        size: 18, color: AppColors.primary500),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary500, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: messageController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Message (Optional)',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary500, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                BlocConsumer<SavedBloc, SavedState>(
+                  listener: (ctx, state) {
+                    // Only used for listen side effects if needed
+                  },
+                  builder: (ctx, state) {
+                    return AppButton(
+                      text: 'Send Offer',
+                      size: AppButtonSize.fullWidth,
+                      onPressed: () {
+                        final offerPrice =
+                            double.tryParse(offerController.text) ?? sellingPrice;
+                        if (offerPrice <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Please enter a valid price.')),
+                          );
+                          return;
+                        }
+                        Navigator.pop(sheetContext);
+                        // Dispatch StartNegotiation event via the NegotiationBloc
+                        // The NegotiationBloc handles navigation after success
+                        _dispatchStartNegotiation(context, productId, offerPrice,
+                            messageController.text.trim());
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _dispatchStartNegotiation(
+      BuildContext context, String productId, double offerPrice, String? message) {
+    // Use NavigatorBloc (NegotiationBloc) to start a negotiation
+    // After negotiation is started, navigate to the chat
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white)),
+            SizedBox(width: 12),
+            Text('Sending offer...'),
+          ],
+        ),
+        backgroundColor: AppColors.primary500,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
-    
-    return Scaffold(
-      backgroundColor: AppColors.neutral50,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.white.withValues(alpha: 0.8),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(LucideIcons.arrowLeft,
-                  size: 20, color: AppColors.neutral900),
-            ),
-            onPressed: () => context.pop(),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.share2,
-                    size: 20, color: AppColors.neutral900),
-              ),
-              onPressed: () {
-                Share.share('Check out this product on ShopSpot!\n${ApiConstants.webBaseUrl}/product-detail/${widget.productId}');
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(LucideIcons.heart,
-                    size: 20, color: AppColors.neutral900),
-              ),
-              onPressed: () {
-                if (GuestHelper.checkGuestAndPrompt(context)) return;
-              },
-            ),
-          ),
-        ],
-      ),
-      body: BlocBuilder<ProductBloc, ProductState>(
-        builder: (context, state) {
-          if (state is ProductLoading) {
-            return const DetailShimmer();
-          } else if (state is ProductError) {
-            return Center(
-                child: Text(state.failure.message,
-                    style: const TextStyle(color: Colors.red)));
-          } else if (state is ProductDetailLoaded) {
-            final product = state.product;
-            final images = product.images.isNotEmpty
-                ? product.images
-                : ['invalid']; // To trigger errorBuilder
 
-            return Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 120),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Premium Edge-to-Edge Gallery Hero
-                      SizedBox(
-                        height: screenH * 0.55,
-                        width: double.infinity,
-                        child: PageView.builder(
-                          itemCount: images.length,
-                          itemBuilder: (context, index) {
-                            return Image.network(
-                              images[index],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset(
-                                  'assets/images/web_lifestyle_shopping.jpg',
+    return BlocProvider(
+      create: (context) => getIt<SavedBloc>(),
+      child: BlocListener<SavedBloc, SavedState>(
+        listener: (context, state) {
+          if (state is SavedLoaded && state.failure != null) {
+            // Rollback optimistic update on failure
+            setState(() => _isSaved = !_isSaved);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.failure!.message),
+                backgroundColor: AppColors.error500,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          } else if (state is SavedLoaded && state.isSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_isSaved ? '❤️ Saved to Wishlist!' : 'Removed from Wishlist'),
+                backgroundColor: _isSaved ? AppColors.primary500 : AppColors.neutral700,
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.neutral50,
+          extendBodyBehindAppBar: true,
+          appBar: AppBar(
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withValues(alpha: 0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(LucideIcons.arrowLeft,
+                      size: 20, color: AppColors.neutral900),
+                ),
+                onPressed: () => context.pop(),
+              ),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(LucideIcons.share2,
+                        size: 20, color: AppColors.neutral900),
+                  ),
+                  onPressed: () {
+                    Share.share(
+                        'Check out this product on Findivo!\n${ApiConstants.webBaseUrl}/product-detail/${widget.productId}');
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: BlocBuilder<ProductBloc, ProductState>(
+                  builder: (context, productState) {
+                    final productId = widget.productId;
+                    return AnimatedBuilder(
+                      animation: _heartScale,
+                      builder: (ctx, child) => Transform.scale(
+                        scale: _heartScale.value,
+                        child: child,
+                      ),
+                      child: IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isSaved ? LucideIcons.heart : LucideIcons.heart,
+                            size: 20,
+                            color: _isSaved
+                                ? AppColors.error500
+                                : AppColors.neutral900,
+                          ),
+                        ),
+                        onPressed: () => _toggleSaved(productId),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          body: BlocBuilder<ProductBloc, ProductState>(
+            builder: (context, state) {
+              if (state is ProductLoading) {
+                return const DetailSkeleton();
+              } else if (state is ProductError) {
+                return Center(
+                    child: Text(state.failure.message,
+                        style: const TextStyle(color: Colors.red)));
+              } else if (state is ProductDetailLoaded) {
+                final product = state.product;
+                final images = product.images.isNotEmpty
+                    ? product.images
+                    : ['invalid'];
+
+                return Stack(
+                  children: [
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.only(bottom: 120),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Premium Edge-to-Edge Gallery Hero
+                          SizedBox(
+                            height: screenH * 0.55,
+                            width: double.infinity,
+                            child: PageView.builder(
+                              itemCount: images.length,
+                              itemBuilder: (context, index) {
+                                return Image.network(
+                                  images[index],
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/images/web_lifestyle_shopping.jpg',
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
                                 );
                               },
-                            );
-                          },
-                        ),
-                      ),
-                      
-                      // Product Info Section
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                if (product.brand != null)
-                                  Text(product.brand!.toUpperCase(),
-                                      style: AppTextStyles.caption.copyWith(
-                                          color: AppColors.roleCustomer,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 1.5)),
-                                if (product.stockQuantity > 0)
-                                  AppBadge(
-                                      type: AppBadgeType.inStock,
-                                      text:
-                                          '${product.stockQuantity} Left')
-                                else
-                                  const AppBadge(
-                                      type: AppBadgeType.outOfStock,
-                                      text: 'Sold Out'),
-                              ],
                             ),
-                            const SizedBox(height: 12),
-                            Text(product.name,
-                                style: AppTextStyles.h1.copyWith(
-                                    fontSize: 28, height: 1.2)),
-                            const SizedBox(height: 16),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text('Rs.${product.sellingPrice}',
-                                    style: AppTextStyles.h2.copyWith(
-                                        color: AppColors.neutral900)),
-                                if (product.mrp != null) ...[
-                                  const SizedBox(width: 12),
-                                  Text('Rs.${product.mrp}',
-                                      style: AppTextStyles.priceStrikethrough
-                                          .copyWith(
-                                              color: AppColors.neutral400,
-                                              fontSize: 18)),
-                                  const SizedBox(width: 12),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                        color: AppColors.error50,
-                                        borderRadius:
-                                            BorderRadius.circular(6)),
-                                    child: Text(
-                                        '${((1 - (product.sellingPrice / product.mrp!)) * 100).toStringAsFixed(0)}% OFF',
-                                        style: AppTextStyles.caption.copyWith(
-                                            color: AppColors.error500,
-                                            fontWeight: FontWeight.w800)),
-                                  )
-                                ]
-                              ],
-                            ),
-                            
-                            const SizedBox(height: 40),
-                            
-                            // Premium Sold By Card
-                            Text('Curated by', style: AppTextStyles.h4),
-                            const SizedBox(height: 16),
-                            GestureDetector(
-                              onTap: () => context
-                                  .push('/shop-detail/${product.shopId}'),
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.neutral900
-                                          .withValues(alpha: 0.04),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 8),
-                                    )
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 56,
-                                      height: 56,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: AppColors.neutral200),
-                                      ),
-                                      child: ClipOval(
-                                        child: Image.network(
-                                          'invalid',
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error,
-                                              stackTrace) {
-                                            return Image.asset(
-                                                'assets/images/web_hero_boutique.jpg',
-                                                fit: BoxFit.cover);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text('The Style Studio',
-                                                  style: AppTextStyles.body
-                                                      .copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w700)),
-                                              const SizedBox(width: 6),
-                                              const Icon(
-                                                  LucideIcons.shieldCheck,
-                                                  size: 16,
-                                                  color: AppColors
-                                                      .roleCustomer),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              const Icon(LucideIcons.mapPin,
-                                                  size: 12,
-                                                  color:
-                                                      AppColors.neutral500),
-                                              const SizedBox(width: 4),
-                                              Text('C.G. Road • 1.2km away',
-                                                  style: AppTextStyles.caption
-                                                      .copyWith(
-                                                          color: AppColors
-                                                              .neutral500)),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                          color: AppColors.neutral50,
-                                          shape: BoxShape.circle),
-                                      child: const Icon(
-                                          LucideIcons.chevronRight,
-                                          size: 20,
-                                          color: AppColors.neutral700),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            
-                            if (product.description != null &&
-                                product.description!.isNotEmpty) ...[
-                              const SizedBox(height: 40),
-                              
-                              // Expandable Details Accordion
-                              Theme(
-                                data: Theme.of(context).copyWith(
-                                  dividerColor: Colors.transparent,
-                                ),
-                                child: ExpansionTile(
-                                  initiallyExpanded: _isDetailsExpanded,
-                                  onExpansionChanged: (val) {
-                                    setState(() => _isDetailsExpanded = val);
-                                  },
-                                  tilePadding: EdgeInsets.zero,
-                                  title: Text('Product Details',
-                                      style: AppTextStyles.h4),
-                                  children: [
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16.0),
-                                      child: Text(
-                                        product.description!,
-                                        style: AppTextStyles.body.copyWith(
-                                            color: AppColors.neutral600,
-                                            height: 1.6),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                          ),
 
-                // Floating Glassmorphism Bottom Bar
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: ClipRRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                        decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.8),
-                          border: Border(
-                              top: BorderSide(
-                                  color: AppColors.neutral200
-                                      .withValues(alpha: 0.5))),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: AppButton(
-                                text: 'Negotiate',
-                                variant: AppButtonVariant.outline,
-                                onPressed: () {
-                                  if (GuestHelper.checkGuestAndPrompt(
-                                      context)) {
-                                    return;
-                                  }
-                                  context.push('/negotiation');
-                                },
-                              ),
+                          // Product Info Section
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    if (product.brand != null)
+                                      Text(
+                                          product.brand!.toUpperCase(),
+                                          style: AppTextStyles.caption.copyWith(
+                                              color: AppColors.roleCustomer,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 1.5)),
+                                    if (product.stockQuantity > 0)
+                                      AppBadge(
+                                          type: AppBadgeType.inStock,
+                                          text:
+                                              '${product.stockQuantity} Left')
+                                    else
+                                      const AppBadge(
+                                          type: AppBadgeType.outOfStock,
+                                          text: 'Sold Out'),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(product.name,
+                                    style: AppTextStyles.h1.copyWith(
+                                        fontSize: 28, height: 1.2)),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('₹${product.sellingPrice}',
+                                        style: AppTextStyles.h2.copyWith(
+                                            color: AppColors.neutral900)),
+                                    if (product.mrp != null) ...[
+                                      const SizedBox(width: 12),
+                                      Text('₹${product.mrp}',
+                                          style:
+                                              AppTextStyles.priceStrikethrough
+                                                  .copyWith(
+                                                      color:
+                                                          AppColors.neutral400,
+                                                      fontSize: 18)),
+                                      const SizedBox(width: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                            color: AppColors.error50,
+                                            borderRadius:
+                                                BorderRadius.circular(6)),
+                                        child: Text(
+                                            '${((1 - (product.sellingPrice / product.mrp!)) * 100).toStringAsFixed(0)}% OFF',
+                                            style:
+                                                AppTextStyles.caption.copyWith(
+                                                    color: AppColors.error500,
+                                                    fontWeight:
+                                                        FontWeight.w800)),
+                                      )
+                                    ]
+                                  ],
+                                ),
+
+                                const SizedBox(height: 40),
+
+                                // Shop Info Card (using real data)
+                                Text('Curated by', style: AppTextStyles.h4),
+                                const SizedBox(height: 16),
+                                GestureDetector(
+                                  onTap: () => context.push(
+                                      '/shop-detail/${product.shopId}'),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.neutral900
+                                              .withValues(alpha: 0.04),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 8),
+                                        )
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 56,
+                                          height: 56,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: AppColors.neutral200),
+                                            image: product.shopLogoUrl != null
+                                                ? DecorationImage(
+                                                    image: NetworkImage(
+                                                        product.shopLogoUrl!),
+                                                    fit: BoxFit.cover)
+                                                : null,
+                                          ),
+                                          child: product.shopLogoUrl == null
+                                              ? const Icon(LucideIcons.store,
+                                                  color: AppColors.neutral400)
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                      product.shopName ??
+                                                          'Local Shop',
+                                                      style: AppTextStyles.body
+                                                          .copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700)),
+                                                  const SizedBox(width: 6),
+                                                  const Icon(
+                                                      LucideIcons.shieldCheck,
+                                                      size: 16,
+                                                      color: AppColors
+                                                          .roleCustomer),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                      LucideIcons.mapPin,
+                                                      size: 12,
+                                                      color: AppColors
+                                                          .neutral500),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                      product.shopCity ?? 'Local',
+                                                      style: AppTextStyles
+                                                          .caption
+                                                          .copyWith(
+                                                              color: AppColors
+                                                                  .neutral500)),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                              color: AppColors.neutral50,
+                                              shape: BoxShape.circle),
+                                          child: const Icon(
+                                              LucideIcons.chevronRight,
+                                              size: 20,
+                                              color: AppColors.neutral700),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                if (product.description != null &&
+                                    product.description!.isNotEmpty) ...[
+                                  const SizedBox(height: 40),
+                                  Theme(
+                                    data: Theme.of(context).copyWith(
+                                      dividerColor: Colors.transparent,
+                                    ),
+                                    child: ExpansionTile(
+                                      initiallyExpanded: _isDetailsExpanded,
+                                      onExpansionChanged: (val) {
+                                        setState(
+                                            () => _isDetailsExpanded = val);
+                                      },
+                                      tilePadding: EdgeInsets.zero,
+                                      title: Text('Product Details',
+                                          style: AppTextStyles.h4),
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 16.0),
+                                          child: Text(
+                                            product.description!,
+                                            style: AppTextStyles.body.copyWith(
+                                                color: AppColors.neutral600,
+                                                height: 1.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 3,
-                              child: AppButton(
-                                text: 'Add to Cart',
-                                variant: AppButtonVariant.primary,
-                                onPressed: () {
-                                  if (GuestHelper.checkGuestAndPrompt(
-                                      context)) {
-                                    return;
-                                  }
-                                  // Proceed with Buy
-                                },
-                              ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Floating Glassmorphism Bottom Bar
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: ClipRRect(
+                        child: BackdropFilter(
+                          filter:
+                              ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColors.white.withValues(alpha: 0.9),
+                              border: Border(
+                                  top: BorderSide(
+                                      color: AppColors.neutral200
+                                          .withValues(alpha: 0.5))),
                             ),
-                          ],
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: AppButton(
+                                    text: 'Negotiate',
+                                    variant: AppButtonVariant.outline,
+                                    onPressed: product.stockQuantity > 0
+                                        ? () => _startNegotiation(
+                                            context,
+                                            product.id,
+                                            double.tryParse(product.sellingPrice.toString()) ?? 0)
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 3,
+                                  child: AppButton(
+                                    text: product.stockQuantity > 0
+                                        ? 'Reserve Now'
+                                        : 'Out of Stock',
+                                    variant: AppButtonVariant.primary,
+                                    onPressed: product.stockQuantity > 0
+                                        ? () {
+                                            if (GuestHelper
+                                                .checkGuestAndPrompt(
+                                                    context)) {
+                                              return;
+                                            }
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: const Text(
+                                                    '🛒 Item reserved!'),
+                                                backgroundColor:
+                                                    AppColors.primary500,
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10)),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          }
-          return const SizedBox.shrink();
-        },
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
       ),
     );
   }

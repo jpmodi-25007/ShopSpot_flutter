@@ -5,10 +5,13 @@ import 'package:logger/logger.dart';
 import 'dart:io' show Platform;
 
 import '../network/api_constants.dart';
-import '../../features/dashboard/presentation/bloc/notification_event.dart';
-import '../../features/dashboard/presentation/bloc/notification_bloc.dart';
+import 'notification_payload.dart';
+import 'pending_notification_service.dart';
+import 'notification_router.dart';
 
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Runs in a separate isolate for background messages
   print("Handling a background message: ${message.messageId}");
 }
 
@@ -44,16 +47,28 @@ class PushNotificationService {
         _sendTokenToBackend(newToken);
       });
 
-      // Foreground message listener
+      // 1. App completely terminated / killed (User taps notification)
+      final initialMessage = await _fcm.getInitialMessage();
+      if (initialMessage != null) {
+        _logger.i('App launched from terminated state via notification');
+        final payload = NotificationPayload.fromMap(initialMessage.data);
+        PendingNotificationService().storePendingNotification(payload);
+      }
+
+      // 2. App in foreground (Message received)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         _logger.i('Got a message whilst in the foreground!');
-        _logger.i('Message data: ${message.data}');
+        // In a real app, you might show a local notification (e.g. flutter_local_notifications)
+        // We do NOT auto-navigate here unless configured.
+      });
 
-        if (message.notification != null) {
-          _logger.i('Message also contained a notification: ${message.notification}');
-          // In a real app, you might show a local notification here, or update the UI
-          // For now, we will just rely on the BLoC to refresh notifications if needed.
-        }
+      // 3. App in background (User taps notification)
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        _logger.i('App opened from background via notification tap');
+        final payload = NotificationPayload.fromMap(message.data);
+        // Note: we can't easily push here without a global navigator key or context.
+        // We will store it in the pending service, and a listener on the router/bloc will consume it.
+        PendingNotificationService().storePendingNotification(payload);
       });
     }
   }

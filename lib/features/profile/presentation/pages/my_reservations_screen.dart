@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -21,13 +22,17 @@ class MyReservationsScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(LucideIcons.store, color: AppColors.primary500),
-            onPressed: () {},
+            icon: const Icon(LucideIcons.arrowLeft),
+            onPressed: () => context.pop(),
           ),
-          title: Text('ShopSpot', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+          title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
           centerTitle: true,
           actions: [
-            IconButton(icon: const Icon(LucideIcons.search), onPressed: () {}),
+            IconButton(icon: const Icon(LucideIcons.search), onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Search reservations...'), backgroundColor: AppColors.neutral700),
+              );
+            }),
           ],
         ),
         body: Column(
@@ -66,7 +71,12 @@ class MyReservationsScreen extends StatelessWidget {
               child: BlocBuilder<ReservationBloc, ReservationState>(
                 builder: (context, state) {
                   if (state is ReservationLoading || state is ReservationInitial) {
-                    return const GenericListShimmer();
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 8,
+                      separatorBuilder: (context, index) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) => const OrderCardSkeleton(),
+                    );
                   } else if (state is ReservationError) {
                     return Center(
                       child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: AppColors.error500)),
@@ -82,7 +92,7 @@ class MyReservationsScreen extends StatelessWidget {
                       itemCount: state.reservations.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        return _buildReservationCard(state.reservations[index]);
+                        return _buildReservationCard(context, state.reservations[index]);
                       },
                     );
                   }
@@ -114,7 +124,7 @@ class MyReservationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReservationCard(ReservationEntity reservation) {
+  Widget _buildReservationCard(BuildContext context, ReservationEntity reservation) {
     final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     
     final difference = reservation.expiresAt.difference(DateTime.now());
@@ -196,7 +206,14 @@ class MyReservationsScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       minimumSize: Size.zero,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => const _RescheduleBottomSheet(),
+                      );
+                    },
                     icon: const Icon(LucideIcons.qrCode, size: 16),
                     label: const Text('View QR'),
                   )
@@ -213,6 +230,79 @@ class MyReservationsScreen extends StatelessWidget {
             ),
           )
         ],
+      ),
+    );
+  }
+}
+
+class _RescheduleBottomSheet extends StatelessWidget {
+  const _RescheduleBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Reschedule Visit', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text('Select New Date', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Tomorrow, 2:00 PM',
+                  prefixIcon: const Icon(LucideIcons.calendar, color: AppColors.neutral500),
+                  filled: true,
+                  fillColor: AppColors.neutral50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary500,
+                  foregroundColor: AppColors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  context.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reservation rescheduled!'), backgroundColor: AppColors.success500));
+                },
+                child: const Text('Confirm Reschedule', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error500,
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                onPressed: () {
+                  context.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reservation cancelled.'), backgroundColor: AppColors.neutral700));
+                },
+                child: const Text('Cancel Reservation', style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

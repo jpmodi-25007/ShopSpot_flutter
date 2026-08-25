@@ -10,6 +10,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 
 import '../services/push_notification_service.dart';
+import '../services/cloudinary_service.dart';
 import '../../features/dashboard/domain/usecases/mark_all_as_read_usecase.dart';
 
 import '../../features/authentication/data/datasources/auth_remote_data_source.dart';
@@ -21,6 +22,9 @@ import '../../features/authentication/domain/usecases/check_session_use_case.dar
 import '../../features/authentication/domain/usecases/logout_use_case.dart';
 import '../../features/authentication/domain/usecases/update_profile_use_case.dart';
 import '../../features/authentication/presentation/bloc/authentication_bloc.dart';
+
+import '../../features/dashboard/data/datasources/event_remote_data_source.dart';
+import '../../features/dashboard/presentation/bloc/event_bloc.dart';
 
 import '../../features/product/data/datasources/product_remote_data_source.dart';
 import '../../features/product/data/repositories/product_repository_impl.dart';
@@ -102,6 +106,9 @@ import '../../features/dashboard/data/repositories/notification_repository_impl.
 import '../../features/dashboard/domain/repositories/notification_repository.dart';
 import '../../features/dashboard/domain/usecases/get_my_notifications_usecase.dart';
 import '../../features/dashboard/presentation/bloc/notification_bloc.dart';
+import '../../features/dashboard/data/repositories/promotion_repository_impl.dart';
+import '../../features/dashboard/domain/repositories/promotion_repository.dart';
+import '../../features/dashboard/presentation/bloc/promotion_bloc.dart';
 
 import '../../features/saved/data/datasources/saved_remote_data_source.dart';
 import '../../features/saved/data/repositories/saved_repository_impl.dart';
@@ -392,10 +399,23 @@ Future<void> configureDependencies() async {
       () => NotificationRemoteDataSourceImpl(apiClient: getIt()));
   getIt.registerLazySingleton<NotificationRepository>(
       () => NotificationRepositoryImpl(remoteDataSource: getIt()));
+
+  
+  // Cloudinary Service
+  getIt.registerLazySingleton(() => CloudinaryService(apiClient: getIt()));
   getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
   getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
   getIt.registerFactory(() => NotificationBloc(
     getMyNotifications: getIt(),
     markAllAsRead: getIt(),
   ));
+
+  // Promotions Module
+  getIt.registerLazySingleton<PromotionRepository>(
+      () => PromotionRepositoryImpl(apiClient: getIt()));
+  getIt.registerFactory(() => PromotionBloc(repository: getIt()));
+
+  // Events
+  getIt.registerLazySingleton<EventRemoteDataSource>(() => EventRemoteDataSourceImpl(dio: getIt()));
+  getIt.registerFactory(() => EventBloc(remoteDataSource: getIt()));
 }

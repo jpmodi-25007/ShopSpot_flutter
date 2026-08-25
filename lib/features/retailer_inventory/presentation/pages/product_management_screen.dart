@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -50,7 +50,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           child: IconButton(
             icon: const Icon(LucideIcons.packageSearch,
                 color: AppColors.roleRetailer),
-            onPressed: () {},
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (ctx) => const _ProductFilterBottomSheet(),
+              );
+            },
           ),
         ),
         title: Text('Inventory Hub',
@@ -197,7 +204,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         style: AppTextStyles.bodySmall
                             .copyWith(color: AppColors.neutral500)),
                     const SizedBox(height: 6),
-                    Text('\$124,500.00', style: AppTextStyles.h1),
+                    Text('₹124,500.00', style: AppTextStyles.h1),
                   ],
                 ),
               ),
@@ -318,7 +325,13 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
                 builder: (context, state) {
                   if (state is RetailerInventoryLoading) {
-                    return const GenericListShimmer();
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: 4,
+                      separatorBuilder: (context, index) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) => const ProductListItemSkeleton(),
+                    );
                   } else if (state is RetailerInventoryError) {
                     return Center(
                         child: Text(state.failure.message,
@@ -336,7 +349,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             product.id,
                             product.name,
                             product.categoryId ?? 'Uncategorized',
-                            'Rs.${product.sellingPrice}',
+                            '₹${product.sellingPrice}',
                             product.stockQuantity,
                             product.images.isNotEmpty
                                 ? product.images.first
@@ -383,7 +396,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       Expanded(
                         flex: 1,
                         child: OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            context.push('/retailer/add-product');
+                          },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: const BorderSide(
@@ -684,3 +699,75 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     );
   }
 }
+
+class _ProductFilterBottomSheet extends StatefulWidget {
+  const _ProductFilterBottomSheet();
+
+  @override
+  State<_ProductFilterBottomSheet> createState() => _ProductFilterBottomSheetState();
+}
+
+class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
+  String _selectedSort = 'Newest';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Filter & Sort', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text('Sort By', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['Newest', 'Oldest', 'Price: High to Low', 'Price: Low to High']
+                    .map((s) => ChoiceChip(
+                          label: Text(s),
+                          selected: _selectedSort == s,
+                          onSelected: (val) {
+                            if (val) setState(() => _selectedSort = s);
+                          },
+                          selectedColor: AppColors.roleRetailerLight.withValues(alpha: 0.2),
+                          labelStyle: TextStyle(
+                            color: _selectedSort == s ? AppColors.roleRetailer : AppColors.neutral700,
+                            fontWeight: _selectedSort == s ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.roleRetailer,
+                  foregroundColor: AppColors.white,
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => context.pop(),
+                child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

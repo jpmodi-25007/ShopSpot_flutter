@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,7 +60,7 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
           icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900),
           onPressed: () => context.pop(),
         ),
-        title: Text('ShopSpot', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
+        title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -89,7 +89,12 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
           }
         },
         child: _isLoading 
-            ? const GenericListShimmer() 
+            ? ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: 8,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) => const ProductListItemSkeleton(),
+              )
             : Stack(
                 children: [
                   Column(

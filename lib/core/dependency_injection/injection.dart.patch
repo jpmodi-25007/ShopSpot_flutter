@@ -1,0 +1,21 @@
+--- apps/mobile_web/lib/core/dependency_injection/injection.dart
++++ apps/mobile_web/lib/core/dependency_injection/injection.dart
+@@ -20,6 +20,9 @@
+ import '../../features/authentication/domain/usecases/update_profile_use_case.dart';
+ import '../../features/authentication/presentation/bloc/authentication_bloc.dart';
+ 
++import '../../features/dashboard/data/datasources/event_remote_data_source.dart';
++import '../../features/dashboard/presentation/bloc/event_bloc.dart';
++
+ import '../../features/product/data/datasources/product_remote_data_source.dart';
+ import '../../features/product/data/repositories/product_repository_impl.dart';
+ import '../../features/product/domain/repositories/product_repository.dart';
+@@ -414,6 +417,11 @@
+   getIt.registerFactory(() => PromotionBloc(repository: getIt()));
+   getIt.registerLazySingleton<PromotionRemoteDataSource>(() => PromotionRemoteDataSourceImpl(dio: getIt()));
+   getIt.registerLazySingleton<PromotionRepository>(() => PromotionRepositoryImpl(remoteDataSource: getIt()));
++
++  // Events
++  getIt.registerLazySingleton<EventRemoteDataSource>(() => EventRemoteDataSourceImpl(dio: getIt()));
++  getIt.registerFactory(() => EventBloc(remoteDataSource: getIt()));
+ }

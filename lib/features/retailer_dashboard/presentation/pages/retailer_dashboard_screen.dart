@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 
@@ -37,10 +37,10 @@ class RetailerDashboardScreen extends StatelessWidget {
             child: IconButton(
               icon: const Icon(LucideIcons.store,
                   color: AppColors.roleRetailer),
-              onPressed: () {},
+              onPressed: () => context.go('/retailer/profile'),
             ),
           ),
-          title: Text('ShopSpot Hub',
+          title: Text('Findivo Hub',
               style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
           centerTitle: true,
           actions: [
@@ -122,13 +122,13 @@ class RetailerDashboardScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildActionBtn(
-                          LucideIcons.plus, 'Add Product', true, () {}),
+                          LucideIcons.plus, 'Add Product', true, () => context.push('/retailer/add-product')),
                       _buildActionBtn(
-                          LucideIcons.packageSearch, 'Inventory', false, () {}),
+                          LucideIcons.packageSearch, 'Inventory', false, () => context.go('/retailer/inventory')),
                       _buildActionBtn(
-                          LucideIcons.barChart2, 'Analytics', false, () {}),
+                          LucideIcons.barChart2, 'Analytics', false, () => context.push('/retailer/stock-history')),
                       _buildActionBtn(
-                          LucideIcons.megaphone, 'Promote', false, () {}),
+                          LucideIcons.megaphone, 'Promote', false, () => context.go('/retailer/campaigns')),
                     ],
                   ),
                   const SizedBox(height: 40),
@@ -178,6 +178,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                   Text('Needs Attention', style: AppTextStyles.h3),
                   const SizedBox(height: 16),
                   _buildPremiumActionItemCard(
+                    context: context,
                     icon: LucideIcons.messageCircle,
                     iconColor: AppColors.roleRetailer,
                     title: 'New Inquiry',
@@ -187,6 +188,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildPremiumActionItemCard(
+                    context: context,
                     icon: LucideIcons.timer,
                     iconColor: AppColors.warning600,
                     title: 'Expiring in 15 mins',
@@ -218,21 +220,64 @@ class RetailerDashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildPremiumCampaignBidCard(
+                    context: context,
                     campaignTitle: 'Summer Mega Sale Push',
                     influencerName: 'Elena Rivers (@elenastyles)',
                     influencerImage: 'invalid',
-                    bidAmount: '\$1,500',
+                    bidAmount: '₹1,500',
                     status: 'Pending Review',
                   ),
                   const SizedBox(height: 16),
                   _buildPremiumCampaignBidCard(
+                    context: context,
                     campaignTitle: 'Artisan Espresso Maker Launch',
                     influencerName: 'Mark D. (@coffee_mark)',
                     influencerImage: 'invalid',
-                    bidAmount: '\$800',
+                    bidAmount: '₹800',
                     status: 'Counter Offer Sent',
                     isCounter: true,
                   ),
+                  const SizedBox(height: 40),
+
+                  // Shop Events
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Shop Events', style: AppTextStyles.h3),
+                      GestureDetector(
+                        onTap: () => context.push('/retailer/events/create'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                              color: AppColors.roleRetailerLight.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(100)),
+                          child: Text('Create Event',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.roleRetailer, fontWeight: FontWeight.w800)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.neutral50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.neutral200),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(LucideIcons.calendarPlus, size: 32, color: AppColors.neutral400),
+                        const SizedBox(height: 12),
+                        Text('Host a sale or special event', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text('Events appear on the customer home feed', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 80), // Bottom padding
                 ],
               ),
@@ -352,6 +397,7 @@ class RetailerDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildPremiumActionItemCard({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -420,7 +466,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                     ? BorderSide(color: AppColors.warning600.withValues(alpha: 0.5))
                     : BorderSide.none,
               ),
-              onPressed: () {},
+              onPressed: () => context.go('/retailer/negotiations'),
               child: Text(buttonText,
                   style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
@@ -431,6 +477,7 @@ class RetailerDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildPremiumCampaignBidCard({
+    required BuildContext context,
     required String campaignTitle,
     required String influencerName,
     required String influencerImage,
@@ -528,7 +575,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12)),
                     side: const BorderSide(color: AppColors.neutral200),
                   ),
-                  onPressed: () {},
+                  onPressed: () => context.go('/retailer/campaigns'),
                   child: const Text('View Profile'),
                 ),
               ),
@@ -547,7 +594,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {},
+                    onPressed: () => context.go('/retailer/campaigns'),
                     child: const Text('Counter'),
                   ),
                 ),
@@ -561,7 +608,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {},
+                    onPressed: () => context.go('/retailer/campaigns'),
                     child: const Text('Accept Bid',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),

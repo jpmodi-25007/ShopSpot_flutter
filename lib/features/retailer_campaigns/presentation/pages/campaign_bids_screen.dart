@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -67,7 +67,14 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
             },
             builder: (context, state) {
               if (state is RetailerCampaignLoading) {
-                return const GenericListShimmer();
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  itemCount: 4,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => const BidCardSkeleton(),
+                );
               } else if (state is RetailerCampaignBidsLoaded && state.campaignId == widget.campaignId) {
                 if (state.bids.isEmpty) {
                   return const Center(child: Text("No bids yet for this campaign."));

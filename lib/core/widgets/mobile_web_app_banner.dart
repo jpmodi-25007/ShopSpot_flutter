@@ -80,7 +80,7 @@ class _MobileWebAppBannerState extends State<MobileWebAppBanner> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('ShopSpot', style: AppTextStyles.h4),
+                          Text('Findivo', style: AppTextStyles.h4),
                           Text('Get the best experience in our app', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                         ],
                       ),

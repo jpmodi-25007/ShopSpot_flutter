@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../widgets/responsive_container.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class WebContactPage extends StatefulWidget {
   const WebContactPage({super.key});
@@ -64,7 +64,7 @@ class _WebContactPageState extends State<WebContactPage> {
                       _buildContactMethod(
                         icon: LucideIcons.mail,
                         title: 'Email Us',
-                        value: 'support@shopspot.com',
+                        value: 'support@findivo.com',
                       ),
                       const SizedBox(height: 32),
                       _buildContactMethod(

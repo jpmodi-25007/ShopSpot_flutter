@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
@@ -21,7 +21,7 @@ class ProfileScreen extends StatelessWidget {
       },
       child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
         builder: (context, authState) {
-          if (authState is AuthenticationGuest) {
+          if (authState is AuthenticationGuest || authState is AuthenticationUnauthenticated) {
             return _buildGuestProfile(context);
           }
 
@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 240,
             pinned: true,
-            backgroundColor: const Color(0xFF3B82F6),
+            backgroundColor: AppColors.primary500,
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -44,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFF3B82F6), Color(0xFF9333EA)],
+                        colors: [AppColors.primary500, AppColors.primary600],
                       ),
                     ),
                   ),
@@ -154,7 +154,7 @@ class ProfileScreen extends StatelessWidget {
                       const Divider(height: 1),
                       _buildListTile(LucideIcons.helpCircle, 'Help & Support'),
                       const Divider(height: 1),
-                      _buildListTile(LucideIcons.info, 'About ShopSpot'),
+                      _buildListTile(LucideIcons.info, 'About Findivo'),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -219,7 +219,7 @@ class ProfileScreen extends StatelessWidget {
                 child: const Icon(LucideIcons.user, size: 60, color: AppColors.primary500),
               ),
               const SizedBox(height: 32),
-              Text('Welcome to ShopSpot!', style: AppTextStyles.h2),
+              Text('Welcome to Findivo!', style: AppTextStyles.h2),
               const SizedBox(height: 16),
               Text(
                 'Log in to view your orders, manage saved products, and personalize your experience.',

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../sections/web_hero_section.dart';
 import '../sections/feature_section.dart';
 import '../sections/how_it_works_section.dart';
@@ -48,7 +48,7 @@ class WebHomePage extends StatelessWidget {
           sectionLabel: '🏪  For Retailers',
           title: 'Your digital storefront, effortlessly managed.',
           description:
-              'Stop juggling spreadsheets. ShopSpot gives independent retailers '
+              'Stop juggling spreadsheets. Findivo gives independent retailers '
               'a powerful dashboard to manage products, track inventory, '
               'engage customers, and run influencer campaigns—all in one place.',
           imagePath: 'assets/images/intro2.jpg',
@@ -72,9 +72,9 @@ class WebHomePage extends StatelessWidget {
           description:
               'Connect with boutiques and brands you already love. '
               'Browse campaigns, submit bids, collaborate on content, '
-              'and get paid—all within ShopSpot. No agents. No middlemen.',
+              'and get paid—all within Findivo. No agents. No middlemen.',
           imagePath: 'assets/images/intro3.jpg',
-          badgeValue: '\$45K+',
+          badgeValue: '₹45K+',
           badgeLabel: 'Paid to influencers',
           badgeIcon: LucideIcons.trendingUp,
           badgeColor: AppColors.roleInfluencer,
@@ -93,9 +93,9 @@ class WebHomePage extends StatelessWidget {
         FAQSection(
           faqs: [
             {
-              'question': 'What is ShopSpot?',
+              'question': 'What is Findivo?',
               'answer':
-                  'ShopSpot is a hyper-local e-commerce platform connecting customers with local boutiques, giving retailers powerful management tools, and allowing influencers to discover and bid on brand campaigns.'
+                  'Findivo is a hyper-local e-commerce platform connecting customers with local boutiques, giving retailers powerful management tools, and allowing influencers to discover and bid on brand campaigns.'
             },
             {
               'question': 'How much does it cost?',

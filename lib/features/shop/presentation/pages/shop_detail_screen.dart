@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -14,6 +14,7 @@ import '../bloc/shop_bloc.dart';
 import '../bloc/shop_event.dart';
 import '../bloc/shop_state.dart';
 import '../../../product/domain/entities/product_entity.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ShopDetailScreen extends StatefulWidget {
   final String shopId;
@@ -51,7 +52,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
           child: BlocBuilder<ShopBloc, ShopState>(
         builder: (context, state) {
           if (state is ShopInitial || (state is ShopStateLoaded && state.shop == null && state.isLoading)) {
-            return const ShopDetailShimmer();
+            return const ShopDetailSkeleton();
           }
           if (state is ShopStateLoaded && state.failure != null && state.shop == null) {
             return Center(child: Text(state.failure!.message));
@@ -86,7 +87,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                         ),
                         onPressed: () {
                           if (shop != null) {
-                            Share.share('Check out ${shop.name} on ShopSpot!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                            Share.share('Check out ${shop.name} on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
                           }
                         },
                       ),
@@ -202,7 +203,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           _buildActionItem(context, LucideIcons.share, 'Share', onTap: () async {
                             if (shop != null) {
                               try {
-                                await Share.share('Check out ${shop.name} on ShopSpot!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                                await Share.share('Check out ${shop.name} on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
                               } catch (e) {
                                 // Fallback if Share plugin is missing on this platform (e.g., dev environment)
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
@@ -380,7 +381,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                       return _buildProductCard(
                         p.id,
                         p.name, 
-                        '\$${p.sellingPrice}', 
+                        '₹${p.sellingPrice}', 
                         p.images.isNotEmpty ? p.images.first : 'https://placehold.co/400x400.png', 
                         p.stockQuantity > 0 ? AppBadgeType.inStock : AppBadgeType.lowStock, 
                         p.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'
@@ -567,10 +568,10 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
       children: [
-        Text('About ElectroHub', style: AppTextStyles.h3),
+        Text('About ${shop?.name ?? 'Shop'}', style: AppTextStyles.h3),
         const SizedBox(height: 12),
         Text(
-          'ElectroHub is your premium destination for the latest electronics, home appliances, and gadgets. We pride ourselves on offering authentic products with official warranties.',
+          shop?.description ?? 'No description available.',
           style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700, height: 1.5),
         ),
         const SizedBox(height: 24),
@@ -582,26 +583,48 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
         const SizedBox(height: 24),
         Text('Location', style: AppTextStyles.h4),
         const SizedBox(height: 12),
-        Container(
-          height: 150,
-          decoration: BoxDecoration(
-            color: AppColors.neutral200,
-            borderRadius: BorderRadius.circular(12),
-            image: const DecorationImage(
-              image: NetworkImage('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=400&auto=format&fit=crop'),
-              fit: BoxFit.cover,
+        if (shop != null && shop.latitude != 0 && shop.longitude != 0)
+          Container(
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.neutral300),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(shop.latitude, shop.longitude),
+                  zoom: 15.0,
+                ),
+                markers: {
+                  Marker(
+                    markerId: MarkerId(shop.id),
+                    position: LatLng(shop.latitude, shop.longitude),
+                    infoWindow: InfoWindow(title: shop.name),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+                  )
+                },
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: true,
+                scrollGesturesEnabled: false,
+              ),
+            ),
+          )
+        else
+          Container(
+            height: 150,
+            decoration: BoxDecoration(
+              color: AppColors.neutral200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                'Location coordinates unavailable',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+              ),
             ),
           ),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: AppColors.white, shape: BoxShape.circle, boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)
-              ]),
-              child: const Icon(LucideIcons.mapPin, color: AppColors.primary500),
-            ),
-          ),
-        )
       ],
     );
   }

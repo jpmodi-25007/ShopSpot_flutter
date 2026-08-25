@@ -6,7 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/legal_document_bottom_sheet.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/utils/responsive_builder.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/authentication_bloc.dart';
@@ -175,7 +175,13 @@ class _SignupScreenState extends State<SignupScreen>
                 child: IconButton(
                   icon: const Icon(LucideIcons.arrowLeft,
                       color: AppColors.white),
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/');
+                    }
+                  },
                 ),
               ),
             ],
@@ -284,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen>
                   const Icon(LucideIcons.store,
                       color: AppColors.white, size: 48),
                   const SizedBox(height: 16),
-                  Text('Join ShopSpot',
+                  Text('Join Findivo',
                       style: AppTextStyles.h1.copyWith(
                           color: AppColors.white, fontSize: 32)),
                   const SizedBox(height: 10),
@@ -306,10 +312,17 @@ class _SignupScreenState extends State<SignupScreen>
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(48),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     IconButton(
                       icon: const Icon(LucideIcons.arrowLeft),
-                      onPressed: () => context.pop(),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
                       alignment: Alignment.centerLeft,
                     ),
                     const SizedBox(height: 8),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/negotiation_bloc.dart';
@@ -41,14 +41,38 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => context.pop(),
         ),
-        title: Text('ShopSpot', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+        title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(LucideIcons.moreVertical), onPressed: () {}),
+          IconButton(icon: const Icon(LucideIcons.moreVertical), onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => const _NegotiationSettingsBottomSheet(),
+            );
+          }),
         ],
       ),
       body: BlocBuilder<NegotiationBloc, NegotiationState>(
         builder: (context, state) {
+          if (state is NegotiationLoading) {
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: 6,
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final isMe = index % 2 == 0;
+              return Align(
+                alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                child: ShimmerBox(
+                  width: 200, 
+                  height: 60, 
+                  borderRadius: 16,
+                ),
+              );
+            },
+          );
+        }
           if (state is NegotiationLoaded && state.activeNegotiation != null) {
             final negotiation = state.activeNegotiation!;
             return Column(
@@ -209,7 +233,13 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(LucideIcons.plus, color: AppColors.neutral500),
-                          onPressed: () {},
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: Colors.transparent,
+                              builder: (ctx) => const _AttachmentPickerBottomSheet(),
+                            );
+                          },
                         ),
                         Expanded(
                           child: Container(
@@ -236,7 +266,14 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                           ),
                           child: IconButton(
                             icon: const Icon(LucideIcons.send, color: AppColors.white, size: 20),
-                            onPressed: () {},
+                            onPressed: () {
+                              if (_messageController.text.trim().isNotEmpty) {
+                                _messageController.clear();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Message sent'), backgroundColor: AppColors.primary500),
+                                );
+                              }
+                            },
                           ),
                         ),
                       ],
@@ -247,8 +284,8 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
             );
           }
 
-          // Loading View
-          return const GenericListShimmer();
+          // Fallback View
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -346,6 +383,112 @@ class _OfferBubble extends StatelessWidget {
           Text(amount, style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
           const SizedBox(height: 8),
           Text(time, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+        ],
+      ),
+    );
+  }
+}
+
+class _NegotiationSettingsBottomSheet extends StatelessWidget {
+  const _NegotiationSettingsBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.neutral200, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(LucideIcons.dollarSign, color: AppColors.primary500),
+              title: const Text('Make Final Offer'),
+              onTap: () {
+                context.pop();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer created!'), backgroundColor: AppColors.success500));
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.info, color: AppColors.neutral700),
+              title: const Text('View Product Details'),
+              onTap: () => context.pop(),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.xCircle, color: AppColors.error500),
+              title: const Text('Cancel Negotiation', style: TextStyle(color: AppColors.error500)),
+              onTap: () {
+                context.pop();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Negotiation cancelled.'), backgroundColor: AppColors.neutral700));
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentPickerBottomSheet extends StatelessWidget {
+  const _AttachmentPickerBottomSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _AttachmentOption(icon: LucideIcons.image, label: 'Photo', color: Colors.blue, onTap: () => context.pop()),
+                  _AttachmentOption(icon: LucideIcons.camera, label: 'Camera', color: Colors.pink, onTap: () => context.pop()),
+                  _AttachmentOption(icon: LucideIcons.fileText, label: 'Document', color: Colors.orange, onTap: () => context.pop()),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AttachmentOption({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
     );

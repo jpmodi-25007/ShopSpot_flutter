@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:ui';
+import 'package:share_plus/share_plus.dart';
 import 'package:mobile_web/core/widgets/app_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -47,7 +48,9 @@ class CampaignDetailsScreen extends StatelessWidget {
                     decoration: BoxDecoration(color: AppColors.white.withValues(alpha: 0.8), shape: BoxShape.circle),
                     child: IconButton(
                       icon: const Icon(LucideIcons.share, color: AppColors.neutral900),
-                      onPressed: () {},
+                      onPressed: () {
+                        Share.share('Check out this campaign on Findivo!');
+                      },
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -119,7 +122,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text('\$${campaign!.budgetMin.toInt()} - \$${campaign!.budgetMax.toInt()}', style: AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
+                                Text('₹${campaign!.budgetMin.toInt()} - ₹${campaign!.budgetMax.toInt()}', style: AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
                                 const SizedBox(height: 4),
                                 Text('Est. Earnings', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                               ],
@@ -251,7 +254,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    onPressed: () => context.push('/influencer/submit-bid'),
+                    onPressed: () => context.push('/influencer/submit-bid', extra: campaign),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -303,151 +306,6 @@ class CampaignDetailsScreen extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class SubmitBidScreen extends StatelessWidget {
-  const SubmitBidScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.neutral50,
-      appBar: AppBar(
-        backgroundColor: AppColors.neutral50,
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.pop(),
-        ),
-        title: Text('Submit Proposal', style: AppTextStyles.h3),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Campaign Summary
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.neutral200),
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/web_hero_boutique.jpg',
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Urban Tech Smartwatch', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 4),
-                        Text('Suggested Budget: \$450 - \$800', style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            Text('Your Proposed Price', style: AppTextStyles.h3),
-            const SizedBox(height: 8),
-            Text('Enter your total fee for completing all required deliverables.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
-            const SizedBox(height: 16),
-            const AppTextField(
-              label: 'Total Fee (USD)',
-              hintText: '\$ 0.00',
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 32),
-
-            Text('Timeline', style: AppTextStyles.h3),
-            const SizedBox(height: 8),
-            Text('When can you start and deliver the final content?', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
-            const SizedBox(height: 16),
-            const AppTextField(
-              label: 'Available to Start',
-              hintText: 'dd/mm/yyyy',
-              suffixIcon: Icon(LucideIcons.calendar, size: 20),
-            ),
-            const SizedBox(height: 16),
-            const AppTextField(
-              label: 'Estimated Delivery',
-              hintText: 'dd/mm/yyyy',
-              suffixIcon: Icon(LucideIcons.calendar, size: 20),
-            ),
-            const SizedBox(height: 32),
-
-            Text('Proposal Message', style: AppTextStyles.h3),
-            const SizedBox(height: 8),
-            Text('Briefly explain why you\'re a great fit for this campaign.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
-            const SizedBox(height: 16),
-            TextField(
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: 'Hi team! I love the new smartwatch design...',
-                hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
-                fillColor: AppColors.white,
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.neutral200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.neutral200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.roleInfluencer, width: 2),
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-            ),
-            const SizedBox(height: 40),
-            
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.roleInfluencer,
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                minimumSize: const Size.fromHeight(56),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: () {
-                context.pop();
-                context.pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Proposal submitted successfully!', style: AppTextStyles.body.copyWith(color: AppColors.white)), backgroundColor: AppColors.success500),
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(LucideIcons.send, size: 20),
-                  const SizedBox(width: 12),
-                  Text('Submit Proposal', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -99,7 +99,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text('\$42,500.00', style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 36)),
+                  Text('₹42,500.00', style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 36)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -134,11 +134,11 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                           children: [
                             Text('Pending Clearance', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                             const SizedBox(height: 4),
-                            Text('\$3,200.50', style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
+                            Text('₹3,200.50', style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
                           ],
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => context.go('/influencer/earnings'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.roleInfluencer,
                             foregroundColor: AppColors.white,
@@ -169,7 +169,13 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
               builder: (context, state) {
                 final bids = state is InfluencerLoaded ? state.bids ?? [] : [];
                 if (state is InfluencerLoaded && state.isLoading) {
-                  return const GenericListShimmer();
+                  return Column(
+                    children: const [
+                      BidCardSkeleton(),
+                      SizedBox(height: 16),
+                      BidCardSkeleton(),
+                    ],
+                  );
                 }
                 if (bids.isEmpty) {
                   return Center(
@@ -195,7 +201,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                         brand: 'FashionNova',
                         statusLabel: bid.status,
                         statusColor: statusColor,
-                        yourBid: '\$${bid.proposedAmount.toStringAsFixed(0)}',
+                        yourBid: '₹${bid.proposedAmount.toStringAsFixed(0)}',
                         brandOffer: bid.isShortlisted ? 'Shortlisted' : null,
                       ),
                     );
@@ -311,7 +317,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    onPressed: () {},
+                    onPressed: () => context.go('/influencer/earnings'),
                     child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
@@ -325,7 +331,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    onPressed: () {},
+                    onPressed: () => context.go('/influencer/discover'),
                     child: const Text('View Offer', style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
@@ -463,7 +469,16 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('📤 Please submit your content URL to the shopkeeper.'),
+                            backgroundColor: AppColors.roleInfluencer,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                      },
                       child: const Text('Submit Work', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ],

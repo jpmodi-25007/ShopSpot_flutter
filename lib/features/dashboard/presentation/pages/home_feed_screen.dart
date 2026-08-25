@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/utils/location_helper.dart';
 import '../../../../core/widgets/app_badge.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
@@ -13,8 +13,14 @@ import '../../../shop/presentation/bloc/shop_state.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
+import '../bloc/promotion_bloc.dart';
+import '../bloc/promotion_event.dart';
+import '../bloc/promotion_state.dart';
+import '../bloc/event_bloc.dart';
+import '../bloc/event_event.dart';
+import '../bloc/event_state.dart';
 import '../../../../core/utils/guest_helper.dart';
-import '../../../../core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -25,12 +31,21 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _currentAddress = 'Fetching location...';
+  final PageController _bannerController = PageController(viewportFraction: 0.9);
 
   @override
   void initState() {
     super.initState();
     _fetchLocationAndShops();
     context.read<ProductBloc>().add(const GetTrendingProductsRequested());
+    context.read<PromotionBloc>().add(const GetPromotionsRequested());
+    context.read<EventBloc>().add(const GetEventsRequested());
+  }
+
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchLocationAndShops() async {
@@ -67,6 +82,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Future<void> _refresh() async {
     _fetchLocationAndShops();
     context.read<ProductBloc>().add(const GetTrendingProductsRequested());
+    context.read<PromotionBloc>().add(const GetPromotionsRequested());
   }
 
   @override
@@ -152,31 +168,36 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 preferredSize: const Size.fromHeight(80),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              AppColors.neutral900.withValues(alpha: 0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search boutiques, products, styles...',
-                        hintStyle: AppTextStyles.body
-                            .copyWith(color: AppColors.neutral400),
-                        prefixIcon: const Icon(LucideIcons.search,
-                            color: AppColors.neutral900),
-                        suffixIcon: const Icon(LucideIcons.slidersHorizontal,
-                            color: AppColors.neutral900, size: 18),
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16),
+                  child: GestureDetector(
+                    onTap: () => context.go('/search'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                AppColors.neutral900.withValues(alpha: 0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: AbsorbPointer(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search boutiques, products, styles...',
+                            hintStyle: AppTextStyles.body
+                                .copyWith(color: AppColors.neutral400),
+                            prefixIcon: const Icon(LucideIcons.search,
+                                color: AppColors.neutral900),
+                            suffixIcon: const Icon(LucideIcons.slidersHorizontal,
+                                color: AppColors.neutral900, size: 18),
+                            border: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -210,96 +231,88 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     ),
                   ),
 
-                  // Premium Deals Banner
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.roleCustomer,
-                            AppColors.roleCustomerLight,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.roleCustomer
-                                .withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                  // Dynamic Promotions Banner Carousel
+                  BlocBuilder<PromotionBloc, PromotionState>(
+                    builder: (context, state) {
+                      if (state is PromotionLoading) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: SizedBox(
+                            height: 160,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 24.0),
+                              child: AppShimmer(child: ShimmerBox(width: double.infinity, height: 160, borderRadius: 16)),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.white
-                                        .withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
+                        );
+                      }
+                      
+                      if (state is PromotionsLoaded && state.banners.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: SizedBox(
+                            height: 180,
+                            child: PageView.builder(
+                              controller: _bannerController,
+                              itemCount: state.banners.length,
+                              itemBuilder: (context, index) {
+                                final banner = state.banners[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    if (banner.shopId != null && banner.shopId!.isNotEmpty) {
+                                      context.push('/shop-detail/${banner.shopId}');
+                                    } else if (banner.productId != null && banner.productId!.isNotEmpty) {
+                                      context.push('/product-detail/${banner.productId}');
+                                    }
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.neutral900.withValues(alpha: 0.1),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        )
+                                      ],
+                                      image: DecorationImage(
+                                        image: NetworkImage(banner.imageUrl),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.bottomCenter,
+                                          end: Alignment.topCenter,
+                                          colors: [
+                                            Colors.black.withValues(alpha: 0.6),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.all(16),
+                                      alignment: Alignment.bottomLeft,
+                                      child: banner.title != null && banner.title!.isNotEmpty
+                                          ? Text(
+                                              banner.title!,
+                                              style: AppTextStyles.h3.copyWith(color: AppColors.white),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
                                   ),
-                                  child: Text('LIMITED TIME',
-                                      style: AppTextStyles.caption.copyWith(
-                                          color: AppColors.white,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.5)),
-                                ),
-                                const SizedBox(height: 12),
-                                Text('Exclusive App\nDiscounts',
-                                    style: AppTextStyles.h2
-                                        .copyWith(color: AppColors.white)),
-                                const SizedBox(height: 8),
-                                Text('Up to 40% off on nearby shops',
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.white
-                                            .withValues(alpha: 0.8))),
-                                const SizedBox(height: 16),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.white,
-                                    borderRadius: BorderRadius.circular(100),
-                                  ),
-                                  child: Text('Explore Deals',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                          color: AppColors.roleCustomer,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: AppColors.white.withValues(alpha: 0.2),
-                                  width: 1),
-                            ),
-                            child: const Center(
-                              child: Text('40%',
-                                  style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        );
+                      }
+                      
+                      // Fallback if no dynamic banners
+                      return const SizedBox.shrink();
+                    }
                   ),
 
                   // Nearby Shops Section
@@ -328,7 +341,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             physics: const NeverScrollableScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             itemCount: 3,
-                            itemBuilder: (context, index) => const ShopCardShimmer(),
+                            itemBuilder: (context, index) => const ShopCardSkeleton(),
                           ),
                         );
                       } else if (state.failure != null) {
@@ -367,9 +380,91 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             physics: const NeverScrollableScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             itemCount: 3,
-                            itemBuilder: (context, index) => const ShopCardShimmer(),
+                            itemBuilder: (context, index) => const ShopCardSkeleton(),
                           ),
                         );
+                    },
+                  ),
+
+                  // Events Section
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 32, 16, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Upcoming Events', style: AppTextStyles.h3),
+                        TextButton(
+                          onPressed: () => context.push('/events'),
+                          child: Text('View All', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary500)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  BlocBuilder<EventBloc, EventState>(
+                    builder: (context, state) {
+                      if (state is EventLoading) {
+                        return SizedBox(
+                          height: 200,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: 3,
+                            itemBuilder: (context, index) => Container(
+                              width: 300,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              decoration: BoxDecoration(color: AppColors.neutral200, borderRadius: BorderRadius.circular(16)),
+                            ),
+                          ),
+                        );
+                      } else if (state is EventsLoaded && state.events.isNotEmpty) {
+                        return SizedBox(
+                          height: 200,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: state.events.take(5).length,
+                            itemBuilder: (context, index) {
+                              final event = state.events[index];
+                              return GestureDetector(
+                                onTap: () => context.push('/events/${event.id}'),
+                                child: Container(
+                                  width: 300,
+                                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    image: DecorationImage(
+                                      image: NetworkImage(event.imageUrl ?? 'https://via.placeholder.com/300x200'),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.all(16),
+                                    alignment: Alignment.bottomLeft,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(event.title, style: AppTextStyles.h4.copyWith(color: AppColors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        const SizedBox(height: 4),
+                                        Text('${event.startDate.day}/${event.startDate.month} • ${event.shopName ?? "ShopSpot"}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral200)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
                     },
                   ),
 
@@ -406,7 +501,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 childAspectRatio: 0.58,
                                 children: List.generate(
                                   crossAxisCount * 2,
-                                  (index) => const ProductCardShimmer(),
+                                  (index) => const ProductCardSkeleton(),
                                 ),
                               );
                             } else if (state is ProductError) {
@@ -426,22 +521,38 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 childAspectRatio: 0.58, // Taller for premium feel
                                 children: state.products
                                     .take(crossAxisCount * 3) // Show a few rows
-                                    .map((p) => _buildPremiumProductCard(
-                                        context,
-                                        p.id,
-                                        p.shopId,
-                                        p.name,
-                                        'Shop Spot',
-                                        '₹${p.sellingPrice}',
-                                        p.images.isNotEmpty
-                                            ? p.images.first
-                                            : '',
-                                        p.stockQuantity > 0
-                                            ? AppBadgeType.inStock
-                                            : AppBadgeType.lowStock,
-                                        p.stockQuantity > 0
-                                            ? 'In Stock'
-                                            : 'Low Stock'))
+                                    .toList()
+                                    .asMap()
+                                    .entries
+                                    .map((entry) => TweenAnimationBuilder<double>(
+                                          tween: Tween(begin: 0.0, end: 1.0),
+                                          duration: Duration(milliseconds: 400 + (entry.key * 100)),
+                                          curve: Curves.easeOut,
+                                          builder: (context, value, child) => Opacity(
+                                            opacity: value,
+                                            child: Transform.translate(
+                                              offset: Offset(0, 20 * (1 - value)),
+                                              child: child,
+                                            ),
+                                          ),
+                                          child: _buildPremiumProductCard(
+                                            context,
+                                            entry.value.id,
+                                            entry.value.shopId,
+                                            entry.value.name,
+                                            'Shop Spot',
+                                            '₹${entry.value.sellingPrice}',
+                                            entry.value.images.isNotEmpty
+                                                ? entry.value.images.first
+                                                : '',
+                                            entry.value.stockQuantity > 0
+                                                ? AppBadgeType.inStock
+                                                : AppBadgeType.lowStock,
+                                            entry.value.stockQuantity > 0
+                                                ? 'In Stock'
+                                                : 'Low Stock',
+                                          ),
+                                        ))
                                     .toList(),
                               );
                             }
@@ -680,13 +791,28 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.9),
-                          shape: BoxShape.circle),
-                      child: const Icon(LucideIcons.heart,
-                          size: 16, color: AppColors.neutral600),
+                    child: GestureDetector(
+                      onTap: () {
+                        if (GuestHelper.checkGuestAndPrompt(context)) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('❤️ Saved to Wishlist!'),
+                            backgroundColor: AppColors.roleCustomer,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                            color: AppColors.white.withValues(alpha: 0.9),
+                            shape: BoxShape.circle),
+                        child: const Icon(LucideIcons.heart,
+                            size: 16, color: AppColors.neutral600),
+                      ),
                     ),
                   ),
                 ],

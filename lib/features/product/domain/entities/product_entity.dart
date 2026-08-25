@@ -14,6 +14,9 @@ class ProductEntity extends Equatable {
   final String? sku;
   final String? barcode;
   final String shopId;
+  final String? shopName;
+  final String? shopCity;
+  final String? shopLogoUrl;
   final List<String> tags;
 
   const ProductEntity({
@@ -30,6 +33,9 @@ class ProductEntity extends Equatable {
     this.sku,
     this.barcode,
     required this.shopId,
+    this.shopName,
+    this.shopCity,
+    this.shopLogoUrl,
     this.tags = const [],
   });
 

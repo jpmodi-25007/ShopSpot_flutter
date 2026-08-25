@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
@@ -27,7 +27,12 @@ class SavedShopsScreen extends StatelessWidget {
         body: BlocBuilder<SavedBloc, SavedState>(
           builder: (context, state) {
             if (state is SavedLoaded && state.isLoading) {
-              return const GenericListShimmer();
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: 6,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) => const ProductListItemSkeleton(),
+              );
             }
             final shops = state is SavedLoaded ? state.savedShops ?? [] : [];
             if (shops.isEmpty) {

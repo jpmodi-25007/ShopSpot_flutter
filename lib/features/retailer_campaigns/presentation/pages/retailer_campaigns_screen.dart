@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -35,7 +35,7 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.store, color: AppColors.roleRetailer),
-          onPressed: () {},
+          onPressed: () => context.go('/retailer/profile'),
         ),
         title: Text('Influencer Campaigns', style: AppTextStyles.h3),
         centerTitle: true,
@@ -77,7 +77,12 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
             BlocBuilder<RetailerCampaignBloc, RetailerCampaignState>(
               builder: (context, state) {
                 if (state is RetailerCampaignLoading) {
-                  return const GenericListShimmer();
+                  return Column(
+                    children: List.generate(4, (index) => const Padding(
+                      padding: EdgeInsets.only(bottom: 12.0),
+                      child: CampaignCardSkeleton(),
+                    )),
+                  );
                 } else if (state is RetailerCampaignLoaded) {
                   if (state.campaigns.isEmpty) {
                     return const Center(child: Text("No campaigns found. Create one above!"));

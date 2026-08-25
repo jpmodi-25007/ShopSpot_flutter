@@ -22,6 +22,9 @@ import '../../features/profile/presentation/pages/manage_addresses_screen.dart';
 import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_dashboard_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_profile_screen.dart';
+import '../../features/dashboard/presentation/pages/events_list_screen.dart';
+import '../../features/dashboard/presentation/pages/event_details_screen.dart';
+import '../../features/dashboard/presentation/pages/retailer_create_event_screen.dart';
 import '../../features/retailer_inventory/presentation/pages/product_management_screen.dart';
 import '../../features/retailer_inventory/presentation/pages/add_product_screen.dart';
 import '../../features/retailer_inventory/presentation/pages/stock_history_screen.dart';
@@ -38,6 +41,7 @@ import '../../features/influencer/presentation/pages/influencer_dashboard_screen
 import '../../features/influencer/presentation/pages/influencer_earnings_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_profile_screen.dart';
 import '../../features/influencer/presentation/pages/campaign_details_screen.dart';
+import '../../features/influencer/presentation/pages/submit_bid_screen.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
 import 'shell_layout.dart';
 import 'retailer_shell_layout.dart';
@@ -116,6 +120,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/product-detail/:id',
       builder: (context, state) => ProductDetailScreen(productId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/events',
+      builder: (context, state) => const EventsListScreen(),
+    ),
+    GoRoute(
+      path: '/events/:id',
+      builder: (context, state) => EventDetailsScreen(eventId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/shop-detail/:id',
@@ -262,6 +274,10 @@ final appRouter = GoRouter(
       builder: (context, state) => const AddProductScreen(),
     ),
     GoRoute(
+      path: '/retailer/events/create',
+      builder: (context, state) => const RetailerCreateEventScreen(),
+    ),
+    GoRoute(
       path: '/retailer/stock-history',
       builder: (context, state) => const StockHistoryScreen(),
     ),
@@ -337,7 +353,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/influencer/submit-bid',
-      builder: (context, state) => const SubmitBidScreen(),
+      builder: (context, state) {
+        final campaign = state.extra as InfluencerCampaignEntity?;
+        return SubmitBidScreen(campaign: campaign);
+      },
     ),
   ],
 );

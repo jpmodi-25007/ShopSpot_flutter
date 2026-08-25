@@ -1,11 +1,11 @@
 {
-    "name": "ShopSpot",
-    "short_name": "ShopSpot",
+    "name": "Findivo",
+    "short_name": "Findivo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#5C2E0E",
-    "theme_color": "#5C2E0E",
-    "description": "ShopSpot — Discover local shops, deals and products near you.",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "Findivo — Discover local shops, deals and products near you.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

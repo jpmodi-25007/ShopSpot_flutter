@@ -32,11 +32,20 @@ class LocationHelper {
       final placemarks = await geocoding.placemarkFromCoordinates(lat, lng);
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        return '${place.subLocality ?? place.locality}, ${place.locality ?? place.administrativeArea}';
+        final name = place.subLocality != null && place.subLocality!.isNotEmpty ? place.subLocality : place.locality;
+        final city = place.locality != null && place.locality!.isNotEmpty ? place.locality : place.administrativeArea;
+        
+        if (name != null && name.isNotEmpty && city != null && city.isNotEmpty) {
+          return '$name, $city';
+        } else if (city != null && city.isNotEmpty) {
+          return city;
+        } else if (name != null && name.isNotEmpty) {
+          return name;
+        }
       }
-      return null;
+      return 'Current Location';
     } catch (e) {
-      return null;
+      return 'Current Location';
     }
   }
 }

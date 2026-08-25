@@ -15,6 +15,9 @@ class ProductModel extends ProductEntity {
     super.sku,
     super.barcode,
     required super.shopId,
+    super.shopName,
+    super.shopCity,
+    super.shopLogoUrl,
     super.tags = const [],
   });
 
@@ -25,7 +28,7 @@ class ProductModel extends ProductEntity {
       description: json['description']?.toString(),
       categoryId: json['categoryId']?.toString(),
       brand: json['brand']?.toString(),
-      images: (json['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      images: _parseImages(json),
       mrp: json['mrp'] != null ? double.tryParse(json['mrp'].toString()) : null,
       sellingPrice: json['sellingPrice'] != null ? double.tryParse(json['sellingPrice'].toString()) ?? 0.0 : 0.0,
       stockQuantity: json['stockQuantity'] != null ? int.tryParse(json['stockQuantity'].toString()) ?? 0 : 0,
@@ -33,6 +36,9 @@ class ProductModel extends ProductEntity {
       sku: json['sku']?.toString(),
       barcode: json['barcode']?.toString(),
       shopId: json['shopId']?.toString() ?? '',
+      shopName: json['shop'] != null ? (json['shop']['name']?.toString()) : null,
+      shopCity: json['shop'] != null ? (json['shop']['city']?.toString()) : null,
+      shopLogoUrl: json['shop'] != null ? (json['shop']['logoUrl']?.toString()) : null,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
@@ -73,5 +79,18 @@ class ProductModel extends ProductEntity {
       shopId: shopId,
       tags: tags,
     );
+  }
+
+  static List<String> _parseImages(Map<String, dynamic> json) {
+    if (json['mediaAssets'] != null && json['mediaAssets'] is List) {
+      return (json['mediaAssets'] as List)
+          .map((e) => (e['secureUrl'] ?? '').toString())
+          .where((url) => url.isNotEmpty)
+          .toList();
+    }
+    if (json['images'] != null && json['images'] is List) {
+      return (json['images'] as List).map((e) => e.toString()).toList();
+    }
+    return [];
   }
 }

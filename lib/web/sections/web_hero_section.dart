@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../widgets/responsive_container.dart';
@@ -65,7 +65,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
             color: AppColors.neutral900,
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Text(
-              '🎉  ShopSpot is now live in 25+ cities!  Join your local community today.',
+              '🎉  Findivo is now live in 25+ cities!  Join your local community today.',
               style: AppTextStyles.bodySmall.copyWith(
                 color: AppColors.white,
                 fontWeight: FontWeight.w500,
@@ -144,7 +144,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
       children: [
         // Badge
         _AnimatedBadge(
-          icon: LucideIcons.zap,
+          icon: Icons.bolt,
           text: 'Shop Local · Sell More · Earn Together',
         ),
         const SizedBox(height: 28),
@@ -172,7 +172,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
 
         // Subtitle
         Text(
-          'ShopSpot brings together curious shoppers, passionate local retailers, and community influencers—all in one beautifully simple platform.',
+          'Findivo brings together curious shoppers, passionate local retailers, and community influencers—all in one beautifully simple platform.',
           style: AppTextStyles.bodyLarge.copyWith(
             color: AppColors.neutral600,
             fontSize: 17,

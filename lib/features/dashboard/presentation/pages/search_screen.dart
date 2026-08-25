@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,7 +9,7 @@ import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -322,7 +322,12 @@ class _SearchScreenState extends State<SearchScreen>
     return BlocBuilder<SearchBloc, SearchState>(
       builder: (context, state) {
         if (state is SearchLoading) {
-          return const SearchResultListShimmer();
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 5,
+            itemBuilder: (context, index) => const SearchResultSkeleton(),
+          );
         } else if (state is SearchError) {
           return Center(
               child: Text(state.message,

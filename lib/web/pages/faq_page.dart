@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../sections/cta_section.dart';
 import '../sections/faq_section.dart';
@@ -17,19 +17,19 @@ const _categories = [
     lightColor: AppColors.neutral100,
     faqs: [
       {
-        'question': 'What is ShopSpot?',
+        'question': 'What is Findivo?',
         'answer':
-            'ShopSpot is a hyper-local e-commerce platform that connects customers directly with local boutiques, artisan shops, and independent retailers. We also empower local influencers to partner with these brands—creating a vibrant, community-driven commerce ecosystem.',
+            'Findivo is a hyper-local e-commerce platform that connects customers directly with local boutiques, artisan shops, and independent retailers. We also empower local influencers to partner with these brands—creating a vibrant, community-driven commerce ecosystem.',
       },
       {
-        'question': 'Is ShopSpot available in my city?',
+        'question': 'Is Findivo available in my city?',
         'answer':
-            'We\'re growing fast! ShopSpot is currently live in over 25 cities across the US and is expanding every month. Enter your city in the app at signup—if we\'re not there yet, join the waitlist and we\'ll notify you when we launch near you.',
+            'We\'re growing fast! Findivo is currently live in over 25 cities across the US and is expanding every month. Enter your city in the app at signup—if we\'re not there yet, join the waitlist and we\'ll notify you when we launch near you.',
       },
       {
-        'question': 'What devices does ShopSpot support?',
+        'question': 'What devices does Findivo support?',
         'answer':
-            'ShopSpot is available as a native iOS and Android app, and as a full-featured web application accessible from any modern browser. Your account syncs seamlessly across all your devices.',
+            'Findivo is available as a native iOS and Android app, and as a full-featured web application accessible from any modern browser. Your account syncs seamlessly across all your devices.',
       },
     ],
   ),
@@ -42,12 +42,12 @@ const _categories = [
       {
         'question': 'How much does it cost to join as a customer?',
         'answer':
-            'ShopSpot is completely free for customers. There are no membership fees, subscription costs, or hidden charges. You only pay for the products you purchase from local shops.',
+            'Findivo is completely free for customers. There are no membership fees, subscription costs, or hidden charges. You only pay for the products you purchase from local shops.',
       },
       {
         'question': 'Can I negotiate prices with retailers?',
         'answer':
-            'Yes! This is one of ShopSpot\'s most loved features. Many retailers allow customers to send offers and negotiate in real-time through our built-in chat system. Look for the "Make an Offer" button on eligible product listings.',
+            'Yes! This is one of Findivo\'s most loved features. Many retailers allow customers to send offers and negotiate in real-time through our built-in chat system. Look for the "Make an Offer" button on eligible product listings.',
       },
       {
         'question': 'How do I track my orders?',
@@ -55,7 +55,7 @@ const _categories = [
             'All your orders appear in the "My Orders" section of your profile. Retailers provide real-time status updates, and you\'ll receive push notifications at each stage—from confirmation, packing, dispatch, to delivery.',
       },
       {
-        'question': 'Are payments secure on ShopSpot?',
+        'question': 'Are payments secure on Findivo?',
         'answer':
             'Absolutely. All transactions are processed through bank-grade, PCI-DSS compliant payment infrastructure. We support major credit/debit cards, Apple Pay, Google Pay, and more. Your card details are never stored on our servers.',
       },
@@ -68,19 +68,19 @@ const _categories = [
     lightColor: AppColors.success50,
     faqs: [
       {
-        'question': 'How do I list my business on ShopSpot?',
+        'question': 'How do I list my business on Findivo?',
         'answer':
             'Click "Get Started" on our homepage and select "Retailer" during registration. Submit your business details for a quick verification (usually under 24 hours). Once approved, you\'ll have full access to the retailer dashboard to list products, manage inventory, and run campaigns.',
       },
       {
-        'question': 'What tools does ShopSpot provide for retailers?',
+        'question': 'What tools does Findivo provide for retailers?',
         'answer':
             'Retailers get a powerful, dedicated dashboard that includes: product and inventory management, bulk upload tools, real-time negotiation chat with customers, influencer campaign creation, and analytics covering sales, visits, and conversion rates.',
       },
       {
         'question': 'Can I manage multiple store locations?',
         'answer':
-            'Yes! ShopSpot supports multi-location retail operations. You can add and manage multiple store branches under a single account, each with its own inventory, staff access, and reporting.',
+            'Yes! Findivo supports multi-location retail operations. You can add and manage multiple store branches under a single account, each with its own inventory, staff access, and reporting.',
       },
       {
         'question': 'How do influencer campaigns work for retailers?',
@@ -96,7 +96,7 @@ const _categories = [
     lightColor: AppColors.warning50,
     faqs: [
       {
-        'question': 'How do I join ShopSpot as an influencer?',
+        'question': 'How do I join Findivo as an influencer?',
         'answer':
             'Register with the "Influencer" role and connect your social media profiles. Our team reviews your account to verify your reach and engagement. Once approved, you\'ll be able to discover and bid on campaigns from local retailers in your city.',
       },
@@ -537,7 +537,7 @@ class _WebFAQPageState extends State<WebFAQPage> with TickerProviderStateMixin {
       {
         'icon': LucideIcons.mail,
         'label': 'Email',
-        'value': 'support@shopspot.com',
+        'value': 'support@findivo.com',
         'color': AppColors.info500,
         'bg': AppColors.info50,
       },

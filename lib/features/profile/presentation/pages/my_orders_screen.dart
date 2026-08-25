@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,7 +28,12 @@ class MyOrdersScreen extends StatelessWidget {
         body: BlocBuilder<OrderBloc, OrderState>(
           builder: (context, state) {
             if (state is OrderLoading || state is OrderInitial) {
-              return const GenericListShimmer();
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: 8,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) => const OrderCardSkeleton(),
+              );
             } else if (state is OrderError) {
               return Center(child: Text(state.failure.message, style: AppTextStyles.body.copyWith(color: AppColors.error500)));
             } else if (state is OrdersLoaded) {

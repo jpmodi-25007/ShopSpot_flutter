@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:ui';
 
 import '../../../../core/theme/app_colors.dart';
@@ -13,6 +14,8 @@ import '../../../shop/presentation/bloc/shop_state.dart';
 import '../../../product/presentation/bloc/product_bloc.dart';
 import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapViewScreen extends StatefulWidget {
   const MapViewScreen({super.key});
@@ -22,6 +25,9 @@ class MapViewScreen extends StatefulWidget {
 }
 
 class _MapViewScreenState extends State<MapViewScreen> {
+  GoogleMapController? _mapController;
+  LatLng _initialTarget = const LatLng(23.0225, 72.5714);
+
   @override
   void initState() {
     super.initState();
@@ -33,6 +39,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
     final pos = await LocationHelper.getCurrentLocation();
     if (pos != null) {
       if (mounted) {
+        setState(() {
+          _initialTarget = LatLng(pos.latitude, pos.longitude);
+        });
+        _mapController?.animateCamera(CameraUpdate.newLatLng(_initialTarget));
         context.read<ShopBloc>().add(GetNearbyShopsRequested(
             lat: pos.latitude, lng: pos.longitude));
       }
@@ -44,184 +54,114 @@ class _MapViewScreenState extends State<MapViewScreen> {
     }
   }
 
+  Future<void> _openDirections(double lat, double lng) async {
+    final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      backgroundColor: AppColors.neutral50,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        title: Text('Discover Nearby', style: AppTextStyles.h3),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Column(
         children: [
-          // Premium Background Map Placeholder
-          Container(
-            color: AppColors.neutral100,
-            width: double.infinity,
-            height: double.infinity,
+          // Fixed Height Map
+          SizedBox(
+            height: 300,
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: GridPaper(
-                    color: AppColors.neutral300.withValues(alpha: 0.5),
-                    divisions: 1,
-                    subdivisions: 1,
-                    interval: 100,
-                  ),
+                BlocBuilder<ShopBloc, ShopState>(
+                  builder: (context, shopState) {
+                    final shops = shopState.nearbyShops ?? [];
+                    final Set<Marker> markers = shops.map((shop) {
+                      return Marker(
+                        markerId: MarkerId(shop.id),
+                        position: LatLng(shop.latitude, shop.longitude),
+                        infoWindow: InfoWindow(
+                          title: shop.name,
+                          snippet: 'Tap for directions',
+                          onTap: () => _openDirections(shop.latitude, shop.longitude),
+                        ),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+                      );
+                    }).toSet();
+      
+                    return GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _initialTarget,
+                        zoom: 14.0,
+                      ),
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      markers: markers,
+                      onMapCreated: (controller) {
+                        _mapController = controller;
+                      },
+                    );
+                  },
                 ),
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(LucideIcons.map,
-                          size: 80, color: AppColors.neutral300),
-                      const SizedBox(height: 16),
-                      Text('Interactive Map Loading...',
-                          style: AppTextStyles.bodySmall
-                              .copyWith(color: AppColors.neutral400)),
-                    ],
-                  ),
-                ),
-                // Fake premium markers
                 Positioned(
-                  top: 300,
-                  left: 150,
-                  child: _buildPremiumMarker('The Style Studio'),
-                ),
-                Positioned(
-                  top: 450,
-                  right: 100,
-                  child: _buildPremiumMarker('Luxe Living'),
+                  right: 16,
+                  bottom: 16,
+                  child: GestureDetector(
+                    onTap: () async {
+                      final pos = await LocationHelper.getCurrentLocation();
+                      if (pos != null && _mapController != null) {
+                        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(
+                            LatLng(pos.latitude, pos.longitude), 14.0));
+                      }
+                    },
+                    child: _buildFloatingButton(LucideIcons.crosshair),
+                  ),
                 ),
               ],
             ),
           ),
-
-          // Floating Top Bar
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: AppColors.white.withValues(alpha: 0.5)),
-                      boxShadow: [
-                        BoxShadow(
-                            color: AppColors.neutral900
-                                .withValues(alpha: 0.05),
-                            blurRadius: 16,
-                            offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.search,
-                            color: AppColors.neutral900, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('Search curated boutiques...',
-                              style: AppTextStyles.body.copyWith(
-                                  color: AppColors.neutral500)),
-                        ),
-                        Container(
-                            width: 1,
-                            height: 20,
-                            color: AppColors.neutral200,
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16)),
-                        const Icon(LucideIcons.slidersHorizontal,
-                            color: AppColors.roleCustomer, size: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Action Buttons (Right side)
-          Positioned(
-            right: 20,
-            top: 140,
-            child: Column(
+          
+          // Scrollable Content Below Map
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              physics: const BouncingScrollPhysics(),
               children: [
-                _buildFloatingButton(LucideIcons.crosshair),
-                const SizedBox(height: 16),
-                _buildFloatingButton(LucideIcons.layers),
-              ],
-            ),
-          ),
+                Row(
+                  children: [
+                    const Icon(LucideIcons.mapPin,
+                        size: 16, color: AppColors.neutral500),
+                    const SizedBox(width: 8),
+                    Text('Exploring C.G. Road Area',
+                        style: AppTextStyles.body.copyWith(
+                            color: AppColors.neutral500)),
+                  ],
+                ),
+                const SizedBox(height: 24),
 
-          // Premium Bottom Sheet
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.45,
-              minChildSize: 0.15,
-              maxChildSize: 0.85,
-              builder: (context, scrollController) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(32)),
-                    boxShadow: [
-                      BoxShadow(
-                          color: AppColors.neutral900
-                              .withValues(alpha: 0.08),
-                          blurRadius: 24,
-                          offset: const Offset(0, -8)),
-                    ],
-                  ),
-                  child: ListView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 48,
-                          height: 5,
-                          decoration: BoxDecoration(
-                              color: AppColors.neutral200,
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Curated Offers', style: AppTextStyles.h4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.roleCustomerLight,
+                        borderRadius: BorderRadius.circular(100),
                       ),
-                      const SizedBox(height: 24),
-                      Text('Discover Nearby',
-                          style: AppTextStyles.h2
-                              .copyWith(color: AppColors.neutral900)),
-                      const SizedBox(height: 4),
-                      Row(
+                      child: Row(
                         children: [
-                          const Icon(LucideIcons.mapPin,
-                              size: 14, color: AppColors.neutral500),
-                          const SizedBox(width: 6),
-                          Text('Exploring C.G. Road Area',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.neutral500)),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Curated Offers',
-                              style: AppTextStyles.h4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.roleCustomerLight,
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(LucideIcons.flame,
+                          const Icon(LucideIcons.flame,
                                     size: 14,
                                     color: AppColors.roleCustomer),
                                 const SizedBox(width: 4),
@@ -318,56 +258,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
                           return const SizedBox.shrink();
                         },
                       ),
-                    ],
-                  ),
-                );
-              },
+              ],
             ),
-          )
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPremiumMarker(String title) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.neutral900,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.neutral900.withValues(alpha: 0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ],
-          ),
-          child: Text(title,
-              style: AppTextStyles.caption.copyWith(
-                  color: AppColors.white, fontWeight: FontWeight.w700)),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: AppColors.roleCustomer,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.roleCustomer.withValues(alpha: 0.4),
-                blurRadius: 8,
-                spreadRadius: 2,
-              )
-            ],
-          ),
-        ),
-      ],
     );
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/storage/local_storage.dart';
@@ -9,6 +9,7 @@ import '../../../../core/dependency_injection/injection.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
+import '../../../../core/widgets/app_text_field.dart';
 
 class InfluencerProfileScreen extends StatefulWidget {
   const InfluencerProfileScreen({super.key});
@@ -170,7 +171,20 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
             actions: [
               IconButton(
                 icon: const Icon(LucideIcons.edit2, color: Colors.white),
-                onPressed: () {},
+                onPressed: () {
+                  final currentState = context.read<InfluencerBloc>().state;
+                  if (currentState is InfluencerLoaded && currentState.profile != null) {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (ctx) => BlocProvider.value(
+                        value: context.read<InfluencerBloc>(),
+                        child: EditInfluencerProfileBottomSheet(profile: currentState.profile!),
+                      ),
+                    );
+                  }
+                },
               ),
             ],
           ),
@@ -257,7 +271,16 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                             TextButton.icon(
                               icon: const Icon(LucideIcons.edit2, size: 14),
                               label: const Text('Edit'),
-                              onPressed: () {},
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Edit bio feature coming soon!'),
+                                    backgroundColor: AppColors.roleInfluencer,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                );
+                              },
                               style: TextButton.styleFrom(foregroundColor: AppColors.roleInfluencer),
                             ),
                           ],
@@ -293,7 +316,16 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                     children: [
                       Text('Portfolio', style: AppTextStyles.h4),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('More portfolio items coming soon!'),
+                              backgroundColor: AppColors.roleInfluencer,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        },
                         child: Text('See All', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleInfluencer)),
                       ),
                     ],
@@ -484,3 +516,119 @@ class _ActionRow extends StatelessWidget {
 }
 
 
+
+class EditInfluencerProfileBottomSheet extends StatefulWidget {
+  final dynamic profile;
+  const EditInfluencerProfileBottomSheet({super.key, required this.profile});
+
+  @override
+  State<EditInfluencerProfileBottomSheet> createState() => _EditInfluencerProfileBottomSheetState();
+}
+
+class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfileBottomSheet> {
+  late TextEditingController _bioController;
+  late TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _bioController = TextEditingController(text: widget.profile.bio ?? '');
+    _nameController = TextEditingController(text: widget.profile.user.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final data = {
+      'bio': _bioController.text,
+      // 'name': _nameController.text, // User table is separate in real app, keeping simple
+    };
+    context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<InfluencerBloc, InfluencerState>(
+      listener: (context, state) {
+        if (state is InfluencerLoaded && state.isSuccess) {
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated!'), backgroundColor: AppColors.success500),
+          );
+        } else if (state is InfluencerLoaded && state.failure != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.failure?.message ?? 'Failed to update profile'), backgroundColor: AppColors.error500),
+          );
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Edit Profile', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppTextField(
+                controller: _nameController,
+                label: 'Display Name',
+                hintText: 'Your name',
+              ),
+              const SizedBox(height: 16),
+              Text('Bio', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _bioController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Tell brands about yourself...',
+                  filled: true,
+                  fillColor: AppColors.neutral50,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 32),
+              BlocBuilder<InfluencerBloc, InfluencerState>(
+                builder: (context, state) {
+                  final isLoading = state is InfluencerLoaded && state.isLoading;
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.roleInfluencer,
+                      foregroundColor: AppColors.white,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: isLoading ? null : _save,
+                    child: isLoading
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                        : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

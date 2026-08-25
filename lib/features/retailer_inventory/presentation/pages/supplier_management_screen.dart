@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_web/core/widgets/shimmer_effects.dart';
+import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
@@ -50,7 +50,7 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
           children: [
             const Icon(LucideIcons.mapPin, color: AppColors.roleRetailer, size: 20),
             const SizedBox(width: 8),
-            Text('ShopSpot', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
+            Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
           ],
         ),
         centerTitle: true,
@@ -64,7 +64,18 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
       body: BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
         builder: (context, state) {
           if (state is RetailerInventoryLoading) {
-            return const GenericListShimmer();
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text('Supplier Management', style: AppTextStyles.h2),
+                const SizedBox(height: 4),
+                Text('Manage your active suppliers, recent orders, and performance ratings.', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                const SizedBox(height: 24),
+                const SupplierCardSkeleton(),
+                const SizedBox(height: 16),
+                const SupplierCardSkeleton(),
+              ],
+            );
           }
           
           if (state is RetailerInventoryError) {
@@ -85,7 +96,14 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
               const SizedBox(height: 24),
 
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => const _AddSupplierBottomSheet(),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                   backgroundColor: AppColors.roleRetailer,
@@ -311,3 +329,91 @@ class _SupplierManagementScreenState extends State<SupplierManagementScreen> {
     );
   }
 }
+
+class _AddSupplierBottomSheet extends StatefulWidget {
+  const _AddSupplierBottomSheet();
+
+  @override
+  State<_AddSupplierBottomSheet> createState() => _AddSupplierBottomSheetState();
+}
+
+class _AddSupplierBottomSheetState extends State<_AddSupplierBottomSheet> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    context.pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Supplier added!'), backgroundColor: AppColors.success500),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Add Supplier', style: AppTextStyles.h3),
+                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+              ],
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Supplier Name',
+                filled: true,
+                fillColor: AppColors.neutral50,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Email Address',
+                filled: true,
+                fillColor: AppColors.neutral50,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.roleRetailer,
+                foregroundColor: AppColors.white,
+                minimumSize: const Size.fromHeight(50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: _save,
+              child: const Text('Save Supplier', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validation_utils.dart';
@@ -101,7 +101,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/login');
+            }
+          },
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -220,7 +226,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                               minimumSize: const Size.fromHeight(56),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             ),
-                            onPressed: () => context.pop(),
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/login');
+                              }
+                            },
                             child: Text('Back to Login', style: AppTextStyles.button.copyWith(color: AppColors.white)),
                           ),
                           const SizedBox(height: 16),

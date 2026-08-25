@@ -59,7 +59,7 @@ class WebAboutPage extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'ShopSpot was built on a simple premise: local businesses are the heartbeat of our communities, but they often lack the digital tools to compete with e-commerce giants.',
+              'Findivo was built on a simple premise: local businesses are the heartbeat of our communities, but they often lack the digital tools to compete with e-commerce giants.',
               style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral600, height: 1.6),
             ),
             const SizedBox(height: 16),

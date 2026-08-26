@@ -55,10 +55,8 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
       ),
       body: BlocConsumer<NegotiationBloc, NegotiationState>(
         listener: (context, state) {
-          if (state is NegotiationSuccess) {
+          if (state is NegotiationError) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
-          } else if (state is NegotiationError) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.failure.message)));
           }
         },
         builder: (context, state) {

@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_badge.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import '../bloc/retailer_inventory_bloc.dart';
 import '../bloc/retailer_inventory_event.dart';
 import '../bloc/retailer_inventory_state.dart';
@@ -154,7 +155,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   int totalItems = 0;
                   double totalValue = 0.0;
                   if (state is RetailerInventoryLoaded) {
-                    totalItems = state.totalProducts;
+                    totalItems = state.products.length;
                     for (var product in state.products) {
                       totalValue += (double.tryParse(product.sellingPrice) ?? 0.0) * product.stockQuantity;
                     }

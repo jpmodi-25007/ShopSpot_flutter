@@ -4,7 +4,7 @@ class ApiConstants {
   static String get baseUrl {
     const dartDefine = String.fromEnvironment('BASE_URL');
     if (dartDefine.isNotEmpty) return dartDefine;
-    return dotenv.env['BASE_URL'] ?? 'http://192.168.0.38:3001/api/v1';
+    return dotenv.env['BASE_URL'] ?? 'https://findivo-backend.onrender.com/api/v1';
   }
 
   static String get webBaseUrl {

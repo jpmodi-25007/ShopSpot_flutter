@@ -24,8 +24,8 @@ touch .env.production
 echo "Building Flutter Web App..."
 if [ -z "$NEXT_PUBLIC_API_URL" ]; then
   # Fallback to local network IP if env variable is not set (useful for local Vercel CLI testing)
-  echo "NEXT_PUBLIC_API_URL is not set. Using local development URL."
-  flutter build web --release --dart-define=BASE_URL=http://192.168.0.38:3001/api/v1 --dart-define=WEB_BASE_URL=https://shopspot.local
+  echo "NEXT_PUBLIC_API_URL is not set. Using Render backend URL."
+  flutter build web --release --dart-define=BASE_URL=https://findivo-backend.onrender.com/api/v1 --dart-define=WEB_BASE_URL=https://shopspot.local
 else
   # Use Vercel's provided URL for production
   echo "Building for production API: $NEXT_PUBLIC_API_URL"

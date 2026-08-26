@@ -157,7 +157,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   if (state is RetailerInventoryLoaded) {
                     totalItems = state.products.length;
                     for (var product in state.products) {
-                      totalValue += (double.tryParse(product.sellingPrice) ?? 0.0) * product.stockQuantity;
+                      totalValue += product.sellingPrice * product.stockQuantity;
                     }
                   }
 

@@ -19,6 +19,8 @@ import 'features/dashboard/presentation/bloc/search_bloc.dart';
 import 'features/dashboard/presentation/bloc/notification_bloc.dart';
 import 'features/dashboard/presentation/bloc/promotion_bloc.dart';
 import 'features/dashboard/presentation/bloc/event_bloc.dart';
+import 'features/saved/presentation/bloc/saved_bloc.dart';
+import 'features/addresses/presentation/bloc/addresses_bloc.dart';
 
 import 'core/services/pending_notification_service.dart';
 import 'core/services/notification_router.dart';
@@ -73,6 +75,8 @@ class FindivoApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<NotificationBloc>()),
         BlocProvider(create: (_) => getIt<PromotionBloc>()),
         BlocProvider(create: (_) => getIt<EventBloc>()),
+        BlocProvider(create: (_) => getIt<SavedBloc>()),
+        BlocProvider(create: (_) => getIt<AddressesBloc>()),
       ],
       child: BlocListener<AuthenticationBloc, AuthenticationState>(
         listener: (context, state) {

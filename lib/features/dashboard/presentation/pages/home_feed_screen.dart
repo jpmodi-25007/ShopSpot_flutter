@@ -807,28 +807,29 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (GuestHelper.checkGuestAndPrompt(context)) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('❤️ Saved to Wishlist!'),
-                            backgroundColor: AppColors.roleCustomer,
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                    child: StatefulBuilder(
+                      builder: (context, setState) {
+                        bool isSaved = false;
+                        return GestureDetector(
+                          onTap: () {
+                            if (GuestHelper.checkGuestAndPrompt(context)) return;
+                            setState(() {
+                              isSaved = !isSaved;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                                color: AppColors.white.withValues(alpha: 0.9),
+                                shape: BoxShape.circle),
+                            child: Icon(
+                              isSaved ? Icons.favorite : Icons.favorite_border,
+                              size: 16,
+                              color: isSaved ? AppColors.error500 : AppColors.neutral600,
+                            ),
                           ),
                         );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.9),
-                            shape: BoxShape.circle),
-                        child: const Icon(LucideIcons.heart,
-                            size: 16, color: AppColors.neutral600),
-                      ),
+                      }
                     ),
                   ),
                 ],

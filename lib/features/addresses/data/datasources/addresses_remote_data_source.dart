@@ -15,7 +15,8 @@ class AddressesRemoteDataSourceImpl implements AddressesRemoteDataSource {
   @override
   Future<List<dynamic>> getAddresses() async {
     final response = await apiClient.get('/addresses');
-    return response.data['data'] as List<dynamic>? ?? [];
+    final data = response.data is List ? response.data : response.data['data'];
+    return data as List<dynamic>? ?? [];
   }
 
   @override

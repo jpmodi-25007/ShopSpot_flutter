@@ -1,3 +1,7 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/authentication/presentation/bloc/authentication_bloc.dart';
+import '../../features/authentication/presentation/bloc/authentication_state.dart';
+
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -28,6 +32,26 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
+    
+    // Dynamically determine primary color based on auth role if none provided
+    Color getPrimaryColor() {
+      if (color != null) return color!;
+      try {
+        final authState = context.read<AuthenticationBloc>().state;
+        if (authState is AuthenticationLoaded) {
+          switch (authState.user.role) {
+            case 'SHOPKEEPER': return AppColors.roleRetailer;
+            case 'INFLUENCER': return AppColors.roleInfluencer;
+            case 'CUSTOMER': return AppColors.roleCustomer;
+          }
+        }
+      } catch (_) {
+        // Fallback if bloc is not available or not loaded
+      }
+      return AppColors.primary500;
+    }
+
+    final activeColor = getPrimaryColor();
 
     Color getBackgroundColor() {
       if (isDisabled && variant != AppButtonVariant.outline && variant != AppButtonVariant.ghost) {
@@ -35,7 +59,7 @@ class AppButton extends StatelessWidget {
       }
       switch (variant) {
         case AppButtonVariant.primary:
-          return color ?? AppColors.primary500;
+          return activeColor;
         case AppButtonVariant.secondary:
           return AppColors.secondary500;
         case AppButtonVariant.danger:
@@ -54,7 +78,7 @@ class AppButton extends StatelessWidget {
         case AppButtonVariant.danger:
           return AppColors.white;
         case AppButtonVariant.outline:
-          return color ?? AppColors.primary500;
+          return activeColor;
         case AppButtonVariant.ghost:
           return AppColors.neutral700;
       }
@@ -62,7 +86,7 @@ class AppButton extends StatelessWidget {
 
     BorderSide? getBorder() {
       if (variant == AppButtonVariant.outline) {
-        return BorderSide(color: isDisabled ? AppColors.neutral300 : (color ?? AppColors.primary500));
+        return BorderSide(color: isDisabled ? AppColors.neutral300 : activeColor);
       }
       return null;
     }

@@ -14,7 +14,7 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   @override
   Future<List<OrderModel>> getMyOrders() async {
     final response = await apiClient.get(ApiConstants.orders);
-    final data = response.data['data'];
+    final data = response.data is List ? response.data : response.data['data'];
     if (data == null) return [];
     
     return (data as List)

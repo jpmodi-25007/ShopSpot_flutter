@@ -48,10 +48,13 @@ class DioApiClient implements ApiClient {
         if (e.response!.statusCode == 401) {
           throw const UnauthorizedException();
         } else if (e.response!.statusCode == 422 || e.response!.statusCode == 400) {
-          final msg = e.response!.data['message'] ?? 'Validation failed';
-          throw ValidationException(msg);
+          final dataMsg = e.response!.data['message'];
+          final msg = dataMsg is List ? dataMsg.join(', ') : (dataMsg ?? 'Validation failed');
+          throw ValidationException(msg.toString());
         }
-        throw ServerException(e.response!.data['message'] ?? 'Server error occurred');
+        final dataMsg = e.response!.data['message'];
+        final msg = dataMsg is List ? dataMsg.join(', ') : (dataMsg ?? 'Server error occurred');
+        throw ServerException(msg.toString());
       } else {
         throw const NetworkException('Please check your internet connection.');
       }

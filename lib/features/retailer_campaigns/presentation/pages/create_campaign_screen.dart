@@ -251,7 +251,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                           description: 'We are looking for influencers to promote this item.',
                           platforms: ['Instagram', 'YouTube'],
                           contentTypes: ['REEL', 'STORY'],
-                          budgetType: 'PAID',
+                          budgetType: 'PER_CREATOR',
                           budgetMin: 1000,
                           budgetMax: 5000,
                           productId: _selectedProductId,

@@ -84,7 +84,7 @@ class RetailerDashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Good morning,\nElectroHub 👋',
+                  Text('Good morning,\n${state.shop?.name ?? 'Retailer'} 👋',
                       style: AppTextStyles.h1.copyWith(
                           color: AppColors.neutral900, height: 1.2)),
                   const SizedBox(height: 8),

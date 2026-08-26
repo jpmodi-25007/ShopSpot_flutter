@@ -53,7 +53,14 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
           }),
         ],
       ),
-      body: BlocBuilder<NegotiationBloc, NegotiationState>(
+      body: BlocConsumer<NegotiationBloc, NegotiationState>(
+        listener: (context, state) {
+          if (state is NegotiationSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
+          } else if (state is NegotiationError) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.failure.message)));
+          }
+        },
         builder: (context, state) {
           if (state is NegotiationLoading) {
           return ListView.separated(
@@ -211,8 +218,36 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                             ),
                             onPressed: () {
-                               // Counter offer logic
-                               context.read<NegotiationBloc>().add(CounterOfferRequested(id: negotiation.id, counterPrice: (negotiation.counterPrice ?? negotiation.offeredPrice) - 50));
+                               showDialog(
+                                 context: context,
+                                 builder: (ctx) {
+                                   final _priceController = TextEditingController(text: (negotiation.counterPrice ?? negotiation.offeredPrice).toStringAsFixed(0));
+                                   return AlertDialog(
+                                     title: const Text('Counter Offer'),
+                                     content: TextField(
+                                       controller: _priceController,
+                                       keyboardType: TextInputType.number,
+                                       decoration: const InputDecoration(
+                                         labelText: 'Counter Price (₹)',
+                                         border: OutlineInputBorder(),
+                                       ),
+                                     ),
+                                     actions: [
+                                       TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                       ElevatedButton(
+                                         onPressed: () {
+                                           final price = double.tryParse(_priceController.text);
+                                           if (price != null) {
+                                             context.read<NegotiationBloc>().add(CounterOfferRequested(id: negotiation.id, counterPrice: price));
+                                             Navigator.pop(ctx);
+                                           }
+                                         },
+                                         child: const Text('Submit'),
+                                       )
+                                     ],
+                                   );
+                                 },
+                               );
                             },
                             child: const Text('Counter', style: TextStyle(fontWeight: FontWeight.w600)),
                           ),

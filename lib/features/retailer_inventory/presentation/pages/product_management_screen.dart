@@ -149,101 +149,102 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Total Stock Value
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppColors.neutral900.withValues(alpha: 0.03),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8)),
-                  ],
-                  border: Border.all(
-                      color: AppColors.neutral200.withValues(alpha: 0.5)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                              color: AppColors.roleRetailerLight
-                                  .withValues(alpha: 0.5),
-                              shape: BoxShape.circle),
-                          child: const Icon(LucideIcons.wallet,
-                              color: AppColors.roleRetailer, size: 24),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                              color: AppColors.success50,
-                              borderRadius: BorderRadius.circular(100)),
-                          child: Row(
-                            children: [
-                              const Icon(LucideIcons.trendingUp,
-                                  size: 14, color: AppColors.success600),
-                              const SizedBox(width: 4),
-                              Text('+5.2%',
-                                  style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.success600,
-                                      fontWeight: FontWeight.w800)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Text('Total Stock Value',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.neutral500)),
-                    const SizedBox(height: 6),
-                    Text('₹124,500.00', style: AppTextStyles.h1),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+              BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                builder: (context, state) {
+                  int totalItems = 0;
+                  double totalValue = 0.0;
+                  if (state is RetailerInventoryLoaded) {
+                    totalItems = state.totalProducts;
+                    for (var product in state.products) {
+                      totalValue += (double.tryParse(product.sellingPrice) ?? 0.0) * product.stockQuantity;
+                    }
+                  }
 
-              // Total Items in Stock
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppColors.neutral900.withValues(alpha: 0.03),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8)),
-                  ],
-                  border: Border.all(
-                      color: AppColors.neutral200.withValues(alpha: 0.5)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          color: AppColors.warning50,
-                          shape: BoxShape.circle),
-                      child: const Icon(LucideIcons.package,
-                          color: AppColors.warning600, size: 24),
-                    ),
-                    const SizedBox(height: 20),
-                    Text('Total Items in Stock',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.neutral500)),
-                    const SizedBox(height: 6),
-                    Text('3,452', style: AppTextStyles.h1),
-                  ],
-                ),
+                  final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+
+                  return Column(
+                    children: [
+                      // Total Stock Value
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                color: AppColors.neutral900.withValues(alpha: 0.03),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8)),
+                          ],
+                          border: Border.all(
+                              color: AppColors.neutral200.withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                      color: AppColors.roleRetailerLight
+                                          .withValues(alpha: 0.5),
+                                      shape: BoxShape.circle),
+                                  child: const Icon(LucideIcons.wallet,
+                                      color: AppColors.roleRetailer, size: 24),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            Text('Total Stock Value',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.neutral500)),
+                            const SizedBox(height: 6),
+                            Text(currencyFormat.format(totalValue), style: AppTextStyles.h1),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Total Items in Stock
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                color: AppColors.neutral900.withValues(alpha: 0.03),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8)),
+                          ],
+                          border: Border.all(
+                              color: AppColors.neutral200.withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                  color: AppColors.warning50,
+                                  shape: BoxShape.circle),
+                              child: const Icon(LucideIcons.package,
+                                  color: AppColors.warning600, size: 24),
+                            ),
+                            const SizedBox(height: 20),
+                            Text('Total Items in Stock',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.neutral500)),
+                            const SizedBox(height: 6),
+                            Text(NumberFormat.compact().format(totalItems), style: AppTextStyles.h1),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 40),
 

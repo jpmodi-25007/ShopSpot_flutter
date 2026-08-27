@@ -16,8 +16,7 @@ import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
 import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
 import '../../../../core/widgets/shimmer/skeletons/shop_card_skeleton.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapViewScreen extends StatefulWidget {
@@ -28,7 +27,7 @@ class MapViewScreen extends StatefulWidget {
 }
 
 class _MapViewScreenState extends State<MapViewScreen> {
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
   LatLng _initialTarget = const LatLng(23.0225, 72.5714);
 
   @override
@@ -45,7 +44,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
         setState(() {
           _initialTarget = LatLng(pos.latitude, pos.longitude);
         });
-        _mapController.move(_initialTarget, 14.0);
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(_initialTarget, 14.0),
+        );
         context.read<ShopBloc>().add(GetNearbyShopsRequested(
             lat: pos.latitude, lng: pos.longitude));
       }
@@ -57,11 +58,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
     }
   }
 
-  Future<void> _openDirections(double lat, double lng) async {
-    final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
+  void _openShopDetails(String shopId) {
+    context.push('/shop-detail/$shopId');
   }
 
   @override
@@ -87,31 +85,29 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 BlocBuilder<ShopBloc, ShopState>(
                   builder: (context, shopState) {
                     final shops = shopState.nearbyShops ?? [];
-                    final List<Marker> markers = shops.map((shop) {
+                    final Set<Marker> markers = shops.map((shop) {
                       return Marker(
-                        point: LatLng(shop.latitude, shop.longitude),
-                        width: 40,
-                        height: 40,
-                        child: GestureDetector(
-                          onTap: () => _openDirections(shop.latitude, shop.longitude),
-                          child: const Icon(LucideIcons.mapPin, color: AppColors.roleRetailer, size: 40),
+                        markerId: MarkerId(shop.id),
+                        position: LatLng(shop.latitude, shop.longitude),
+                        infoWindow: InfoWindow(
+                          title: shop.name,
+                          snippet: shop.address,
                         ),
+                        onTap: () => _openShopDetails(shop.id),
                       );
-                    }).toList();
+                    }).toSet();
       
-                    return FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: _initialTarget,
-                        initialZoom: 14.0,
+                    return GoogleMap(
+                      onMapCreated: (controller) => _mapController = controller,
+                      initialCameraPosition: CameraPosition(
+                        target: _initialTarget,
+                        zoom: 14.0,
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.findivo.app',
-                        ),
-                        MarkerLayer(markers: markers),
-                      ],
+                      markers: markers,
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
                     );
                   },
                 ),
@@ -122,8 +118,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     onTap: () async {
                       final pos = await LocationHelper.getCurrentLocation();
                       if (pos != null) {
-                        _mapController.move(
-                            LatLng(pos.latitude, pos.longitude), 14.0);
+                        _mapController?.animateCamera(
+                          CameraUpdate.newLatLngZoom(
+                              LatLng(pos.latitude, pos.longitude), 14.0),
+                        );
                       }
                     },
                     child: _buildFloatingButton(LucideIcons.crosshair),

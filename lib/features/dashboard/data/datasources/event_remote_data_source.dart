@@ -5,6 +5,7 @@ import '../../domain/entities/event_entity.dart';
 
 abstract class EventRemoteDataSource {
   Future<List<EventEntity>> getEvents();
+  Future<List<EventEntity>> getShopEvents();
   Future<EventEntity> getEventDetail(String id);
   Future<void> createEvent(EventModel event);
 }
@@ -23,6 +24,20 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
         return data.map((json) => EventModel.fromJson(json).toEntity()).toList();
       }
       throw Exception('Failed to load events');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  @override
+  Future<List<EventEntity>> getShopEvents() async {
+    try {
+      final response = await dio.get('${ApiConstants.baseUrl}/events/shop');
+      if (response.data['status'] == 'success') {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => EventModel.fromJson(json).toEntity()).toList();
+      }
+      throw Exception('Failed to load shop events');
     } catch (e) {
       throw Exception('Network error: $e');
     }

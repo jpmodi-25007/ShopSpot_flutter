@@ -45,10 +45,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         .add(GetProductDetailRequested(widget.productId));
 
     final savedState = context.read<SavedBloc>().state;
-    if (savedState is SavedLoaded) {
-      _isSaved =
-          savedState.savedProducts?.any((p) => p.id == widget.productId) ??
-              false;
+    if (savedState is SavedInitial) {
+      context.read<SavedBloc>().add(const GetSavedProductsRequested());
+    } else if (savedState is SavedLoaded) {
+      _isSaved = savedState.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
     }
 
     _heartController = AnimationController(
@@ -240,31 +240,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
     return BlocListener<SavedBloc, SavedState>(
       listener: (context, state) {
-        if (state is SavedLoaded && state.failure != null) {
-          // Rollback optimistic update on failure
-          setState(() => _isSaved = !_isSaved);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.failure!.message),
-              backgroundColor: AppColors.error500,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-        } else if (state is SavedLoaded && state.isSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  _isSaved ? '❤️ Saved to Wishlist!' : 'Removed from Wishlist'),
-              backgroundColor:
-                  _isSaved ? AppColors.primary500 : AppColors.neutral700,
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-          );
+        if (state is SavedLoaded) {
+          if (state.failure != null) {
+            // Rollback optimistic update on failure
+            setState(() => _isSaved = !_isSaved);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.failure!.message),
+                backgroundColor: AppColors.error500,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          } else {
+            // Sync UI with actual state (handles initial fetch or background updates)
+            final actualIsSaved = state.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
+            if (_isSaved != actualIsSaved && !_isSavingInProgress) {
+               setState(() => _isSaved = actualIsSaved);
+            }
+            if (state.isSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      _isSaved ? '❤️ Saved to Wishlist!' : 'Removed from Wishlist'),
+                  backgroundColor:
+                      _isSaved ? AppColors.primary500 : AppColors.neutral700,
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            }
+            setState(() => _isSavingInProgress = false);
+          }
         }
       },
       child: Scaffold(
@@ -326,7 +336,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          _isSaved ? LucideIcons.heart : LucideIcons.heart,
+                          _isSaved ? Icons.favorite : Icons.favorite_border,
                           size: 20,
                           color: _isSaved
                               ? AppColors.error500

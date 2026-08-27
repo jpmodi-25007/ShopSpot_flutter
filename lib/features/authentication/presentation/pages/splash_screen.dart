@@ -90,6 +90,8 @@ class _SplashScreenState extends State<SplashScreen>
     // If already resolved, route immediately
     if (state is AuthenticationLoaded) {
       _routeByRole(context, state.user.role);
+    } else if (state is AuthenticationInfluencerPending) {
+      context.go('/influencer/pending');
     } else if (state is AuthenticationGuest) {
       context.go('/home');
     } else if (state is AuthenticationUnauthenticated ||
@@ -122,6 +124,8 @@ class _SplashScreenState extends State<SplashScreen>
 
         if (state is AuthenticationLoaded) {
           _routeByRole(context, state.user.role);
+        } else if (state is AuthenticationInfluencerPending) {
+          context.go('/influencer/pending');
         } else if (state is AuthenticationGuest) {
           context.go('/home');
         } else if (state is AuthenticationUnauthenticated ||

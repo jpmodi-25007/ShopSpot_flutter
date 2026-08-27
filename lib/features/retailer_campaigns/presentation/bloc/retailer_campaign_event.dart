@@ -48,3 +48,39 @@ class AcceptBidRequested extends RetailerCampaignEvent {
   @override
   List<Object?> get props => [bidId, campaignId];
 }
+
+class CounterBidRequested extends RetailerCampaignEvent {
+  final String bidId;
+  final String campaignId;
+  final double amount;
+  final String? message;
+
+  const CounterBidRequested({
+    required this.bidId,
+    required this.campaignId,
+    required this.amount,
+    this.message,
+  });
+
+  @override
+  List<Object?> get props => [bidId, campaignId, amount, message];
+}
+
+class DeleteCampaignRequested extends RetailerCampaignEvent {
+  final String campaignId;
+
+  const DeleteCampaignRequested(this.campaignId);
+
+  @override
+  List<Object?> get props => [campaignId];
+}
+
+class UpdateCampaignRequested extends RetailerCampaignEvent {
+  final String campaignId;
+  final Map<String, dynamic> data;
+
+  const UpdateCampaignRequested({required this.campaignId, required this.data});
+
+  @override
+  List<Object?> get props => [campaignId, data];
+}

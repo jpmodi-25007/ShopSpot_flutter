@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
@@ -24,12 +25,24 @@ class CreateCampaignScreen extends StatefulWidget {
 class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSpecificProduct = true;
-  String _selectedProductId = '2';
+  String _selectedProductId = '';
+  
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _budgetController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     context.read<RetailerInventoryBloc>().add(const GetMyProductsRequested());
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _budgetController.dispose();
+    super.dispose();
   }
 
   @override
@@ -230,6 +243,49 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                 ),
               ),
 
+              const SizedBox(height: 24),
+              
+              // Campaign Details Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.neutral200),
+                  boxShadow: [
+                    BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Campaign Details', style: AppTextStyles.h3),
+                    const SizedBox(height: 20),
+                    AppTextField(
+                      label: 'Campaign Title',
+                      hintText: 'e.g. Summer Collection Promotion',
+                      controller: _titleController,
+                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      label: 'Description',
+                      hintText: 'Describe what you are looking for...',
+                      controller: _descriptionController,
+                    ),
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      label: 'Max Budget (₹)',
+                      hintText: 'e.g. 5000',
+                      controller: _budgetController,
+                      keyboardType: TextInputType.number,
+                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
               // Action Button
               BlocConsumer<RetailerCampaignBloc, RetailerCampaignState>(
                 listener: (context, state) {
@@ -246,15 +302,17 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                     child: AppButton(
                       text: state is RetailerCampaignLoading ? 'Creating...' : 'Create Campaign',
                       onPressed: state is RetailerCampaignLoading ? null : () {
+                        if (!_formKey.currentState!.validate()) return;
+                        
                         final params = CreateCampaignParams(
-                          title: 'Promote $_selectedProductId',
-                          description: 'We are looking for influencers to promote this item.',
-                          platforms: ['Instagram', 'YouTube'],
-                          contentTypes: ['REEL', 'STORY'],
+                          title: _titleController.text.trim(),
+                          description: _descriptionController.text.trim(),
+                          platforms: const ['Instagram', 'YouTube'],
+                          contentTypes: const ['REEL', 'STORY'],
                           budgetType: 'PER_CREATOR',
-                          budgetMin: 1000,
-                          budgetMax: 5000,
-                          productId: _selectedProductId,
+                          budgetMin: 0,
+                          budgetMax: double.tryParse(_budgetController.text.trim()) ?? 5000,
+                          productId: _isSpecificProduct ? _selectedProductId : null,
                         );
                         context.read<RetailerCampaignBloc>().add(CreateCampaignRequested(params));
                       },

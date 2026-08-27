@@ -6,6 +6,9 @@ abstract class RetailerCampaignRemoteDataSource {
   Future<List<InfluencerCampaignModel>> getMyCampaigns({int page = 1, int limit = 20});
   Future<List<InfluencerBidModel>> getCampaignBids(String campaignId, {int page = 1, int limit = 20});
   Future<InfluencerBidModel> acceptBid(String bidId);
+  Future<InfluencerBidModel> counterBid(String bidId, double amount, {String? message});
+  Future<void> updateCampaign(String campaignId, Map<String, dynamic> data);
+  Future<void> deleteCampaign(String campaignId);
 }
 
 class RetailerCampaignRemoteDataSourceImpl implements RetailerCampaignRemoteDataSource {
@@ -36,6 +39,26 @@ class RetailerCampaignRemoteDataSourceImpl implements RetailerCampaignRemoteData
   @override
   Future<InfluencerBidModel> acceptBid(String bidId) async {
     final response = await apiClient.post('/shopkeeper/influencer-campaigns/bids/$bidId/accept');
-    return InfluencerBidModel.fromJson(response.data);
+    return InfluencerBidModel.fromJson(response.data['data'] ?? response.data);
+  }
+
+  @override
+  Future<InfluencerBidModel> counterBid(String bidId, double amount, {String? message}) async {
+    final data = {
+      'counterPrice': amount,
+      if (message != null) 'message': message,
+    };
+    final response = await apiClient.post('/shopkeeper/influencer-campaigns/bids/$bidId/counter', data: data);
+    return InfluencerBidModel.fromJson(response.data['data'] ?? response.data);
+  }
+
+  @override
+  Future<void> updateCampaign(String campaignId, Map<String, dynamic> data) async {
+    await apiClient.patch('/shopkeeper/influencer-campaigns/$campaignId', data: data);
+  }
+
+  @override
+  Future<void> deleteCampaign(String campaignId) async {
+    await apiClient.delete('/shopkeeper/influencer-campaigns/$campaignId');
   }
 }

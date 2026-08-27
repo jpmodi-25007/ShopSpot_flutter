@@ -40,6 +40,7 @@ import '../../features/order/data/repositories/order_repository_impl.dart';
 import '../../features/order/domain/repositories/order_repository.dart';
 import '../../features/order/domain/usecases/get_my_orders_use_case.dart';
 import '../../features/order/presentation/bloc/order_bloc.dart';
+import '../../features/order/presentation/bloc/retailer_order_bloc.dart';
 
 import '../../features/reservation/data/datasources/reservation_remote_data_source.dart';
 import '../../features/reservation/data/repositories/reservation_repository_impl.dart';
@@ -203,6 +204,7 @@ Future<void> configureDependencies() async {
       () => OrderRepositoryImpl(remoteDataSource: getIt()));
   getIt.registerLazySingleton(() => GetMyOrdersUseCase(getIt()));
   getIt.registerFactory(() => OrderBloc(getMyOrdersUseCase: getIt()));
+  getIt.registerFactory(() => RetailerOrderBloc(getIt<OrderRemoteDataSource>()));
 
   // Features (Reservation)
   getIt.registerLazySingleton<ReservationRemoteDataSource>(
@@ -379,11 +381,17 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => GetMyCampaignsUseCase(getIt()));
   getIt.registerLazySingleton(() => GetCampaignBidsUseCase(getIt()));
   getIt.registerLazySingleton(() => AcceptBidUseCase(getIt()));
+  getIt.registerLazySingleton(() => CounterBidUseCase(getIt()));
+  getIt.registerLazySingleton(() => UpdateCampaignUseCase(getIt()));
+  getIt.registerLazySingleton(() => DeleteCampaignUseCase(getIt()));
   getIt.registerFactory(() => RetailerCampaignBloc(
         createCampaign: getIt(),
         getMyCampaigns: getIt(),
         getCampaignBids: getIt(),
         acceptBid: getIt(),
+        counterBid: getIt(),
+        updateCampaign: getIt(),
+        deleteCampaign: getIt(),
       ));
 
   // Search Module

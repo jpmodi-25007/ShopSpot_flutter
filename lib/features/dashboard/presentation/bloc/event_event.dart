@@ -11,6 +11,10 @@ class GetEventsRequested extends EventEvent {
   const GetEventsRequested();
 }
 
+class GetShopEventsRequested extends EventEvent {
+  const GetShopEventsRequested();
+}
+
 class GetEventDetailRequested extends EventEvent {
   final String id;
 

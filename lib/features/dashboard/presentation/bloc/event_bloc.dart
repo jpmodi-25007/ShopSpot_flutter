@@ -10,6 +10,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
 
   EventBloc({required this.remoteDataSource}) : super(EventInitial()) {
     on<GetEventsRequested>(_onGetEventsRequested);
+    on<GetShopEventsRequested>(_onGetShopEventsRequested);
     on<GetEventDetailRequested>(_onGetEventDetailRequested);
     on<CreateEventRequested>(_onCreateEventRequested);
   }
@@ -22,6 +23,19 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     try {
       final events = await remoteDataSource.getEvents();
       emit(EventsLoaded(events));
+    } catch (e) {
+      emit(EventError(ServerFailure(e.toString())));
+    }
+  }
+
+  Future<void> _onGetShopEventsRequested(
+    GetShopEventsRequested event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventLoading());
+    try {
+      final events = await remoteDataSource.getShopEvents();
+      emit(ShopEventsLoaded(events));
     } catch (e) {
       emit(EventError(ServerFailure(e.toString())));
     }

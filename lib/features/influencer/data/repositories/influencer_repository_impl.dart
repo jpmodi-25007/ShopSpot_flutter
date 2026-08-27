@@ -37,9 +37,9 @@ class InfluencerRepositoryImpl implements InfluencerRepository {
   }
 
   @override
-  Future<Either<Failure, List<InfluencerCampaignEntity>>> getEligibleCampaigns({int page = 1, int limit = 20}) async {
+  Future<Either<Failure, List<InfluencerCampaignEntity>>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry}) async {
     try {
-      final models = await remoteDataSource.getEligibleCampaigns(page: page, limit: limit);
+      final models = await remoteDataSource.getEligibleCampaigns(page: page, limit: limit, industry: industry);
       return Right(models.map((m) => m.toEntity()).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

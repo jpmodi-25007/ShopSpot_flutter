@@ -80,294 +80,347 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             backgroundColor: AppColors.white,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
               children: [
-              Text('Inventory Overview',
-                  style: AppTextStyles.h1.copyWith(height: 1.2)),
-              const SizedBox(height: 4),
-              Text('Manage your stock, alerts, and detailed reports.',
-                  style: AppTextStyles.body
-                      .copyWith(color: AppColors.neutral500)),
-              const SizedBox(height: 32),
+                Text('Inventory Overview',
+                    style: AppTextStyles.h1.copyWith(height: 1.2)),
+                const SizedBox(height: 4),
+                Text('Manage your stock, alerts, and detailed reports.',
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.neutral500)),
+                const SizedBox(height: 32),
 
-              // Premium Floating Search Bar
-              Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(100),
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppColors.neutral900.withValues(alpha: 0.04),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4)),
-                  ],
-                  border: Border.all(
-                      color: AppColors.neutral200.withValues(alpha: 0.5)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Icon(LucideIcons.search,
-                        size: 20, color: AppColors.neutral400),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search products, SKUs...',
-                          hintStyle: AppTextStyles.body
-                              .copyWith(color: AppColors.neutral400),
-                          border: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                      ),
-                    ),
-                    const Icon(LucideIcons.slidersHorizontal,
-                        size: 20, color: AppColors.roleRetailer),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Quick Links Horizontal Scroll
-              SizedBox(
-                height: 44,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    _buildPremiumQuickLink(context, 'Stock History',
-                        LucideIcons.history, '/retailer/stock-history'),
-                    const SizedBox(width: 12),
-                    _buildPremiumQuickLink(context, 'Bulk Update',
-                        LucideIcons.layers, '/retailer/bulk-update'),
-                    const SizedBox(width: 12),
-                    _buildPremiumQuickLink(context, 'Suppliers',
-                        LucideIcons.truck, '/retailer/suppliers'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
-                builder: (context, state) {
-                  int totalItems = 0;
-                  double totalValue = 0.0;
-                  if (state is RetailerInventoryLoaded) {
-                    totalItems = state.products.length;
-                    for (var product in state.products) {
-                      totalValue += product.sellingPrice * product.stockQuantity;
-                    }
-                  }
-
-                  final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
-
-                  return Column(
-                    children: [
-                      // Total Stock Value
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                                color: AppColors.neutral900.withValues(alpha: 0.03),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8)),
-                          ],
-                          border: Border.all(
-                              color: AppColors.neutral200.withValues(alpha: 0.5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                      color: AppColors.roleRetailerLight
-                                          .withValues(alpha: 0.5),
-                                      shape: BoxShape.circle),
-                                  child: const Icon(LucideIcons.wallet,
-                                      color: AppColors.roleRetailer, size: 24),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Text('Total Stock Value',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.neutral500)),
-                            const SizedBox(height: 6),
-                            Text(currencyFormat.format(totalValue), style: AppTextStyles.h1),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Total Items in Stock
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                                color: AppColors.neutral900.withValues(alpha: 0.03),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8)),
-                          ],
-                          border: Border.all(
-                              color: AppColors.neutral200.withValues(alpha: 0.5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                  color: AppColors.warning50,
-                                  shape: BoxShape.circle),
-                              child: const Icon(LucideIcons.package,
-                                  color: AppColors.warning600, size: 24),
-                            ),
-                            const SizedBox(height: 20),
-                            Text('Total Items in Stock',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.neutral500)),
-                            const SizedBox(height: 6),
-                            Text(NumberFormat.compact().format(totalItems), style: AppTextStyles.h1),
-                          ],
-                        ),
-                      ),
+                // Premium Floating Search Bar
+                Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.neutral900.withValues(alpha: 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4)),
                     ],
-                  );
-                },
-              ),
-              const SizedBox(height: 40),
-
-              // Category Distribution
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                        color: AppColors.neutral900.withValues(alpha: 0.03),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8)),
-                  ],
-                  border: Border.all(
-                      color: AppColors.neutral200.withValues(alpha: 0.5)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Category Distribution', style: AppTextStyles.h3),
-                    const SizedBox(height: 24),
-                    _buildCategoryProgress(
-                        'Electronics', 0.45, AppColors.roleRetailer),
-                    const SizedBox(height: 16),
-                    _buildCategoryProgress(
-                        'Accessories', 0.30, AppColors.warning500),
-                    const SizedBox(height: 16),
-                    _buildCategoryProgress(
-                        'Apparel', 0.15, AppColors.info500),
-                    const SizedBox(height: 16),
-                    _buildCategoryProgress(
-                        'Other', 0.10, AppColors.neutral400),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Low Stock Alerts
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+                    border: Border.all(
+                        color: AppColors.neutral200.withValues(alpha: 0.5)),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
                     children: [
-                      const Icon(LucideIcons.alertTriangle,
-                          size: 24, color: AppColors.error500),
-                      const SizedBox(width: 8),
-                      Text('Low Stock Alerts', style: AppTextStyles.h3),
+                      const Icon(LucideIcons.search,
+                          size: 20, color: AppColors.neutral400),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search products, SKUs...',
+                            hintStyle: AppTextStyles.body
+                                .copyWith(color: AppColors.neutral400),
+                            border: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const Icon(LucideIcons.slidersHorizontal,
+                          size: 20, color: AppColors.roleRetailer),
                     ],
                   ),
-                  Text('View All',
-                      style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.roleRetailer,
-                          fontWeight: FontWeight.w700)),
-                ],
-              ),
-              const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 24),
 
-              _buildLowStockItem('Pro Wireless Headphones', 'Audio', '3 Left',
-                  AppColors.error500),
-              const SizedBox(height: 12),
-              _buildLowStockItem('Smart Home Hub', 'Electronics', '5 Left',
-                  AppColors.warning600),
+                // Quick Links Horizontal Scroll
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      _buildPremiumQuickLink(context, 'Stock History',
+                          LucideIcons.history, '/retailer/stock-history'),
+                      const SizedBox(width: 12),
+                      _buildPremiumQuickLink(context, 'Bulk Update',
+                          LucideIcons.layers, '/retailer/bulk-update'),
+                      const SizedBox(width: 12),
+                      _buildPremiumQuickLink(context, 'Suppliers',
+                          LucideIcons.truck, '/retailer/suppliers'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
 
-              const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('All Products', style: AppTextStyles.h3),
-                  Text('Filter',
-                      style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.roleRetailer,
-                          fontWeight: FontWeight.w700)),
-                ],
-              ),
-              const SizedBox(height: 16),
+                BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                  builder: (context, state) {
+                    int totalItems = 0;
+                    double totalValue = 0.0;
+                    if (state is RetailerInventoryLoaded) {
+                      totalItems = state.products.length;
+                      for (var product in state.products) {
+                        totalValue +=
+                            product.sellingPrice * product.stockQuantity;
+                      }
+                    }
 
-              BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
-                builder: (context, state) {
-                  if (state is RetailerInventoryLoading) {
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 4,
-                      separatorBuilder: (context, index) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) => const ProductListItemSkeleton(),
+                    final currencyFormat = NumberFormat.currency(
+                        locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+
+                    return Column(
+                      children: [
+                        // Total Stock Value
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: AppColors.neutral900
+                                      .withValues(alpha: 0.03),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8)),
+                            ],
+                            border: Border.all(
+                                color: AppColors.neutral200
+                                    .withValues(alpha: 0.5)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                        color: AppColors.roleRetailerLight
+                                            .withValues(alpha: 0.5),
+                                        shape: BoxShape.circle),
+                                    child: const Icon(LucideIcons.wallet,
+                                        color: AppColors.roleRetailer,
+                                        size: 24),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Text('Total Stock Value',
+                                  style: AppTextStyles.bodySmall
+                                      .copyWith(color: AppColors.neutral500)),
+                              const SizedBox(height: 6),
+                              Text(currencyFormat.format(totalValue),
+                                  style: AppTextStyles.h1),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Total Items in Stock
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: AppColors.neutral900
+                                      .withValues(alpha: 0.03),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8)),
+                            ],
+                            border: Border.all(
+                                color: AppColors.neutral200
+                                    .withValues(alpha: 0.5)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: const BoxDecoration(
+                                    color: AppColors.warning50,
+                                    shape: BoxShape.circle),
+                                child: const Icon(LucideIcons.package,
+                                    color: AppColors.warning600, size: 24),
+                              ),
+                              const SizedBox(height: 20),
+                              Text('Total Items in Stock',
+                                  style: AppTextStyles.bodySmall
+                                      .copyWith(color: AppColors.neutral500)),
+                              const SizedBox(height: 6),
+                              Text(NumberFormat.compact().format(totalItems),
+                                  style: AppTextStyles.h1),
+                            ],
+                          ),
+                        ),
+                      ],
                     );
-                  } else if (state is RetailerInventoryError) {
-                    return Center(
-                        child: Text(state.failure.message,
-                            style: const TextStyle(color: Colors.red)));
-                  } else if (state is RetailerInventoryLoaded) {
-                    if (state.products.isEmpty) {
-                      return const Center(child: Text('No products found.'));
+                  },
+                ),
+                const SizedBox(height: 40),
+
+                // Category Distribution
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.neutral900.withValues(alpha: 0.03),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8)),
+                    ],
+                    border: Border.all(
+                        color: AppColors.neutral200.withValues(alpha: 0.5)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Category Distribution', style: AppTextStyles.h3),
+                      const SizedBox(height: 24),
+                      BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                        builder: (context, state) {
+                          if (state is! RetailerInventoryLoaded || state.products.isEmpty) {
+                            return const Center(child: Text("No data available"));
+                          }
+                          
+                          final Map<String, int> categoryCounts = {};
+                          for (var p in state.products) {
+                            final cat = p.categoryId ?? 'Uncategorized';
+                            categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
+                          }
+                          
+                          final sortedCats = categoryCounts.entries.toList()
+                            ..sort((a, b) => b.value.compareTo(a.value));
+                            
+                          final totalProducts = state.products.length;
+                          final topColors = [AppColors.roleRetailer, AppColors.warning500, AppColors.info500, AppColors.neutral400];
+                          
+                          return Column(
+                            children: [
+                              for (int i = 0; i < sortedCats.length && i < 4; i++)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: _buildCategoryProgress(
+                                    sortedCats[i].key, 
+                                    sortedCats[i].value / totalProducts, 
+                                    topColors[i % topColors.length]
+                                  ),
+                                ),
+                            ],
+                          );
+                        }
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Low Stock Alerts
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.alertTriangle,
+                            size: 24, color: AppColors.error500),
+                        const SizedBox(width: 8),
+                        Text('Low Stock Alerts', style: AppTextStyles.h3),
+                      ],
+                    ),
+                    Text('View All',
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.roleRetailer,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                  builder: (context, state) {
+                    if (state is! RetailerInventoryLoaded) return const SizedBox.shrink();
+                    final lowStockProducts = state.products.where((p) => p.stockQuantity < 10).take(3).toList();
+                    if (lowStockProducts.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: Text("All stocks look good!"),
+                      );
                     }
                     return Column(
-                      children: state.products.map((product) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: _buildPremiumProductListItem(
-                            context,
-                            product.id,
-                            product.name,
-                            product.categoryId ?? 'Uncategorized',
-                            '₹${product.sellingPrice}',
-                            product.stockQuantity,
-                            product.images.isNotEmpty
-                                ? product.images.first
-                                : '',
-                          ),
-                        );
-                      }).toList(),
+                      children: lowStockProducts.map((p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: _buildLowStockItem(
+                          p.name, 
+                          p.categoryId ?? 'Uncategorized', 
+                          '${p.stockQuantity} Left',
+                          p.stockQuantity <= 3 ? AppColors.error500 : AppColors.warning600
+                        ),
+                      )).toList(),
                     );
                   }
-                  return const SizedBox.shrink();
-                },
-              ),
+                ),
 
-              const SizedBox(height: 40),
-            ],
-          ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('All Products', style: AppTextStyles.h3),
+                    Text('Filter',
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.roleRetailer,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                  builder: (context, state) {
+                    if (state is RetailerInventoryLoading) {
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 4,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (context, index) =>
+                            const ProductListItemSkeleton(),
+                      );
+                    } else if (state is RetailerInventoryError) {
+                      return Center(
+                          child: Text(state.failure.message,
+                              style: const TextStyle(color: Colors.red)));
+                    } else if (state is RetailerInventoryLoaded) {
+                      if (state.products.isEmpty) {
+                        return const Center(child: Text('No products found.'));
+                      }
+                      return Column(
+                        children: state.products.map((product) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: _buildPremiumProductListItem(
+                              context,
+                              product.id,
+                              product.name,
+                              product.categoryId ?? 'Uncategorized',
+                              '₹${product.sellingPrice}',
+                              product.stockQuantity,
+                              product.images.isNotEmpty
+                                  ? product.images.first
+                                  : '',
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
 
           // Sticky Bottom Buttons
@@ -462,8 +515,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(
-              color: AppColors.neutral200.withValues(alpha: 0.8)),
+          border:
+              Border.all(color: AppColors.neutral200.withValues(alpha: 0.8)),
           boxShadow: [
             BoxShadow(
                 color: AppColors.neutral900.withValues(alpha: 0.02),
@@ -477,8 +530,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             const SizedBox(width: 8),
             Text(label,
                 style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.neutral700,
-                    fontWeight: FontWeight.w700)),
+                    color: AppColors.neutral700, fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -491,8 +543,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         SizedBox(
           width: 80,
           child: Text(label,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
+              style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.neutral700, fontWeight: FontWeight.w600)),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -616,8 +668,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 blurRadius: 12,
                 offset: const Offset(0, 6))
           ],
-          border: Border.all(
-              color: AppColors.neutral200.withValues(alpha: 0.6)),
+          border:
+              Border.all(color: AppColors.neutral200.withValues(alpha: 0.6)),
         ),
         child: Row(
           children: [
@@ -706,7 +758,8 @@ class _ProductFilterBottomSheet extends StatefulWidget {
   const _ProductFilterBottomSheet();
 
   @override
-  State<_ProductFilterBottomSheet> createState() => _ProductFilterBottomSheetState();
+  State<_ProductFilterBottomSheet> createState() =>
+      _ProductFilterBottomSheetState();
 }
 
 class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
@@ -730,26 +783,40 @@ class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Filter & Sort', style: AppTextStyles.h3),
-                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                  IconButton(
+                      icon: const Icon(LucideIcons.x),
+                      onPressed: () => context.pop()),
                 ],
               ),
               const SizedBox(height: 24),
-              Text('Sort By', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              Text('Sort By',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ['Newest', 'Oldest', 'Price: High to Low', 'Price: Low to High']
+                children: [
+                  'Newest',
+                  'Oldest',
+                  'Price: High to Low',
+                  'Price: Low to High'
+                ]
                     .map((s) => ChoiceChip(
                           label: Text(s),
                           selected: _selectedSort == s,
                           onSelected: (val) {
                             if (val) setState(() => _selectedSort = s);
                           },
-                          selectedColor: AppColors.roleRetailerLight.withValues(alpha: 0.2),
+                          selectedColor: AppColors.roleRetailerLight
+                              .withValues(alpha: 0.2),
                           labelStyle: TextStyle(
-                            color: _selectedSort == s ? AppColors.roleRetailer : AppColors.neutral700,
-                            fontWeight: _selectedSort == s ? FontWeight.w700 : FontWeight.w500,
+                            color: _selectedSort == s
+                                ? AppColors.roleRetailer
+                                : AppColors.neutral700,
+                            fontWeight: _selectedSort == s
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ))
                     .toList(),
@@ -760,10 +827,12 @@ class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
                   backgroundColor: AppColors.roleRetailer,
                   foregroundColor: AppColors.white,
                   minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.pop(),
-                child: const Text('Apply Filters', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text('Apply Filters',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -772,4 +841,3 @@ class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
     );
   }
 }
-

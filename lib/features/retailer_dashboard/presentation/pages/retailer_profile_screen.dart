@@ -1,3 +1,5 @@
+import '../../../../core/widgets/logout_dialog.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -45,12 +47,21 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                 fit: StackFit.expand,
                 children: [
                   Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
-                      ),
+                    decoration: BoxDecoration(
+                      color: AppColors.neutral200,
+                      image: shop?.coverImageUrl != null && shop!.coverImageUrl!.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(shop.coverImageUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                      gradient: shop?.coverImageUrl == null || shop!.coverImageUrl!.isEmpty
+                          ? const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                            )
+                          : null,
                     ),
                   ),
                   Positioned(
@@ -96,7 +107,12 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(LucideIcons.store, color: AppColors.roleRetailer, size: 36),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: shop?.logoUrl != null && shop!.logoUrl!.isNotEmpty
+                              ? Image.network(shop.logoUrl!, fit: BoxFit.cover)
+                              : const Icon(LucideIcons.store, color: AppColors.roleRetailer, size: 36),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -113,6 +129,15 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                               ],
                             ),
                             Text(shop?.city ?? 'Loading...', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailerLight)),
+                            if (shop?.description != null && shop!.description!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                shop.description!,
+                                style: AppTextStyles.caption.copyWith(color: AppColors.white.withValues(alpha: 0.9)),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -211,10 +236,10 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                     title: 'Shop Information',
                     icon: LucideIcons.info,
                     children: [
-                      _InfoRow(LucideIcons.mapPin, 'Address', '102, Shivalik High St, Ahmedabad'),
-                      _InfoRow(LucideIcons.phone, 'Phone', '+91 98765 43210'),
-                      _InfoRow(LucideIcons.globe, 'Website', 'www.electrohub.in'),
-                      _InfoRow(LucideIcons.clock, 'Hours', 'Mon–Sat: 10 AM – 9 PM'),
+                      _InfoRow(LucideIcons.mapPin, 'Address', shop?.address ?? 'Not set'),
+                      _InfoRow(LucideIcons.phone, 'Phone', shop?.phone ?? 'Not set'),
+                      _InfoRow(LucideIcons.mail, 'Email', shop?.email ?? 'Not set'),
+                      _InfoRow(LucideIcons.globe, 'Website', 'www.${(shop?.name ?? 'shop').toLowerCase().replaceAll(' ', '')}.com'),
                     ],
                   ),
 
@@ -236,9 +261,8 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
 
                   // Logout
                   GestureDetector(
-                    onTap: () async {
-                      await getIt<LocalStorage>().clear();
-                      if (context.mounted) context.go('/login');
+                    onTap: () {
+                      LogoutDialog.show(context);
                     },
                     child: Container(
                       width: double.infinity,
@@ -412,6 +436,12 @@ class _EditRetailerProfileBottomSheetState extends State<EditRetailerProfileBott
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late TextEditingController _cityController;
+  late TextEditingController _addressController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _logoUrlController;
+  late TextEditingController _coverUrlController;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -419,6 +449,11 @@ class _EditRetailerProfileBottomSheetState extends State<EditRetailerProfileBott
     _nameController = TextEditingController(text: widget.shop?.name ?? '');
     _descriptionController = TextEditingController(text: widget.shop?.description ?? '');
     _cityController = TextEditingController(text: widget.shop?.city ?? '');
+    _addressController = TextEditingController(text: widget.shop?.address ?? '');
+    _phoneController = TextEditingController(text: widget.shop?.phone ?? '');
+    _emailController = TextEditingController(text: widget.shop?.email ?? '');
+    _logoUrlController = TextEditingController(text: widget.shop?.logoUrl ?? '');
+    _coverUrlController = TextEditingController(text: widget.shop?.coverImageUrl ?? '');
   }
 
   @override
@@ -426,14 +461,45 @@ class _EditRetailerProfileBottomSheetState extends State<EditRetailerProfileBott
     _nameController.dispose();
     _descriptionController.dispose();
     _cityController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _logoUrlController.dispose();
+    _coverUrlController.dispose();
     super.dispose();
   }
 
   void _save() {
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: AppColors.success500),
-    );
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
+    final city = _cityController.text.trim();
+    final address = _addressController.text.trim();
+    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Shop Name is required.'), backgroundColor: AppColors.error500),
+      );
+      return;
+    }
+
+    final data = {
+      'name': name,
+      'description': description,
+      'city': city,
+      'address': address,
+      'phone': phone,
+      'email': email,
+      'logoUrl': _logoUrlController.text.trim().isEmpty ? null : _logoUrlController.text.trim(),
+      'coverImageUrl': _coverUrlController.text.trim().isEmpty ? null : _coverUrlController.text.trim(),
+    };
+
+    if (widget.shop == null) {
+      context.read<RetailerDashboardBloc>().add(CreateShopRequested(data));
+    } else {
+      context.read<RetailerDashboardBloc>().add(UpdateShopRequested(data));
+    }
   }
 
   @override
@@ -446,64 +512,153 @@ class _EditRetailerProfileBottomSheetState extends State<EditRetailerProfileBott
         color: AppColors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Edit Shop Profile', style: AppTextStyles.h3),
-                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
-              ],
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Shop Name',
-                filled: true,
-                fillColor: AppColors.neutral50,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      child: BlocConsumer<RetailerDashboardBloc, RetailerDashboardState>(
+        listener: (context, state) {
+          if (state is RetailerDashboardLoaded) {
+            if (state.isSuccess) {
+              context.pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Shop details saved successfully!'), backgroundColor: AppColors.success500),
+              );
+            } else if (state.failure != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${state.failure}'), backgroundColor: AppColors.error500),
+              );
+            }
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is RetailerDashboardLoaded ? state.isLoading : false;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(widget.shop == null ? 'Add Shop Details' : 'Edit Shop Profile', style: AppTextStyles.h3),
+                      IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _nameController,
+                    validator: (value) => value == null || value.trim().isEmpty ? 'Shop name is required' : null,
+                    decoration: InputDecoration(
+                      labelText: 'Shop Name',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Full Address',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _cityController,
+                          decoration: InputDecoration(
+                            labelText: 'City',
+                            filled: true,
+                            fillColor: AppColors.neutral50,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: InputDecoration(
+                            labelText: 'Phone',
+                            filled: true,
+                            fillColor: AppColors.neutral50,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Email Address',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _logoUrlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: 'Logo Image URL',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _coverUrlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: 'Cover Image URL',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.roleRetailer,
+                      foregroundColor: AppColors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                        : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Description',
-                filled: true,
-                fillColor: AppColors.neutral50,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _cityController,
-              decoration: InputDecoration(
-                labelText: 'City',
-                filled: true,
-                fillColor: AppColors.neutral50,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.roleRetailer,
-                foregroundColor: AppColors.white,
-                minimumSize: const Size.fromHeight(50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _save,
-              child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

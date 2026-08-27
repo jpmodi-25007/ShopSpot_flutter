@@ -47,9 +47,10 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     }
 
     final data = {
-      'proposedPrice': price,
-      'coverLetter': _messageController.text,
-      'estimatedDays': 7, // Defaulting for now
+      'proposedAmount': price,
+      'proposal': _messageController.text,
+      'availableDate': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+      'deliveryDate': DateTime.now().add(const Duration(days: 8)).toIso8601String(),
     };
 
     context.read<InfluencerBloc>().add(

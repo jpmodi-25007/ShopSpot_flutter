@@ -100,13 +100,19 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                         child: Text('No reservations found.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
                       );
                     }
-                    return ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filtered.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        return _buildReservationCard(context, filtered[index]);
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        context.read<ReservationBloc>().add(FetchMyReservations());
+                        await Future.delayed(const Duration(seconds: 1));
                       },
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          return _buildReservationCard(context, filtered[index]);
+                        },
+                      ),
                     );
                   }
                   return const SizedBox.shrink();
@@ -158,9 +164,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       expiryText = 'Expires in ${difference.inHours}h ${difference.inMinutes.remainder(60)}m';
     }
 
-    final imageUrl = reservation.productImage.isNotEmpty 
+    final String? imageUrl = reservation.productImage.isNotEmpty 
         ? reservation.productImage 
-        : 'https://via.placeholder.com/150';
+        : null;
 
     return Container(
       decoration: BoxDecoration(
@@ -175,9 +181,20 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(imageUrl, width: 80, height: 80, fit: BoxFit.cover),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral100,
+                    borderRadius: BorderRadius.circular(12),
+                    image: imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  ),
+                  child: imageUrl == null ? const Icon(LucideIcons.package, color: AppColors.neutral400) : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(

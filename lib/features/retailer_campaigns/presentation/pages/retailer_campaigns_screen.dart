@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
 import '../bloc/retailer_campaign_state.dart';
@@ -64,16 +65,6 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            Text('Performance Overview', style: AppTextStyles.h4),
-            const SizedBox(height: 16),
-            _buildPerformanceCard('TOTAL VIEWS', '245.8K', '+12.4% vs last week', LucideIcons.eye, AppColors.roleRetailer),
-            const SizedBox(height: 12),
-            _buildPerformanceCard('ENGAGEMENT RATE', '4.8%', '+0.8% vs last week', LucideIcons.heart, AppColors.secondary500),
-            const SizedBox(height: 12),
-            _buildPerformanceCard('LINK CLICKS', '12,450', null, LucideIcons.mousePointerClick, AppColors.info500),
-            const SizedBox(height: 32),
-            Text('Active Campaigns', style: AppTextStyles.h4),
-            const SizedBox(height: 16),
             BlocBuilder<RetailerCampaignBloc, RetailerCampaignState>(
               builder: (context, state) {
                 if (state is RetailerCampaignLoading) {
@@ -84,16 +75,33 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
                     )),
                   );
                 } else if (state is RetailerCampaignLoaded) {
-                  if (state.campaigns.isEmpty) {
-                    return const Center(child: Text("No campaigns found. Create one above!"));
-                  }
+                  final activeCampaigns = state.campaigns.where((c) => c.status != 'COMPLETED' && c.status != 'CANCELLED').length;
+                  final totalBudget = state.campaigns.fold<double>(0, (sum, c) => sum + c.budgetMax);
+
                   return Column(
-                    children: state.campaigns.map((c) => Column(
-                      children: [
-                        _buildCampaignCard(context, c),
-                        const SizedBox(height: 12),
-                      ],
-                    )).toList(),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Performance Overview', style: AppTextStyles.h4),
+                      const SizedBox(height: 16),
+                      _buildPerformanceCard('ACTIVE CAMPAIGNS', activeCampaigns.toString(), null, LucideIcons.megaphone, AppColors.roleRetailer),
+                      const SizedBox(height: 12),
+                      _buildPerformanceCard('TOTAL BUDGET DEPLOYED', '₹${totalBudget.toStringAsFixed(0)}', null, LucideIcons.wallet, AppColors.success500),
+                      const SizedBox(height: 32),
+                      Text('Your Campaigns', style: AppTextStyles.h4),
+                      const SizedBox(height: 16),
+                      if (state.campaigns.isEmpty)
+                        const Center(child: Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Text("No campaigns found. Create one above!"),
+                        ))
+                      else
+                        ...state.campaigns.map((c) => Column(
+                          children: [
+                            _buildCampaignCard(context, c),
+                            const SizedBox(height: 12),
+                          ],
+                        )),
+                    ],
                   );
                 } else if (state is RetailerCampaignError) {
                   return Center(child: Text("Error: ${state.message}"));
@@ -157,11 +165,27 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(campaign.title, style: AppTextStyles.h4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.roleRetailerLight, borderRadius: BorderRadius.circular(12)),
-                child: Text('Active', style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+              Expanded(
+                child: Text(campaign.title, style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.roleRetailerLight, borderRadius: BorderRadius.circular(12)),
+                    child: Text('Active', style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showEditCampaignSheet(context, campaign),
+                    child: const Icon(LucideIcons.pencil, size: 16, color: AppColors.neutral500),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _showDeleteConfirmation(context, campaign.id),
+                    child: const Icon(LucideIcons.trash2, size: 16, color: AppColors.error500),
+                  ),
+                ],
               ),
             ],
           ),
@@ -202,6 +226,106 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
         const SizedBox(height: 4),
         Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
       ],
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, String campaignId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Campaign'),
+        content: const Text('Are you sure you want to delete this campaign? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<RetailerCampaignBloc>().add(DeleteCampaignRequested(campaignId));
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.error500)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditCampaignSheet(BuildContext context, InfluencerCampaignEntity campaign) {
+    final titleController = TextEditingController(text: campaign.title);
+    final descController = TextEditingController(text: campaign.description);
+    final budgetController = TextEditingController(text: campaign.budgetMax.toStringAsFixed(0));
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Edit Campaign', style: AppTextStyles.h2),
+              const SizedBox(height: 20),
+              AppTextField(
+                label: 'Campaign Title',
+                hintText: 'Enter title',
+                controller: titleController,
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Description',
+                hintText: 'Enter description',
+                controller: descController,
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                label: 'Max Budget (₹)',
+                hintText: 'Enter budget',
+                controller: budgetController,
+                keyboardType: TextInputType.number,
+                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: AppButton(
+                  text: 'Save Changes',
+                  onPressed: () {
+                    if (formKey.currentState!.validate()) {
+                      Navigator.pop(ctx);
+                      context.read<RetailerCampaignBloc>().add(UpdateCampaignRequested(
+                        campaignId: campaign.id,
+                        data: {
+                          'title': titleController.text.trim(),
+                          'description': descController.text.trim(),
+                          'budgetMax': double.tryParse(budgetController.text.trim()) ?? 0,
+                          'budgetMin': 0,
+                        },
+                      ));
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

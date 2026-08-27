@@ -9,6 +9,7 @@ import 'authentication_state.dart';
 
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/services/push_notification_service.dart';
+import '../../../influencer/data/datasources/influencer_remote_data_source.dart';
 
 class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> {
   final LoginUseCase _loginUseCase;
@@ -37,13 +38,34 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     on<UpdateProfileRequested>(_onUpdateProfileRequested);
   }
 
+  /// Checks if an influencer's profile is approved before letting them in.
+  Future<bool> _isInfluencerApproved() async {
+    try {
+      final dataSource = getIt<InfluencerRemoteDataSource>();
+      final profile = await dataSource.getProfile();
+      return profile.verificationStatus == 'APPROVED';
+    } catch (_) {
+      // If we can't fetch the profile (e.g. newly signed up, profile not yet created),
+      // treat as PENDING to be safe.
+      return false;
+    }
+  }
+
   Future<void> _onCheckSessionRequested(CheckSessionRequested event, Emitter<AuthenticationState> emit) async {
     emit(const AuthenticationLoading());
     final result = await _checkSessionUseCase.execute();
-    result.fold(
-      (failure) => emit(const AuthenticationUnauthenticated()),
-      (user) {
+    await result.fold(
+      (failure) async => emit(const AuthenticationUnauthenticated()),
+      (user) async {
         getIt<PushNotificationService>().initialize();
+        // Check influencer verification status on session restore
+        if (user.role == 'INFLUENCER') {
+          final approved = await _isInfluencerApproved();
+          if (!approved) {
+            emit(AuthenticationInfluencerPending(user));
+            return;
+          }
+        }
         emit(AuthenticationLoaded(user));
       },
     );
@@ -52,10 +74,17 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
   Future<void> _onLoginSubmitted(LoginSubmitted event, Emitter<AuthenticationState> emit) async {
     emit(const AuthenticationLoading());
     final result = await _loginUseCase.execute(event.emailOrPhone, event.password, event.role);
-    result.fold(
-      (failure) => emit(AuthenticationError(failure)),
-      (user) {
+    await result.fold(
+      (failure) async => emit(AuthenticationError(failure)),
+      (user) async {
         getIt<PushNotificationService>().initialize();
+        if (user.role == 'INFLUENCER') {
+          final approved = await _isInfluencerApproved();
+          if (!approved) {
+            emit(AuthenticationInfluencerPending(user));
+            return;
+          }
+        }
         emit(AuthenticationLoaded(user));
       },
     );
@@ -64,10 +93,15 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
   Future<void> _onRegisterSubmitted(RegisterSubmitted event, Emitter<AuthenticationState> emit) async {
     emit(const AuthenticationLoading());
     final result = await _registerUseCase.execute(event.name, event.emailOrPhone, event.password, event.role);
-    result.fold(
-      (failure) => emit(AuthenticationError(failure)),
-      (user) {
+    await result.fold(
+      (failure) async => emit(AuthenticationError(failure)),
+      (user) async {
         getIt<PushNotificationService>().initialize();
+        // New influencer registrations always start as PENDING
+        if (user.role.toUpperCase() == 'INFLUENCER') {
+          emit(AuthenticationInfluencerPending(user));
+          return;
+        }
         emit(AuthenticationLoaded(user));
       },
     );

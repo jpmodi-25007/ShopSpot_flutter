@@ -49,10 +49,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          event.imageUrl ?? 'https://via.placeholder.com/600x400',
-                          fit: BoxFit.cover,
-                        ),
+                        if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                          Image.network(
+                            event.imageUrl!,
+                            fit: BoxFit.cover,
+                          )
+                        else
+                          Container(
+                            color: AppColors.neutral200,
+                            child: const Center(
+                              child: Icon(LucideIcons.image, size: 64, color: AppColors.neutral400),
+                            ),
+                          ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(

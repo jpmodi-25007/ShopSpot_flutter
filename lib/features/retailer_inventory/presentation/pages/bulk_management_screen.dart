@@ -49,6 +49,27 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
     });
   }
 
+  void _applyChanges() {
+    if (_selectedCount == 0) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.roleRetailer)),
+    );
+    
+    // Simulate bulk update processing
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        Navigator.pop(context); // pop loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully applied changes to $_selectedCount products!'), backgroundColor: AppColors.success500),
+        );
+        _toggleAll(false);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,7 +295,7 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
                   const Spacer(),
                   
                   OutlinedButton(
-                    onPressed: _selectedCount > 0 ? () {} : null,
+                    onPressed: _selectedCount > 0 ? () => context.pop() : null,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       side: BorderSide(color: _selectedCount > 0 ? AppColors.roleRetailerLight : AppColors.neutral200),
@@ -284,7 +305,7 @@ class _BulkManagementScreenState extends State<BulkManagementScreen> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: _selectedCount > 0 ? () {} : null,
+                    onPressed: _selectedCount > 0 ? _applyChanges : null,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       backgroundColor: AppColors.roleRetailer,

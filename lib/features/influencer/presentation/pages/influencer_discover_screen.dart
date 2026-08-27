@@ -28,7 +28,9 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
   }
 
   Future<void> _refresh() async {
-    context.read<InfluencerBloc>().add(const GetEligibleCampaignsRequested());
+    context.read<InfluencerBloc>().add(GetEligibleCampaignsRequested(
+      industry: _selectedFilter == 'All Campaigns' ? null : _selectedFilter,
+    ));
   }
 
   @override
@@ -126,11 +128,11 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                 children: [
                   _buildPremiumChip('All Campaigns'),
                   const SizedBox(width: 12),
-                  _buildPremiumChip('Fashion & Apparel'),
+                  _buildPremiumChip('Fashion'),
                   const SizedBox(width: 12),
                   _buildPremiumChip('Food & Beverage'),
                   const SizedBox(width: 12),
-                  _buildPremiumChip('Tech & Gadgets'),
+                  _buildPremiumChip('Electronics'),
                 ],
               ),
             ),
@@ -166,8 +168,33 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                 final campaigns = state is InfluencerLoaded ? state.campaigns ?? [] : [];
                 if (campaigns.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(child: Text('No campaigns available right now.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500))),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.roleInfluencerLight.withValues(alpha: 0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(LucideIcons.telescope, size: 48, color: AppColors.roleInfluencer),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'No Campaigns Found',
+                            style: AppTextStyles.h3.copyWith(color: AppColors.neutral900),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Check back later or try adjusting your industry filters.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
                 return Padding(
@@ -231,7 +258,12 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
   Widget _buildPremiumChip(String label) {
     final isSelected = _selectedFilter == label;
     return GestureDetector(
-      onTap: () => setState(() => _selectedFilter = label),
+      onTap: () {
+        setState(() => _selectedFilter = label);
+        context.read<InfluencerBloc>().add(GetEligibleCampaignsRequested(
+          industry: label == 'All Campaigns' ? null : label,
+        ));
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

@@ -544,6 +544,9 @@ class _SignupScreenState extends State<SignupScreen>
                   } else {
                     context.go('/home');
                   }
+                } else if (state is AuthenticationInfluencerPending) {
+                  // New influencer — show pending verification screen
+                  context.go('/influencer/pending');
                 } else if (state is AuthenticationError) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text(state.failure.message),

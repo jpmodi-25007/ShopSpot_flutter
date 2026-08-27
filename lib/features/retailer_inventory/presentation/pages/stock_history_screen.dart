@@ -19,11 +19,14 @@ class StockHistoryScreen extends StatefulWidget {
 }
 
 class _StockHistoryScreenState extends State<StockHistoryScreen> {
-  final _bloc = getIt<RetailerInventoryBloc>();
+  late RetailerInventoryBloc _bloc;
+  DateTimeRange? _selectedDateRange;
+  String _selectedReason = 'All Reasons';
 
   @override
   void initState() {
     super.initState();
+    _bloc = getIt<RetailerInventoryBloc>();
     _bloc.add(const GetStockHistoryRequested());
   }
 
@@ -83,6 +86,16 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
             List<Map<String, dynamic>> history = [];
             if (state is StockHistoryLoaded) {
               history = state.stockHistory;
+              
+              if (_selectedDateRange != null) {
+                history = history.where((item) {
+                  final dt = DateTime.parse(item['createdAt']);
+                  return dt.isAfter(_selectedDateRange!.start) && dt.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
+                }).toList();
+              }
+              if (_selectedReason != 'All Reasons') {
+                history = history.where((item) => (item['reason'] ?? 'Unknown') == _selectedReason).toList();
+              }
             }
 
             return Column(
@@ -104,41 +117,97 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                     children: [
                       Text('Date Range', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.neutral300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(LucideIcons.calendar, size: 16, color: AppColors.neutral400),
-                            const SizedBox(width: 8),
-                            Text('Oct 1, 2023 - Oct 31, 2023', style: AppTextStyles.bodySmall),
-                          ],
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now(),
+                            initialDateRange: _selectedDateRange,
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary: AppColors.roleRetailer,
+                                    onPrimary: Colors.white,
+                                    onSurface: AppColors.neutral900,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              _selectedDateRange = picked;
+                            });
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.neutral300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.calendar, size: 16, color: AppColors.neutral400),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _selectedDateRange == null 
+                                      ? 'Select date range' 
+                                      : '${DateFormat('MMM dd, yyyy').format(_selectedDateRange!.start)} - ${DateFormat('MMM dd, yyyy').format(_selectedDateRange!.end)}', 
+                                  style: AppTextStyles.bodySmall,
+                                ),
+                              ),
+                              if (_selectedDateRange != null)
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedDateRange = null;
+                                    });
+                                  },
+                                  child: const Icon(LucideIcons.x, size: 16, color: AppColors.neutral400),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text('Reason', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                         decoration: BoxDecoration(
                           border: Border.all(color: AppColors.neutral300),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(LucideIcons.alignLeft, size: 16, color: AppColors.neutral400),
-                                const SizedBox(width: 8),
-                                Text('All Reasons', style: AppTextStyles.bodySmall),
-                              ],
-                            ),
-                            const Icon(LucideIcons.chevronDown, size: 16, color: AppColors.neutral400),
-                          ],
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedReason,
+                            isExpanded: true,
+                            icon: const Icon(LucideIcons.chevronDown, size: 16, color: AppColors.neutral400),
+                            items: ['All Reasons', 'NEW_STOCK', 'SALE', 'RETURN', 'DAMAGE', 'ADJUSTMENT'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Row(
+                                  children: [
+                                    const Icon(LucideIcons.alignLeft, size: 16, color: AppColors.neutral400),
+                                    const SizedBox(width: 8),
+                                    Text(value, style: AppTextStyles.bodySmall),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedReason = newValue;
+                                });
+                              }
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),

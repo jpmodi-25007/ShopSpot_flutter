@@ -1,6 +1,13 @@
+import '../../features/profile/presentation/pages/help_support_screen.dart';
+import '../../features/profile/presentation/pages/about_findivo_screen.dart';
+
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../core/dependency_injection/injection.dart';
 import '../../features/authentication/presentation/pages/splash_screen.dart';
 import '../../features/authentication/presentation/pages/intro_screen.dart';
+
 
 import '../../features/authentication/presentation/pages/login_screen.dart';
 import '../../features/authentication/presentation/pages/signup_screen.dart';
@@ -36,19 +43,22 @@ import '../../features/retailer_campaigns/presentation/pages/retailer_campaigns_
 import '../../features/retailer_campaigns/presentation/pages/create_campaign_screen.dart';
 import '../../features/retailer_campaigns/presentation/pages/campaign_bids_screen.dart';
 import '../../features/retailer_campaigns/presentation/pages/retailer_influencer_profile_screen.dart';
+import '../../features/order/presentation/pages/retailer_orders_screen.dart';
+import '../../features/order/presentation/bloc/retailer_order_bloc.dart';
 import '../../features/influencer/presentation/pages/influencer_discover_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_dashboard_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_earnings_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_profile_screen.dart';
 import '../../features/influencer/presentation/pages/campaign_details_screen.dart';
 import '../../features/influencer/presentation/pages/submit_bid_screen.dart';
+import '../../features/influencer/presentation/pages/influencer_pending_screen.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
 import 'shell_layout.dart';
 import 'retailer_shell_layout.dart';
 import 'influencer_shell_layout.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../web/layouts/web_layout.dart';
+
 import '../web/pages/home_page.dart';
 import '../web/pages/features_page.dart';
 import '../web/pages/how_it_works_page.dart';
@@ -152,6 +162,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/saved-products',
       builder: (context, state) => const SavedProductsScreen(),
+    ),
+    GoRoute(
+      path: '/help-support',
+      builder: (context, state) => const HelpSupportScreen(),
+    ),
+    GoRoute(
+      path: '/about-findivo',
+      builder: (context, state) => const AboutFindivoScreen(),
     ),
     GoRoute(
       path: '/saved-shops',
@@ -265,6 +283,17 @@ final appRouter = GoRouter(
             ),
           ],
         ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/retailer/orders',
+              builder: (context, state) => BlocProvider(
+                create: (_) => getIt<RetailerOrderBloc>(),
+                child: const RetailerOrdersScreen(),
+              ),
+            ),
+          ],
+        ),
       ],
     ),
     
@@ -357,6 +386,10 @@ final appRouter = GoRouter(
         final campaign = state.extra as InfluencerCampaignEntity?;
         return SubmitBidScreen(campaign: campaign);
       },
+    ),
+    GoRoute(
+      path: '/influencer/pending',
+      builder: (context, state) => const InfluencerPendingScreen(),
     ),
   ],
 );

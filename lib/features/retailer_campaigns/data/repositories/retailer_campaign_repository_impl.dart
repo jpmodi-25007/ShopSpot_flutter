@@ -32,4 +32,20 @@ class RetailerCampaignRepositoryImpl implements RetailerCampaignRepository {
     final model = await remoteDataSource.acceptBid(bidId);
     return model.toEntity();
   }
+
+  @override
+  Future<InfluencerBidEntity> counterBid(String bidId, double amount, {String? message}) async {
+    final model = await remoteDataSource.counterBid(bidId, amount, message: message);
+    return model.toEntity();
+  }
+
+  @override
+  Future<void> updateCampaign(String campaignId, Map<String, dynamic> data) async {
+    await remoteDataSource.updateCampaign(campaignId, data);
+  }
+
+  @override
+  Future<void> deleteCampaign(String campaignId) async {
+    await remoteDataSource.deleteCampaign(campaignId);
+  }
 }

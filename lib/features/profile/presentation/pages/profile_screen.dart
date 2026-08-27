@@ -1,3 +1,5 @@
+import '../../../../core/widgets/logout_dialog.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -152,9 +154,9 @@ class ProfileScreen extends StatelessWidget {
                       const Divider(height: 1),
                       _buildListTile(LucideIcons.globe, 'Language', trailingText: 'English'),
                       const Divider(height: 1),
-                      _buildListTile(LucideIcons.helpCircle, 'Help & Support'),
+                      _buildListTile(LucideIcons.helpCircle, 'Help & Support', onTap: () => context.push('/help-support')),
                       const Divider(height: 1),
-                      _buildListTile(LucideIcons.info, 'About Findivo'),
+                      _buildListTile(LucideIcons.info, 'About Findivo', onTap: () => context.push('/about-findivo')),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -162,7 +164,7 @@ class ProfileScreen extends StatelessWidget {
                   // Logout Button
                   GestureDetector(
                     onTap: () {
-                      context.read<AuthenticationBloc>().add(const LogoutRequested());
+                      LogoutDialog.show(context);
                     },
                     child: Container(
                       width: double.infinity,

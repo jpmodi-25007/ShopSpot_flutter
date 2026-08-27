@@ -5,6 +5,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/dependency_injection/injection.dart';
 import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
@@ -24,6 +29,18 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
   
   DateTime? _startDate;
   DateTime? _endDate;
+  
+  final ImagePicker _picker = ImagePicker();
+  XFile? _selectedImage;
+  bool _isUploading = false;
+  final CloudinaryService _cloudinary = getIt<CloudinaryService>();
+
+  Future<void> _pickImage() async {
+    final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() => _selectedImage = picked);
+    }
+  }
 
   @override
   void dispose() {
@@ -69,13 +86,33 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       if (_startDate == null || _endDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select start and end dates')),
         );
         return;
+      }
+      
+      String? imageUrl;
+      
+      if (_selectedImage != null) {
+        setState(() => _isUploading = true);
+        try {
+          if (!kIsWeb) {
+            final result = await _cloudinary.uploadImage(
+              imageFile: File(_selectedImage!.path),
+              folder: 'events',
+            );
+            imageUrl = result.secureUrl;
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
+          setState(() => _isUploading = false);
+          return;
+        }
+        setState(() => _isUploading = false);
       }
       
       context.read<EventBloc>().add(
@@ -85,7 +122,7 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
           location: _locationController.text,
           startDate: _startDate!,
           endDate: _endDate!,
-          imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop', // Poster placeholder
+          imageUrl: imageUrl ?? 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
         ),
       );
     }
@@ -126,22 +163,33 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Poster Upload Placeholder
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: AppColors.neutral100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.neutral300, style: BorderStyle.solid),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(LucideIcons.imagePlus, size: 48, color: AppColors.neutral400),
-                      const SizedBox(height: 12),
-                      Text('Upload Event Poster', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
-                      Text('16:9 ratio recommended', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                    ],
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: double.infinity,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: AppColors.neutral100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.neutral300, style: BorderStyle.solid),
+                      image: _selectedImage != null && !kIsWeb
+                          ? DecorationImage(
+                              image: FileImage(File(_selectedImage!.path)),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: _selectedImage == null
+                        ? Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(LucideIcons.imagePlus, size: 48, color: AppColors.neutral400),
+                              const SizedBox(height: 12),
+                              Text('Upload Event Poster', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                              Text('16:9 ratio recommended', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                            ],
+                          )
+                        : const SizedBox(),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -245,12 +293,12 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: state is EventCreating ? null : _submit,
+                        onPressed: state is EventCreating || _isUploading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.roleRetailer,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: state is EventCreating 
+                        child: state is EventCreating || _isUploading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : const Text('Post Event', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),

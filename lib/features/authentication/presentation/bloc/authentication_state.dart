@@ -30,6 +30,15 @@ final class AuthenticationGuest extends AuthenticationState {
   const AuthenticationGuest();
 }
 
+final class AuthenticationInfluencerPending extends AuthenticationState {
+  final UserEntity user;
+
+  const AuthenticationInfluencerPending(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
 final class AuthenticationUnauthenticated extends AuthenticationState {
   const AuthenticationUnauthenticated();
 }

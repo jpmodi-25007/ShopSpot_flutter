@@ -441,10 +441,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   margin: const EdgeInsets.symmetric(horizontal: 4),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(16),
-                                    image: DecorationImage(
-                                      image: NetworkImage(event.imageUrl ?? 'https://via.placeholder.com/300x200'),
-                                      fit: BoxFit.cover,
-                                    ),
+                                    color: AppColors.neutral200,
+                                    image: event.imageUrl != null && event.imageUrl!.isNotEmpty
+                                        ? DecorationImage(
+                                            image: NetworkImage(event.imageUrl!),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                                   ),
                                   child: Container(
                                     decoration: BoxDecoration(

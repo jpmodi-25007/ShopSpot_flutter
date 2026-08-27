@@ -448,6 +448,9 @@ class _LoginScreenState extends State<LoginScreen>
                   } else {
                     context.go('/home');
                   }
+                } else if (state is AuthenticationInfluencerPending) {
+                  // Influencer not yet approved — show pending screen
+                  context.go('/influencer/pending');
                 } else if (state is AuthenticationGuest) {
                   context.go('/home');
                 } else if (state is AuthenticationError) {

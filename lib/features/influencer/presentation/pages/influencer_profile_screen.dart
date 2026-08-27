@@ -1,15 +1,15 @@
+import '../../../../core/widgets/logout_dialog.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/local_storage.dart';
-import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
-import '../../../../core/widgets/app_text_field.dart';
 
 class InfluencerProfileScreen extends StatefulWidget {
   const InfluencerProfileScreen({super.key});
@@ -103,32 +103,42 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              width: 76,
-                              height: 76,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.white, width: 3),
-                              ),
-                              child: ClipOval(
-                                child: Image.network(
-                                  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
-                                  fit: BoxFit.cover,
+                        BlocBuilder<InfluencerBloc, InfluencerState>(
+                          builder: (context, state) {
+                            final profile = state is InfluencerLoaded ? state.profile : null;
+                            final avatarUrl = profile?.profileImage;
+                            final isApproved = profile?.verificationStatus == 'APPROVED';
+                            return Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 76,
+                                  height: 76,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: AppColors.white, width: 3),
+                                  ),
+                                  child: ClipOval(
+                                    child: avatarUrl != null && avatarUrl.isNotEmpty
+                                        ? Image.network(avatarUrl, fit: BoxFit.cover)
+                                        : Container(
+                                            color: Colors.white24,
+                                            child: const Icon(LucideIcons.user, color: Colors.white, size: 36),
+                                          ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: AppColors.secondary400,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(LucideIcons.badgeCheck, color: Colors.white, size: 14),
-                            ),
-                          ],
+                                if (isApproved)
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.secondary400,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(LucideIcons.badgeCheck, color: Colors.white, size: 14),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -285,9 +295,42 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                             ),
                           ],
                         ),
-                        Text(
-                          'Streetwear enthusiast & content creator based in Mumbai. I partner with local brands to bring authentic stories to my audience. 5 years creating content, 280K+ followers across platforms.',
-                          style: AppTextStyles.body.copyWith(color: AppColors.neutral600, height: 1.6),
+                        BlocBuilder<InfluencerBloc, InfluencerState>(
+                          builder: (context, state) {
+                            final profile = state is InfluencerLoaded ? state.profile : null;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  profile?.bio ?? 'No bio provided.',
+                                  style: AppTextStyles.body.copyWith(color: AppColors.neutral600, height: 1.6),
+                                ),
+                                if (profile != null &&
+                                    (profile.instagramUrl != null || profile.facebookUrl != null || profile.youtubeUrl != null)) ...[
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      if (profile.instagramUrl != null && profile.instagramUrl!.isNotEmpty)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 12),
+                                          child: Icon(Icons.camera_alt, color: AppColors.roleInfluencer, size: 20),
+                                        ),
+                                      if (profile.facebookUrl != null && profile.facebookUrl!.isNotEmpty)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 12),
+                                          child: Icon(Icons.facebook, color: AppColors.roleInfluencer, size: 20),
+                                        ),
+                                      if (profile.youtubeUrl != null && profile.youtubeUrl!.isNotEmpty)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 12),
+                                          child: Icon(Icons.video_library, color: AppColors.roleInfluencer, size: 20),
+                                        ),
+                                    ],
+                                  ),
+                                ]
+                              ],
+                            );
+                          },
                         ),
                         const SizedBox(height: 12),
                         Wrap(
@@ -372,7 +415,17 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                     ),
                     child: Column(
                       children: [
-                        _ActionRow(LucideIcons.link2, 'Linked Social Accounts', () {}),
+                        _ActionRow(LucideIcons.link2, 'Linked Social Accounts', () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => BlocProvider.value(
+                              value: context.read<InfluencerBloc>(),
+                              child: const LinkedSocialAccountsBottomSheet(),
+                            ),
+                          );
+                        }),
                         const Divider(height: 1),
                         _ActionRow(LucideIcons.fileText, 'Download Media Kit', () {}),
                         const Divider(height: 1),
@@ -386,9 +439,8 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                   const SizedBox(height: 16),
 
                   GestureDetector(
-                    onTap: () async {
-                      await getIt<LocalStorage>().clear();
-                      if (context.mounted) context.go('/login');
+                    onTap: () {
+                      LogoutDialog.show(context);
                     },
                     child: Container(
                       width: double.infinity,
@@ -533,7 +585,7 @@ class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfile
   void initState() {
     super.initState();
     _bioController = TextEditingController(text: widget.profile.bio ?? '');
-    _nameController = TextEditingController(text: widget.profile.user.name ?? '');
+    _nameController = TextEditingController(text: widget.profile.displayName ?? '');
   }
 
   @override
@@ -546,7 +598,7 @@ class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfile
   void _save() {
     final data = {
       'bio': _bioController.text,
-      // 'name': _nameController.text, // User table is separate in real app, keeping simple
+      'displayName': _nameController.text,
     };
     context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
   }
@@ -556,7 +608,7 @@ class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfile
     return BlocListener<InfluencerBloc, InfluencerState>(
       listener: (context, state) {
         if (state is InfluencerLoaded && state.isSuccess) {
-          context.pop();
+          Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated!'), backgroundColor: AppColors.success500),
           );
@@ -584,7 +636,7 @@ class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfile
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Edit Profile', style: AppTextStyles.h3),
-                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => context.pop()),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => Navigator.of(context).pop()),
                 ],
               ),
               const SizedBox(height: 24),
@@ -621,6 +673,127 @@ class _EditInfluencerProfileBottomSheetState extends State<EditInfluencerProfile
                     child: isLoading
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
                         : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LinkedSocialAccountsBottomSheet extends StatefulWidget {
+  const LinkedSocialAccountsBottomSheet({super.key});
+
+  @override
+  State<LinkedSocialAccountsBottomSheet> createState() => _LinkedSocialAccountsBottomSheetState();
+}
+
+class _LinkedSocialAccountsBottomSheetState extends State<LinkedSocialAccountsBottomSheet> {
+  final _instagramController = TextEditingController();
+  final _facebookController = TextEditingController();
+  final _youtubeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<InfluencerBloc>().state;
+    if (state is InfluencerLoaded && state.profile != null) {
+      _instagramController.text = state.profile!.instagramUrl ?? '';
+      _facebookController.text = state.profile!.facebookUrl ?? '';
+      _youtubeController.text = state.profile!.youtubeUrl ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _instagramController.dispose();
+    _facebookController.dispose();
+    _youtubeController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final data = <String, dynamic>{};
+    if (_instagramController.text.isNotEmpty) data['instagramUrl'] = _instagramController.text;
+    if (_facebookController.text.isNotEmpty) data['facebookUrl'] = _facebookController.text;
+    if (_youtubeController.text.isNotEmpty) data['youtubeUrl'] = _youtubeController.text;
+    
+    context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<InfluencerBloc, InfluencerState>(
+      listener: (context, state) {
+        if (state is InfluencerLoaded && state.isSuccess) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Social links updated!'), backgroundColor: AppColors.success500),
+          );
+        } else if (state is InfluencerLoaded && state.failure != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.failure?.message ?? 'Failed to update links'), backgroundColor: AppColors.error500),
+          );
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Linked Social Accounts', style: AppTextStyles.h3),
+                  IconButton(icon: const Icon(LucideIcons.x), onPressed: () => Navigator.of(context).pop()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppTextField(
+                controller: _instagramController,
+                label: 'Instagram URL',
+                hintText: 'https://instagram.com/username',
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _facebookController,
+                label: 'Facebook URL',
+                hintText: 'https://facebook.com/username',
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: _youtubeController,
+                label: 'YouTube URL',
+                hintText: 'https://youtube.com/channel',
+              ),
+              const SizedBox(height: 32),
+              BlocBuilder<InfluencerBloc, InfluencerState>(
+                builder: (context, state) {
+                  final isLoading = state is InfluencerLoaded && state.isLoading;
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.roleInfluencer,
+                      foregroundColor: AppColors.white,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: isLoading ? null : _save,
+                    child: isLoading
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                        : const Text('Save Links', style: TextStyle(fontWeight: FontWeight.w700)),
                   );
                 },
               ),

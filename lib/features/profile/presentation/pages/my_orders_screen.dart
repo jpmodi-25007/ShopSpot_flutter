@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -42,14 +43,20 @@ class MyOrdersScreen extends StatelessWidget {
                   child: Text('No orders found.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
                 );
               }
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.orders.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final order = state.orders[index];
-                  return _buildOrderItem(order);
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<OrderBloc>().add(FetchMyOrders());
+                  await Future.delayed(const Duration(seconds: 1));
                 },
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.orders.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final order = state.orders[index];
+                    return _buildOrderItem(order);
+                  },
+                ),
               );
             }
             return const SizedBox.shrink();
@@ -65,9 +72,9 @@ class MyOrdersScreen extends StatelessWidget {
         ? (order.items.first['name'] ?? 'Item') 
         : 'Unknown Item';
         
-    final itemImage = order.items.isNotEmpty && order.items.first['image'] != null
-        ? order.items.first['image']
-        : 'https://via.placeholder.com/150';
+    final String? itemImage = order.items.isNotEmpty && order.items.first['image'] != null
+        ? order.items.first['image'] as String?
+        : null;
 
     Color statusColor;
     Color statusBgColor;
@@ -135,11 +142,14 @@ class MyOrdersScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.neutral100,
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(itemImage),
-                    fit: BoxFit.cover,
-                  )
+                  image: itemImage != null 
+                    ? DecorationImage(
+                        image: NetworkImage(itemImage),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
                 ),
+                child: itemImage == null ? const Icon(LucideIcons.package, color: AppColors.neutral400) : null,
               ),
               const SizedBox(width: 16),
               Expanded(

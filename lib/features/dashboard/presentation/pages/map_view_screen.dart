@@ -16,7 +16,8 @@ import '../../../product/presentation/bloc/product_event.dart';
 import '../../../product/presentation/bloc/product_state.dart';
 import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
 import '../../../../core/widgets/shimmer/skeletons/shop_card_skeleton.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapViewScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class MapViewScreen extends StatefulWidget {
 }
 
 class _MapViewScreenState extends State<MapViewScreen> {
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   LatLng _initialTarget = const LatLng(23.0225, 72.5714);
 
   @override
@@ -44,7 +45,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
         setState(() {
           _initialTarget = LatLng(pos.latitude, pos.longitude);
         });
-        _mapController?.animateCamera(CameraUpdate.newLatLng(_initialTarget));
+        _mapController.move(_initialTarget, 14.0);
         context.read<ShopBloc>().add(GetNearbyShopsRequested(
             lat: pos.latitude, lng: pos.longitude));
       }
@@ -86,31 +87,31 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 BlocBuilder<ShopBloc, ShopState>(
                   builder: (context, shopState) {
                     final shops = shopState.nearbyShops ?? [];
-                    final Set<Marker> markers = shops.map((shop) {
+                    final List<Marker> markers = shops.map((shop) {
                       return Marker(
-                        markerId: MarkerId(shop.id),
-                        position: LatLng(shop.latitude, shop.longitude),
-                        infoWindow: InfoWindow(
-                          title: shop.name,
-                          snippet: 'Tap for directions',
+                        point: LatLng(shop.latitude, shop.longitude),
+                        width: 40,
+                        height: 40,
+                        child: GestureDetector(
                           onTap: () => _openDirections(shop.latitude, shop.longitude),
+                          child: const Icon(LucideIcons.mapPin, color: AppColors.roleRetailer, size: 40),
                         ),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
                       );
-                    }).toSet();
+                    }).toList();
       
-                    return GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: _initialTarget,
-                        zoom: 14.0,
+                    return FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: _initialTarget,
+                        initialZoom: 14.0,
                       ),
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      markers: markers,
-                      onMapCreated: (controller) {
-                        _mapController = controller;
-                      },
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.findivo.app',
+                        ),
+                        MarkerLayer(markers: markers),
+                      ],
                     );
                   },
                 ),
@@ -120,9 +121,9 @@ class _MapViewScreenState extends State<MapViewScreen> {
                   child: GestureDetector(
                     onTap: () async {
                       final pos = await LocationHelper.getCurrentLocation();
-                      if (pos != null && _mapController != null) {
-                        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(
-                            LatLng(pos.latitude, pos.longitude), 14.0));
+                      if (pos != null) {
+                        _mapController.move(
+                            LatLng(pos.latitude, pos.longitude), 14.0);
                       }
                     },
                     child: _buildFloatingButton(LucideIcons.crosshair),

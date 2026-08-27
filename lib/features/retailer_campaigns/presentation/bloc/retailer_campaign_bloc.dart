@@ -8,17 +8,26 @@ class RetailerCampaignBloc extends Bloc<RetailerCampaignEvent, RetailerCampaignS
   final GetMyCampaignsUseCase getMyCampaigns;
   final GetCampaignBidsUseCase getCampaignBids;
   final AcceptBidUseCase acceptBid;
+  final CounterBidUseCase counterBid;
+  final UpdateCampaignUseCase updateCampaign;
+  final DeleteCampaignUseCase deleteCampaign;
 
   RetailerCampaignBloc({
     required this.createCampaign,
     required this.getMyCampaigns,
     required this.getCampaignBids,
     required this.acceptBid,
+    required this.counterBid,
+    required this.updateCampaign,
+    required this.deleteCampaign,
   }) : super(RetailerCampaignInitial()) {
     on<GetMyCampaignsRequested>(_onGetMyCampaigns);
     on<CreateCampaignRequested>(_onCreateCampaign);
     on<GetCampaignBidsRequested>(_onGetCampaignBids);
     on<AcceptBidRequested>(_onAcceptBid);
+    on<CounterBidRequested>(_onCounterBid);
+    on<UpdateCampaignRequested>(_onUpdateCampaign);
+    on<DeleteCampaignRequested>(_onDeleteCampaign);
   }
 
   Future<void> _onGetMyCampaigns(GetMyCampaignsRequested event, Emitter<RetailerCampaignState> emit) async {
@@ -92,6 +101,39 @@ class RetailerCampaignBloc extends Bloc<RetailerCampaignEvent, RetailerCampaignS
       await acceptBid(event.bidId);
       emit(const RetailerCampaignSuccess("Bid accepted successfully"));
       add(GetCampaignBidsRequested(event.campaignId));
+    } catch (e) {
+      emit(RetailerCampaignError(e.toString()));
+    }
+  }
+
+  Future<void> _onCounterBid(CounterBidRequested event, Emitter<RetailerCampaignState> emit) async {
+    emit(RetailerCampaignLoading());
+    try {
+      await counterBid(event.bidId, event.amount, message: event.message);
+      emit(const RetailerCampaignSuccess("Counter offer sent"));
+      add(GetCampaignBidsRequested(event.campaignId));
+    } catch (e) {
+      emit(RetailerCampaignError(e.toString()));
+    }
+  }
+
+  Future<void> _onUpdateCampaign(UpdateCampaignRequested event, Emitter<RetailerCampaignState> emit) async {
+    emit(RetailerCampaignLoading());
+    try {
+      await updateCampaign(event.campaignId, event.data);
+      emit(const RetailerCampaignSuccess("Campaign updated successfully"));
+      add(const GetMyCampaignsRequested());
+    } catch (e) {
+      emit(RetailerCampaignError(e.toString()));
+    }
+  }
+
+  Future<void> _onDeleteCampaign(DeleteCampaignRequested event, Emitter<RetailerCampaignState> emit) async {
+    emit(RetailerCampaignLoading());
+    try {
+      await deleteCampaign(event.campaignId);
+      emit(const RetailerCampaignSuccess("Campaign deleted successfully"));
+      add(const GetMyCampaignsRequested());
     } catch (e) {
       emit(RetailerCampaignError(e.toString()));
     }

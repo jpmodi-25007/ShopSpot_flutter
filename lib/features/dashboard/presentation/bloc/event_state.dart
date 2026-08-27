@@ -22,6 +22,14 @@ class EventsLoaded extends EventState {
   List<Object?> get props => [events];
 }
 
+class ShopEventsLoaded extends EventState {
+  final List<EventEntity> events;
+  const ShopEventsLoaded(this.events);
+
+  @override
+  List<Object> get props => [events];
+}
+
 class EventDetailLoaded extends EventState {
   final EventEntity event;
 

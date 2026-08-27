@@ -18,7 +18,11 @@ class SavedRemoteDataSourceImpl implements SavedRemoteDataSource {
   @override
   Future<List<dynamic>> getSavedProducts() async {
     final response = await apiClient.get('/saved/products');
-    return response.data['data'] as List<dynamic>? ?? [];
+    final data = response.data;
+    if (data is Map && data.containsKey('data')) {
+      return data['data'] as List<dynamic>? ?? [];
+    }
+    return data as List<dynamic>? ?? [];
   }
 
   @override
@@ -34,7 +38,11 @@ class SavedRemoteDataSourceImpl implements SavedRemoteDataSource {
   @override
   Future<List<dynamic>> getSavedShops() async {
     final response = await apiClient.get('/saved/shops');
-    return response.data['data'] as List<dynamic>? ?? [];
+    final data = response.data;
+    if (data is Map && data.containsKey('data')) {
+      return data['data'] as List<dynamic>? ?? [];
+    }
+    return data as List<dynamic>? ?? [];
   }
 
   @override

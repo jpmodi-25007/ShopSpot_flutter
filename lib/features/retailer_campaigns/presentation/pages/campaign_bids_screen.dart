@@ -175,10 +175,24 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                     side: const BorderSide(color: AppColors.neutral300),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('View Profile', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
+                  child: Text('Profile', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
                 ),
               ),
-              const SizedBox(width: 12),
+              if (bid.status != 'ACCEPTED') ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _showCounterDialog(bid),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: AppColors.roleRetailer),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Counter', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
                   onPressed: bid.status == 'ACCEPTED' ? null : () {
@@ -190,7 +204,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text(bid.status == 'ACCEPTED' ? 'Accepted' : 'Accept Bid', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
+                  child: Text(bid.status == 'ACCEPTED' ? 'Accepted' : 'Accept', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -200,6 +214,64 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
     );
   }
 
+  void _showCounterDialog(InfluencerBidEntity bid) {
+    final amountController = TextEditingController(text: bid.proposedAmount.toStringAsFixed(0));
+    final messageController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.white,
+        title: Text('Counter Bid', style: AppTextStyles.h3),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Current bid: ₹${bid.proposedAmount.toStringAsFixed(0)}', style: AppTextStyles.bodySmall),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Your Counter Amount (₹)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: messageController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Message (optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.neutral600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.roleRetailer, foregroundColor: AppColors.white),
+            onPressed: () {
+              final amount = double.tryParse(amountController.text) ?? 0;
+              if (amount > 0) {
+                context.read<RetailerCampaignBloc>().add(CounterBidRequested(
+                  bidId: bid.id,
+                  campaignId: widget.campaignId,
+                  amount: amount,
+                  message: messageController.text.isNotEmpty ? messageController.text : null,
+                ));
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Send Counter'),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildStat(String label, String value, {bool highlight = false, Color? color}) {
     return Column(
       children: [

@@ -17,17 +17,32 @@ class InfluencerDashboardScreen extends StatefulWidget {
   State<InfluencerDashboardScreen> createState() => _InfluencerDashboardScreenState();
 }
 
-class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
+class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _earningsAnim;
+  late Animation<double> _earningsCurve;
+
   @override
   void initState() {
     super.initState();
+    _earningsAnim = AnimationController(duration: const Duration(milliseconds: 1400), vsync: this);
+    _earningsCurve = CurvedAnimation(parent: _earningsAnim, curve: Curves.easeOutCubic);
+    _earningsAnim.forward();
     context.read<InfluencerBloc>().add(const GetInfluencerProfileRequested());
     context.read<InfluencerBloc>().add(const GetMyBidsRequested());
+    context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
+  }
+
+  @override
+  void dispose() {
+    _earningsAnim.dispose();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
     context.read<InfluencerBloc>().add(const GetInfluencerProfileRequested());
     context.read<InfluencerBloc>().add(const GetMyBidsRequested());
+    context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
   }
 
   @override
@@ -51,8 +66,15 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.roleInfluencer, width: 2),
             ),
-            child: const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/web_hero_boutique.jpg'),
+            child: BlocBuilder<InfluencerBloc, InfluencerState>(
+              builder: (context, state) {
+                final avatarUrl = state is InfluencerLoaded ? state.profile?.profileImage : null;
+                return CircleAvatar(
+                  backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                      ? NetworkImage(avatarUrl) as ImageProvider
+                      : const AssetImage('assets/images/web_hero_boutique.jpg'),
+                );
+              },
             ),
           ),
         ),
@@ -88,70 +110,103 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen> {
                 ],
                 border: Border.all(color: AppColors.roleInfluencer.withValues(alpha: 0.3)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: BlocBuilder<InfluencerBloc, InfluencerState>(
+                builder: (context, state) {
+                  final analytics = state is InfluencerLoaded ? state.analytics : null;
+                  final isAnalyticsLoading = state is InfluencerLoaded && state.isLoading && analytics == null;
+                  final totalEarnings = (analytics?['totalEarnings'] as num?)?.toDouble() ?? 0.0;
+                  final payouts = analytics?['payouts'] as List<dynamic>? ?? [];
+                  final pendingClearance = payouts
+                      .where((p) => p['status'] == 'Pending')
+                      .fold<double>(0, (sum, p) => sum + ((p['amount'] as num?)?.toDouble() ?? 0));
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Earnings', style: AppTextStyles.body.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
-                      const Icon(LucideIcons.award, color: AppColors.roleInfluencer, size: 24),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text('₹42,500.00', style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 36)),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.success50,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(LucideIcons.trendingUp, size: 14, color: AppColors.success600),
-                        const SizedBox(width: 6),
-                        Text('+12% from last month', style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Earnings', style: AppTextStyles.body.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
+                          const Icon(LucideIcons.award, color: AppColors.roleInfluencer, size: 24),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      isAnalyticsLoading
+                          ? Container(height: 40, width: 180, decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(8)))
+                          : AnimatedBuilder(
+                              animation: _earningsCurve,
+                              builder: (context, _) {
+                                final display = (totalEarnings * _earningsCurve.value).toInt();
+                                return Text(
+                                  '₹${display.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}',
+                                  style: AppTextStyles.h1.copyWith(color: AppColors.neutral900, fontSize: 36),
+                                );
+                              },
+                            ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.success50,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Pending Clearance', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                            const SizedBox(height: 4),
-                            Text('₹3,200.50', style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
+                            const Icon(LucideIcons.trendingUp, size: 14, color: AppColors.success600),
+                            const SizedBox(width: 6),
+                            Text(
+                              analytics != null
+                                  ? '${(analytics['completedCampaigns'] ?? 0)} campaigns completed'
+                                  : 'Calculating...',
+                              style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.w700),
+                            ),
                           ],
                         ),
-                        ElevatedButton(
-                          onPressed: () => context.go('/influencer/earnings'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.roleInfluencer,
-                            foregroundColor: AppColors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                          child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                ],
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Pending Clearance', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                                const SizedBox(height: 4),
+                                isAnalyticsLoading
+                                    ? Container(height: 20, width: 80, decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(4)))
+                                    : Text(
+                                        '₹${pendingClearance.toStringAsFixed(0)}',
+                                        style: AppTextStyles.h3.copyWith(color: AppColors.neutral900),
+                                      ),
+                              ],
+                            ),
+                            ElevatedButton(
+                              onPressed: () => context.go('/influencer/earnings'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.roleInfluencer,
+                                foregroundColor: AppColors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
+                              child: const Text('View Earnings', style: TextStyle(fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ),
+                      )
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(height: 40),

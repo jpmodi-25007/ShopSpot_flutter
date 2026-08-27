@@ -84,12 +84,20 @@ class _EventsListScreenState extends State<EventsListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.network(
-                          event.imageUrl ?? 'https://via.placeholder.com/600x300',
-                          height: 160,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                        if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                          Image.network(
+                            event.imageUrl!,
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        else
+                          Container(
+                            height: 160,
+                            width: double.infinity,
+                            color: AppColors.neutral200,
+                            child: const Icon(LucideIcons.image, size: 48, color: AppColors.neutral400),
+                          ),
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(

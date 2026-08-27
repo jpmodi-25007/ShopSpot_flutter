@@ -41,4 +41,7 @@ abstract class RetailerCampaignRepository {
   Future<List<InfluencerCampaignEntity>> getMyCampaigns({int page = 1, int limit = 20});
   Future<List<InfluencerBidEntity>> getCampaignBids(String campaignId, {int page = 1, int limit = 20});
   Future<InfluencerBidEntity> acceptBid(String bidId);
+  Future<InfluencerBidEntity> counterBid(String bidId, double amount, {String? message});
+  Future<void> updateCampaign(String campaignId, Map<String, dynamic> data);
+  Future<void> deleteCampaign(String campaignId);
 }

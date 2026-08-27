@@ -21,8 +21,8 @@ class UpdateInfluencerProfileUseCase {
 class GetEligibleCampaignsUseCase {
   final InfluencerRepository repository;
   GetEligibleCampaignsUseCase(this.repository);
-  Future<Either<Failure, List<InfluencerCampaignEntity>>> execute({int page = 1, int limit = 20}) =>
-      repository.getEligibleCampaigns(page: page, limit: limit);
+  Future<Either<Failure, List<InfluencerCampaignEntity>>> execute({int page = 1, int limit = 20, String? industry}) =>
+      repository.getEligibleCampaigns(page: page, limit: limit, industry: industry);
 }
 
 class GetMyBidsUseCase {

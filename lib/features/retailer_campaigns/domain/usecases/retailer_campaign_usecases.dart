@@ -37,3 +37,30 @@ class AcceptBidUseCase {
     return repository.acceptBid(bidId);
   }
 }
+
+class CounterBidUseCase {
+  final RetailerCampaignRepository repository;
+  CounterBidUseCase(this.repository);
+
+  Future<InfluencerBidEntity> call(String bidId, double amount, {String? message}) {
+    return repository.counterBid(bidId, amount, message: message);
+  }
+}
+
+class UpdateCampaignUseCase {
+  final RetailerCampaignRepository repository;
+  UpdateCampaignUseCase(this.repository);
+
+  Future<void> call(String campaignId, Map<String, dynamic> data) {
+    return repository.updateCampaign(campaignId, data);
+  }
+}
+
+class DeleteCampaignUseCase {
+  final RetailerCampaignRepository repository;
+  DeleteCampaignUseCase(this.repository);
+
+  Future<void> call(String campaignId) {
+    return repository.deleteCampaign(campaignId);
+  }
+}

@@ -16,7 +16,8 @@ class ProductCardSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image area
-            const Expanded(
+            const SizedBox(
+              height: 140,
               child: ShimmerImage(
                 width: double.infinity,
                 borderRadius: 16,

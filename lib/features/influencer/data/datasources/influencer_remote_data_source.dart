@@ -5,7 +5,7 @@ import '../models/influencer_campaign_model.dart';
 abstract interface class InfluencerRemoteDataSource {
   Future<InfluencerProfileModel> getProfile();
   Future<InfluencerProfileModel> updateProfile(Map<String, dynamic> data);
-  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20});
+  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry});
   Future<List<InfluencerBidModel>> getMyBids({int page = 1, int limit = 20});
   Future<InfluencerBidModel> submitBid({
     required String campaignId,
@@ -32,10 +32,16 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
   }
 
   @override
-  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20}) async {
-    final response = await apiClient.get('/influencer/campaigns', queryParameters: {'page': page, 'limit': limit});
-    final List<dynamic> list = response.data['data'] ?? response.data;
-    return list.map((j) => InfluencerCampaignModel.fromJson(j)).toList();
+  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry}) async {
+    final queryParams = {
+      'page': page, 
+      'limit': limit,
+      if (industry != null && industry.isNotEmpty && industry != 'All Campaigns') 'industry': industry,
+    };
+    final response = await apiClient.get('/influencer/campaigns', queryParameters: queryParams);
+    
+    final List<dynamic> data = response.data['data'] ?? [];
+    return data.map((json) => InfluencerCampaignModel.fromJson(json)).toList();
   }
 
   @override
@@ -59,7 +65,7 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getInfluencerAnalytics() async {
-    final response = await apiClient.get('/influencer/analytics');
+    final response = await apiClient.get('/analytics/influencer');
     return response.data;
   }
 }

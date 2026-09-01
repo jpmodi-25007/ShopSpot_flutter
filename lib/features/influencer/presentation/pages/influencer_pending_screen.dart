@@ -165,12 +165,12 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(isRejected ? LucideIcons.alertTriangle : LucideIcons.clock, size: 14, color: isRejected ? AppColors.error400 : Colors.amber),
+                                Icon(isRejected ? LucideIcons.alertTriangle : LucideIcons.clock, size: 14, color: isRejected ? AppColors.error500 : Colors.amber),
                                 const SizedBox(width: 6),
                                 Text(
                                   isRejected ? 'APPLICATION REJECTED' : 'UNDER REVIEW',
                                   style: AppTextStyles.caption.copyWith(
-                                    color: isRejected ? AppColors.error400 : Colors.amber,
+                                    color: isRejected ? AppColors.error500 : Colors.amber,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 1.2,
                                   ),

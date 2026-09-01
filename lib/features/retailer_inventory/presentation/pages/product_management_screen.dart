@@ -22,6 +22,8 @@ class ProductManagementScreen extends StatefulWidget {
 }
 
 class _ProductManagementScreenState extends State<ProductManagementScreen> {
+  String _searchQuery = '';
+  
   @override
   void initState() {
     super.initState();
@@ -114,6 +116,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value.toLowerCase();
+                            });
+                          },
                           decoration: InputDecoration(
                             hintText: 'Search products, SKUs...',
                             hintStyle: AppTextStyles.body
@@ -392,11 +399,18 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           child: Text(state.failure.message,
                               style: const TextStyle(color: Colors.red)));
                     } else if (state is RetailerInventoryLoaded) {
-                      if (state.products.isEmpty) {
-                        return const Center(child: Text('No products found.'));
+                      final filteredProducts = _searchQuery.isEmpty 
+                        ? state.products 
+                        : state.products.where((p) => p.name.toLowerCase().contains(_searchQuery)).toList();
+                        
+                      if (filteredProducts.isEmpty) {
+                        return const Center(child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Text('No products found matching your search.'),
+                        ));
                       }
                       return Column(
-                        children: state.products.map((product) {
+                        children: filteredProducts.map((product) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: _buildPremiumProductListItem(

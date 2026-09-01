@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
+import '../../domain/entities/influencer_bid_entity.dart';
 
 class InfluencerDashboardScreen extends StatefulWidget {
   const InfluencerDashboardScreen({super.key});
@@ -216,7 +217,13 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Active Bids', style: AppTextStyles.h3),
-                Text('View All', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
+                GestureDetector(
+                  onTap: () => context.go('/influencer/campaigns'),
+                  child: Text('View All',
+                      style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.roleInfluencer,
+                          fontWeight: FontWeight.w700)),
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -236,7 +243,9 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
-                      child: Text('No active bids yet.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+                      child: Text('No active bids yet.',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.neutral500)),
                     ),
                   );
                 }
@@ -244,20 +253,33 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                   children: bids.map((bid) {
                     Color statusColor;
                     switch (bid.status) {
-                      case 'ACCEPTED': statusColor = AppColors.success500; break;
-                      case 'REJECTED': statusColor = AppColors.error500; break;
-                      case 'SHORTLISTED': statusColor = AppColors.success500; break;
-                      default: statusColor = AppColors.warning600;
+                      case 'ACCEPTED':
+                        statusColor = AppColors.success500;
+                        break;
+                      case 'REJECTED':
+                        statusColor = AppColors.error500;
+                        break;
+                      case 'SHORTLISTED':
+                        statusColor = AppColors.success500;
+                        break;
+                      default:
+                        statusColor = AppColors.warning600;
                     }
+                    // Build a human-readable subtitle from the proposal or a short campaign reference
+                    final subtitle = bid.proposal?.isNotEmpty == true
+                        ? bid.proposal!
+                        : 'Campaign ref: ${bid.campaignId.length > 8 ? bid.campaignId.substring(0, 8) : bid.campaignId}…';
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: _buildPremiumBidCard(
-                        title: bid.campaignId,
-                        brand: 'FashionNova',
+                        bid: bid,
+                        subtitle: subtitle,
                         statusLabel: bid.status,
                         statusColor: statusColor,
-                        yourBid: '₹${bid.proposedAmount.toStringAsFixed(0)}',
-                        brandOffer: bid.isShortlisted ? 'Shortlisted' : null,
+                        yourBid:
+                            '₹${bid.proposedAmount.toStringAsFixed(0)}',
+                        brandStatus:
+                            bid.isShortlisted ? 'Shortlisted' : null,
                       ),
                     );
                   }).toList(),
@@ -266,15 +288,79 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
             ),
             const SizedBox(height: 40),
 
-            // Ongoing Campaigns
+            // Ongoing (Accepted) Campaigns — driven by real bid data
             Text('Ongoing Campaigns', style: AppTextStyles.h3),
             const SizedBox(height: 20),
-            _buildPremiumOngoingCampaignCard(
-              title: 'Pro Series Launch',
-              brand: 'TechNova',
-              progressPercent: 33,
-              dueDate: 'In 5 days',
-              imageUrl: 'invalid', // Force errorBuilder
+            BlocBuilder<InfluencerBloc, InfluencerState>(
+              builder: (context, state) {
+                if (state is InfluencerLoaded && state.isLoading) {
+                  return const BidCardSkeleton();
+                }
+                final bids = state is InfluencerLoaded ? state.bids ?? [] : [];
+                final acceptedBids = bids
+                    .where((b) => b.status == 'ACCEPTED')
+                    .toList();
+                if (acceptedBids.isEmpty) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.neutral50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.neutral200),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(LucideIcons.rocket,
+                            size: 32, color: AppColors.neutral400),
+                        const SizedBox(height: 12),
+                        Text('No ongoing campaigns yet.',
+                            style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(
+                            'Browse campaigns and submit a bid to get started.',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.neutral500)),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              context.go('/influencer/home'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.roleInfluencer,
+                            foregroundColor: AppColors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
+                          child: const Text('Discover Campaigns',
+                              style:
+                                  TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Column(
+                  children: acceptedBids.map((bid) {
+                    final deadlineText =
+                        '${bid.deliveryDate.day}/${bid.deliveryDate.month}/${bid.deliveryDate.year}';
+                    final campaignRef = bid.campaignId.length > 8
+                        ? bid.campaignId.substring(0, 8)
+                        : bid.campaignId;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildAcceptedCampaignCard(
+                        campaignRef: 'Campaign #$campaignRef',
+                        bid: '₹${bid.proposedAmount.toStringAsFixed(0)}',
+                        deadlineText: deadlineText,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
             const SizedBox(height: 80),
           ],
@@ -285,12 +371,12 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
   }
 
   Widget _buildPremiumBidCard({
-    required String title,
-    required String brand,
+    required InfluencerBidEntity bid,
+    required String subtitle,
     required String statusLabel,
     required Color statusColor,
     required String yourBid,
-    String? brandOffer,
+    String? brandStatus,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -298,7 +384,10 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.03), blurRadius: 16, offset: const Offset(0, 8)),
+          BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.03),
+              blurRadius: 16,
+              offset: const Offset(0, 8)),
         ],
         border: Border.all(color: statusColor.withValues(alpha: 0.3)),
       ),
@@ -309,49 +398,76 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(100),
                 ),
-                child: Text(statusLabel, style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w800)),
+                child: Text(statusLabel,
+                    style: AppTextStyles.caption.copyWith(
+                        color: statusColor, fontWeight: FontWeight.w800)),
               ),
-              const Icon(LucideIcons.moreHorizontal, color: AppColors.neutral400),
+              Text(
+                '${bid.availableDate.day}/${bid.availableDate.month}/${bid.availableDate.year}',
+                style: AppTextStyles.caption
+                    .copyWith(color: AppColors.neutral400),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Text(title, style: AppTextStyles.h4),
+          Text('Bid #${bid.id.length > 8 ? bid.id.substring(0, 8) : bid.id}…',
+              style: AppTextStyles.h4),
           const SizedBox(height: 4),
-          Text(brand, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+          Text(subtitle,
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.neutral500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
           const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppColors.neutral50, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                      color: AppColors.neutral50,
+                      borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Your Bid', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                      Text('Your Bid',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.neutral500)),
                       const SizedBox(height: 4),
-                      Text(yourBid, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.neutral900)),
+                      Text(yourBid,
+                          style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.neutral900)),
                     ],
                   ),
                 ),
               ),
-              if (brandOffer != null) ...[
+              if (brandStatus != null) ...[
                 const SizedBox(width: 12),
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                        color: AppColors.roleInfluencerLight
+                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Brand Status', style: AppTextStyles.caption.copyWith(color: AppColors.neutral600)),
+                        Text('Status',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.neutral600)),
                         const SizedBox(height: 4),
-                        Text(brandOffer, style: AppTextStyles.body.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w800)),
+                        Text(brandStatus,
+                            style: AppTextStyles.body.copyWith(
+                                color: AppColors.roleInfluencer,
+                                fontWeight: FontWeight.w800)),
                       ],
                     ),
                   ),
@@ -359,190 +475,134 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
               ]
             ],
           ),
-          if (brandOffer != null) ...[
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.neutral100,
-                      foregroundColor: AppColors.neutral700,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => context.go('/influencer/earnings'),
-                    child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(LucideIcons.clock,
+                  size: 14, color: AppColors.neutral500),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  bid.status == 'ACCEPTED'
+                      ? 'Campaign accepted — coordinate with brand'
+                      : bid.status == 'REJECTED'
+                          ? 'Bid not selected this time'
+                          : 'Awaiting brand decision',
+                  style: AppTextStyles.caption
+                      .copyWith(color: AppColors.neutral500),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.roleInfluencer,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => context.go('/influencer/discover'),
-                    child: const Text('View Offer', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              if (bid.status == 'ACCEPTED')
+                TextButton(
+                  onPressed: () {},
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.error500,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
                   ),
+                  child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
-              ],
-            ),
-          ] else ...[
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                const Icon(LucideIcons.clock, size: 14, color: AppColors.neutral500),
-                const SizedBox(width: 6),
-                Text('Awaiting brand decision', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-              ],
-            ),
-          ]
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPremiumOngoingCampaignCard({
-    required String title,
-    required String brand,
-    required int progressPercent,
-    required String dueDate,
-    required String imageUrl,
+  Widget _buildAcceptedCampaignCard({
+    required String campaignRef,
+    required String bid,
+    required String deadlineText,
   }) {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 10)),
         ],
-        border: Border.all(color: AppColors.neutral200.withValues(alpha: 0.8)),
+        border: Border.all(
+            color: AppColors.roleInfluencer.withValues(alpha: 0.3)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(
-                  imageUrl,
-                  height: 160,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, st) => Image.asset(
-                    'assets/images/web_hero_boutique.jpg',
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.success100,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.checkCircle2,
+                        size: 12, color: AppColors.success600),
+                    const SizedBox(width: 4),
+                    Text('Accepted',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.success600,
+                            fontWeight: FontWeight.w800)),
+                  ],
                 ),
               ),
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.loader, size: 14, color: AppColors.roleInfluencer),
-                      const SizedBox(width: 6),
-                      Text('In Progress', style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w800)),
-                    ],
-                  ),
-                ),
+              Text(
+                'Deliver by $deadlineText',
+                style:
+                    AppTextStyles.caption.copyWith(color: AppColors.neutral500),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(brand, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w600, letterSpacing: 1.1)),
-                const SizedBox(height: 4),
-                Text(title, style: AppTextStyles.h3),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Deliverables: 1 of 3', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
-                    Text('$progressPercent%', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w800)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Stack(
-                  children: [
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(color: AppColors.neutral100, borderRadius: BorderRadius.circular(100)),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: progressPercent / 100,
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(color: AppColors.roleInfluencer, borderRadius: BorderRadius.circular(100)),
+          const SizedBox(height: 16),
+          Text(campaignRef, style: AppTextStyles.h4),
+          const SizedBox(height: 4),
+          Text('Your accepted bid: $bid',
+              style:
+                  AppTextStyles.body.copyWith(color: AppColors.neutral600)),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.white,
+                    foregroundColor: AppColors.roleInfluencer,
+                    elevation: 0,
+                    side: const BorderSide(
+                        color: AppColors.roleInfluencer, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                            '📤 Submit your content URL to the shopkeeper via Chat.'),
+                        backgroundColor: AppColors.roleInfluencer,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
-                    ),
-                  ],
+                    );
+                  },
+                  child: const Text('Submit Work',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.neutral50, borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(LucideIcons.calendar, size: 16, color: AppColors.neutral600),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Deadline', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                            Text(dueDate, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.white,
-                        foregroundColor: AppColors.roleInfluencer,
-                        elevation: 0,
-                        side: const BorderSide(color: AppColors.roleInfluencer, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('📤 Please submit your content URL to the shopkeeper.'),
-                            backgroundColor: AppColors.roleInfluencer,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        );
-                      },
-                      child: const Text('Submit Work', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
+

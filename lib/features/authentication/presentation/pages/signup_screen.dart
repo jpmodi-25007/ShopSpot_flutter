@@ -71,6 +71,7 @@ class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   bool _agreedToTerms = false;
+  bool _isPasswordVisible = false;
   late String _selectedRole;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -435,9 +436,16 @@ class _SignupScreenState extends State<SignupScreen>
                     hintText: '••••••••',
                     prefixIcon:
                         const Icon(LucideIcons.lock, size: 20),
-                    obscureText: true,
-                    suffixIcon:
-                        const Icon(LucideIcons.eyeOff, size: 20),
+                    obscureText: !_isPasswordVisible,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                          _isPasswordVisible
+                              ? LucideIcons.eyeOff
+                              : LucideIcons.eye,
+                          size: 20),
+                      onPressed: () => setState(() =>
+                          _isPasswordVisible = !_isPasswordVisible),
+                    ),
                     controller: _passwordController,
                     validator: ValidationUtils.validatePassword,
                   ),

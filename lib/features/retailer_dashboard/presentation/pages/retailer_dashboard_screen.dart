@@ -25,6 +25,8 @@ import '../../../dashboard/presentation/bloc/event_bloc.dart';
 import '../../../dashboard/presentation/bloc/event_event.dart';
 import '../../../dashboard/presentation/bloc/event_state.dart';
 
+import '../../../../core/widgets/shimmer/skeletons/dashboard_stat_skeleton.dart';
+
 class RetailerDashboardScreen extends StatelessWidget {
   const RetailerDashboardScreen({super.key});
 
@@ -154,19 +156,23 @@ class RetailerDashboardScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildPremiumStatCard(
-                            isLoading ? '-' : compactFormat.format(views),
-                            'Total Views',
-                            isLoading ? '...' : _formatTrend(viewsTrend),
-                            viewsTrend >= 0),
+                        child: isLoading
+                            ? const DashboardStatSkeleton()
+                            : _buildPremiumStatCard(
+                                compactFormat.format(views),
+                                'Total Views',
+                                _formatTrend(viewsTrend),
+                                viewsTrend >= 0),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildPremiumStatCard(
-                            isLoading ? '-' : compactFormat.format(inquiries),
-                            'Active Orders',
-                            isLoading ? '...' : _formatTrend(ordersTrend),
-                            ordersTrend >= 0),
+                        child: isLoading
+                            ? const DashboardStatSkeleton()
+                            : _buildPremiumStatCard(
+                                compactFormat.format(inquiries),
+                                'Active Orders',
+                                _formatTrend(ordersTrend),
+                                ordersTrend >= 0),
                       ),
                     ],
                   ),
@@ -183,7 +189,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                       _buildActionBtn(
                           LucideIcons.packageSearch, 'Inventory', false, () => context.go('/retailer/inventory')),
                       _buildActionBtn(
-                          LucideIcons.barChart2, 'Analytics', false, () => context.push('/retailer/stock-history')),
+                          LucideIcons.barChart2, 'Analytics', false, () => context.push('/retailer/inventory')),
                       _buildActionBtn(
                           LucideIcons.megaphone, 'Promote', false, () => context.go('/retailer/campaigns')),
                     ],
@@ -334,13 +340,9 @@ class RetailerDashboardScreen extends StatelessWidget {
                       return Column(
                         children: campaigns.take(2).map((c) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildPremiumCampaignBidCard(
+                          child: _buildPremiumCampaignCard(
                             context: context,
-                            campaignTitle: c.title,
-                            influencerName: 'View Bids',
-                            influencerImage: 'invalid',
-                            bidAmount: '₹${c.budgetMax.toStringAsFixed(0)}',
-                            status: c.status,
+                            campaign: c,
                           ),
                         )).toList(),
                       );
@@ -675,15 +677,17 @@ class RetailerDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPremiumCampaignBidCard({
+  Widget _buildPremiumCampaignCard({
     required BuildContext context,
-    required String campaignTitle,
-    required String influencerName,
-    required String influencerImage,
-    required String bidAmount,
-    required String status,
-    bool isCounter = false,
+    required dynamic campaign,
   }) {
+    final title = campaign.title ?? 'Untitled Campaign';
+    final status = campaign.status ?? 'DRAFT';
+    final budgetText = '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}';
+    
+    // Check if campaign is active
+    final isActive = status == 'ACTIVE' || status == 'PUBLISHED';
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -696,10 +700,7 @@ class RetailerDashboardScreen extends StatelessWidget {
             offset: const Offset(0, 8),
           )
         ],
-        border: Border.all(
-            color: isCounter
-                ? AppColors.warning500.withValues(alpha: 0.6)
-                : AppColors.neutral200),
+        border: Border.all(color: AppColors.neutral200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,55 +708,50 @@ class RetailerDashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(campaignTitle,
+              Text(title,
                   style: AppTextStyles.caption.copyWith(
                       color: AppColors.roleRetailer,
                       fontWeight: FontWeight.w800)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCounter
-                      ? AppColors.warning500.withValues(alpha: 0.1)
+                  color: isActive
+                      ? AppColors.success500.withValues(alpha: 0.1)
                       : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(status,
                     style: AppTextStyles.caption.copyWith(
-                        color: isCounter
-                            ? AppColors.warning600
+                        color: isActive
+                            ? AppColors.success600
                             : AppColors.neutral600,
                         fontWeight: FontWeight.w700)),
               )
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.neutral100,
-                backgroundImage: const AssetImage('assets/images/web_hero_boutique.jpg'),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral50,
+                  borderRadius: BorderRadius.circular(12)
+                ),
+                child: Icon(LucideIcons.megaphone, color: AppColors.roleRetailer, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(influencerName,
+                    Text('Budget: $budgetText',
                         style: AppTextStyles.bodySmall
                             .copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text('Bid Amount: ',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.neutral500)),
-                        Text(bidAmount,
-                            style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.neutral900,
-                                fontWeight: FontWeight.w800)),
-                      ],
-                    ),
+                    Text('${campaign.platforms.length} Platforms • ${campaign.targetCategories.length} Categories',
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.neutral500)),
                   ],
                 ),
               ),
@@ -770,51 +766,45 @@ class RetailerDashboardScreen extends StatelessWidget {
                     backgroundColor: AppColors.white,
                     foregroundColor: AppColors.neutral700,
                     elevation: 0,
+                    side: const BorderSide(
+                        color: AppColors.neutral200, width: 1.5),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
-                    side: const BorderSide(color: AppColors.neutral200),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () => context.go('/retailer/campaigns'),
-                  child: const Text('View Profile'),
+                  onPressed: () {
+                    // Navigate to campaign details
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Campaign details coming soon')),
+                    );
+                  },
+                  child: const Text('View Details',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.roleRetailer,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    // Navigate to view bids for this campaign
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('View bids coming soon')),
+                    );
+                  },
+                  child: const Text('View Bids',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
           ),
-          if (!isCounter) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.neutral100,
-                      foregroundColor: AppColors.neutral700,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () => context.go('/retailer/campaigns'),
-                    child: const Text('Counter'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.roleRetailer,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () => context.go('/retailer/campaigns'),
-                    child: const Text('Accept Bid',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
-            ),
-          ]
         ],
       ),
     );

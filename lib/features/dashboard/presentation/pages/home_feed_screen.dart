@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../../core/utils/location_helper.dart';
 import '../../../../core/widgets/app_badge.dart';
 import '../../../shop/presentation/bloc/shop_bloc.dart';
@@ -22,7 +23,11 @@ import '../bloc/event_state.dart';
 import '../../../../core/utils/guest_helper.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
+import '../../../../core/widgets/shimmer/skeletons/event_card_skeleton.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../saved/presentation/bloc/saved_bloc.dart';
+import '../../../saved/presentation/bloc/saved_event.dart';
+import '../../../saved/presentation/bloc/saved_state.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -33,6 +38,7 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _currentAddress = 'Fetching location...';
+  Position? _currentPos;
   final PageController _bannerController = PageController(viewportFraction: 0.9);
 
   @override
@@ -53,6 +59,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   Future<void> _fetchLocationAndShops() async {
     final pos = await LocationHelper.getCurrentLocation();
     if (pos != null) {
+      _currentPos = pos;
       if (mounted) {
         context.read<ShopBloc>().add(GetNearbyShopsRequested(
             lat: pos.latitude, lng: pos.longitude));
@@ -326,10 +333,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text('Curated Boutiques', style: AppTextStyles.h3),
-                        Text('See all',
-                            style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.roleCustomer,
-                                fontWeight: FontWeight.w700)),
+                        TextButton(
+                          onPressed: () => context.push('/map'),
+                          child: Text('See all',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.roleCustomer,
+                                  fontWeight: FontWeight.w700)),
+                        ),
                       ],
                     ),
                   ),
@@ -370,12 +380,24 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             itemCount: shops.length,
                             itemBuilder: (context, index) {
                               final shop = shops[index];
+                              
+                              String distanceText = 'Unknown';
+                              if (_currentPos != null) {
+                                final distanceInMeters = Geolocator.distanceBetween(
+                                  _currentPos!.latitude,
+                                  _currentPos!.longitude,
+                                  shop.latitude,
+                                  shop.longitude,
+                                );
+                                distanceText = '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+                              }
+
                               return _buildPremiumShopCard(
                                   context,
                                   shop.id,
                                   shop.name,
                                   shop.city ?? 'Local',
-                                  '1.2 km',
+                                  distanceText,
                                   shop.rating.toString(),
                                   shop.logoUrl ?? '');
                             },
@@ -418,11 +440,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             itemCount: 3,
-                            itemBuilder: (context, index) => Container(
-                              width: 300,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(color: AppColors.neutral200, borderRadius: BorderRadius.circular(16)),
-                            ),
+                            itemBuilder: (context, index) => const EventCardSkeleton(),
                           ),
                         );
                       } else if (state is EventsLoaded && state.events.isNotEmpty) {
@@ -558,7 +576,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                             entry.value.id,
                                             entry.value.shopId,
                                             entry.value.name,
-                                            'Shop Spot',
+                                            entry.value.shopName ?? 'Local Shop',
                                             '₹${entry.value.sellingPrice}',
                                             entry.value.images.isNotEmpty
                                                 ? entry.value.images.first
@@ -810,15 +828,23 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   Positioned(
                     top: 10,
                     right: 10,
-                    child: StatefulBuilder(
-                      builder: (context, setState) {
-                        bool isSaved = false;
+                    child: BlocBuilder<SavedBloc, SavedState>(
+                      builder: (context, savedState) {
+                        final savedProducts = savedState is SavedLoaded
+                            ? (savedState.savedProducts ?? [])
+                            : [];
+                        final isSaved = savedProducts
+                            .any((p) => p['productId'] == productId || p['id'] == productId);
                         return GestureDetector(
                           onTap: () {
                             if (GuestHelper.checkGuestAndPrompt(context)) return;
-                            setState(() {
-                              isSaved = !isSaved;
-                            });
+                            if (isSaved) {
+                              context.read<SavedBloc>().add(
+                                  RemoveSavedProductRequested(productId));
+                            } else {
+                              context.read<SavedBloc>().add(
+                                  SaveProductRequested(productId));
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.all(6),
@@ -826,13 +852,17 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 color: AppColors.white.withValues(alpha: 0.9),
                                 shape: BoxShape.circle),
                             child: Icon(
-                              isSaved ? Icons.favorite : Icons.favorite_border,
+                              isSaved
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
                               size: 16,
-                              color: isSaved ? AppColors.error500 : AppColors.neutral600,
+                              color: isSaved
+                                  ? AppColors.error500
+                                  : AppColors.neutral600,
                             ),
                           ),
                         );
-                      }
+                      },
                     ),
                   ),
                 ],

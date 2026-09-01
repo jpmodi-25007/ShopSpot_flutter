@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -21,16 +22,6 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
   late AnimationController _counterController;
   late Animation<double> _counterAnim;
   int _selectedMonth = 0;
-
-
-
-  final List<_MonthBar> _months = [
-    _MonthBar('Apr', 42),
-    _MonthBar('May', 58),
-    _MonthBar('Jun', 73),
-    _MonthBar('Jul', 91),
-    _MonthBar('Aug', 35),
-  ];
 
   @override
   void initState() {
@@ -146,32 +137,90 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Monthly Performance', style: AppTextStyles.h4.copyWith(fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text('Earnings per campaign (in hundreds)', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral400)),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 120,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: List.generate(_months.length, (index) {
-                              return GestureDetector(
-                                onTap: () => setState(() => _selectedMonth = index),
-                                child: _BarChart(
-                                  bar: _months[index],
-                                  isSelected: _selectedMonth == index,
-                                  animController: _counterController,
-                                  delay: index * 0.15,
+                    child: BlocBuilder<InfluencerBloc, InfluencerState>(
+                      builder: (context, state) {
+                        final payouts = state is InfluencerLoaded
+                            ? (state.analytics?['payouts'] as List<dynamic>? ?? [])
+                            : [];
+                        final isLoadingAnalytics =
+                            state is InfluencerLoaded && state.isLoading;
+
+                        // Build _MonthBar list from real payout data
+                        final List<_MonthBar> monthBars = payouts.map((p) {
+                          final month = (p['month'] as String?) ?? '';
+                          final amount =
+                              ((p['amount'] as num?)?.toDouble() ?? 0.0);
+                          return _MonthBar(month, amount);
+                        }).toList();
+
+                        // Normalize to percentage of max (for bar heights)
+                        double maxAmount = 0;
+                        for (final b in monthBars) {
+                          if (b.value > maxAmount) maxAmount = b.value;
+                        }
+                        final List<_MonthBar> normalizedBars =
+                            monthBars.map((b) {
+                          final pct = maxAmount > 0
+                              ? ((b.value / maxAmount) * 100).clamp(5.0, 100.0)
+                              : 0.0;
+                          return _MonthBar(b.month, pct);
+                        }).toList();
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Monthly Performance',
+                                style:
+                                    AppTextStyles.h4.copyWith(fontSize: 16)),
+                            const SizedBox(height: 4),
+                            Text('Payout history by month',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: AppColors.neutral400)),
+                            const SizedBox(height: 20),
+                            if (isLoadingAnalytics)
+                              AppShimmer(
+                                child: ShimmerBox(
+                                  height: 120,
+                                  width: double.infinity,
+                                  borderRadius: 8,
                                 ),
-                              );
-                            }),
-                          ),
-                        ),
-                      ],
+                              )
+                            else if (normalizedBars.isEmpty)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 24),
+                                child: Center(
+                                  child: Text(
+                                      'No monthly payout data yet.',
+                                      style: AppTextStyles.body.copyWith(
+                                          color: AppColors.neutral500)),
+                                ),
+                              )
+                            else
+                              SizedBox(
+                                height: 120,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: List.generate(
+                                      normalizedBars.length, (index) {
+                                    return GestureDetector(
+                                      onTap: () => setState(
+                                          () => _selectedMonth = index),
+                                      child: _BarChart(
+                                        bar: normalizedBars[index],
+                                        isSelected: _selectedMonth == index,
+                                        animController: _counterController,
+                                        delay: index * 0.15,
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                   ),
 
@@ -231,7 +280,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
 
 class _MonthBar {
   final String month;
-  final int value; // percentage 0–100
+  final double value; // normalized percentage 0–100 for bar height
   const _MonthBar(this.month, this.value);
 }
 
@@ -254,7 +303,13 @@ class _BarChart extends StatelessWidget {
               color: const Color(0xFF7C3AED),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: Text('₹${bar.value * 38}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+            child: Text(
+              '${bar.value.toStringAsFixed(0)}%',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700),
+            ),
           ),
         const SizedBox(height: 4),
         AnimatedBuilder(

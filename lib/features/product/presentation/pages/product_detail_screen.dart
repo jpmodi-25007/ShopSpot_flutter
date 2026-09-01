@@ -16,6 +16,9 @@ import '../../../../core/utils/guest_helper.dart';
 import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
 import '../../../saved/presentation/bloc/saved_state.dart';
+import '../../../negotiation/presentation/bloc/negotiation_bloc.dart';
+import '../../../negotiation/presentation/bloc/negotiation_event.dart';
+import '../../../negotiation/presentation/bloc/negotiation_state.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import 'dart:ui';
 
@@ -211,8 +214,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   void _dispatchStartNegotiation(BuildContext context, String productId,
       double offerPrice, String? message) {
-    // Use NavigatorBloc (NegotiationBloc) to start a negotiation
-    // After negotiation is started, navigate to the chat
+    context.read<NegotiationBloc>().add(
+      StartNegotiationRequested(
+        productId: productId,
+        offeredPrice: offerPrice,
+        message: message,
+      ),
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Row(
@@ -238,45 +246,64 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
 
-    return BlocListener<SavedBloc, SavedState>(
-      listener: (context, state) {
-        if (state is SavedLoaded) {
-          if (state.failure != null) {
-            // Rollback optimistic update on failure
-            setState(() => _isSaved = !_isSaved);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.failure!.message),
-                backgroundColor: AppColors.error500,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-          } else {
-            // Sync UI with actual state (handles initial fetch or background updates)
-            final actualIsSaved = state.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
-            if (_isSaved != actualIsSaved && !_isSavingInProgress) {
-               setState(() => _isSaved = actualIsSaved);
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<SavedBloc, SavedState>(
+          listener: (context, state) {
+            if (state is SavedLoaded) {
+              if (state.failure != null) {
+                // Rollback optimistic update on failure
+                setState(() => _isSaved = !_isSaved);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.failure!.message),
+                    backgroundColor: AppColors.error500,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              } else {
+                // Sync UI with actual state (handles initial fetch or background updates)
+                final actualIsSaved = state.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
+                if (_isSaved != actualIsSaved && !_isSavingInProgress) {
+                   setState(() => _isSaved = actualIsSaved);
+                }
+                if (state.isSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          _isSaved ? '❤️ Saved to Wishlist!' : 'Removed from Wishlist'),
+                      backgroundColor:
+                          _isSaved ? AppColors.primary500 : AppColors.neutral700,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                }
+                setState(() => _isSavingInProgress = false);
+              }
             }
-            if (state.isSuccess) {
+          },
+        ),
+        BlocListener<NegotiationBloc, NegotiationState>(
+          listener: (context, state) {
+            if (state is NegotiationLoaded && state.activeNegotiation != null && !state.isSubmitting) {
+              context.go('/negotiation/${state.activeNegotiation!.id}');
+            } else if (state is NegotiationError) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                      _isSaved ? '❤️ Saved to Wishlist!' : 'Removed from Wishlist'),
-                  backgroundColor:
-                      _isSaved ? AppColors.primary500 : AppColors.neutral700,
-                  duration: const Duration(seconds: 2),
+                  content: Text(state.message),
+                  backgroundColor: AppColors.error500,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
                 ),
               );
             }
-            setState(() => _isSavingInProgress = false);
-          }
-        }
-      },
+          },
+        ),
+      ],
       child: Scaffold(
         backgroundColor: AppColors.neutral50,
         extendBodyBehindAppBar: true,

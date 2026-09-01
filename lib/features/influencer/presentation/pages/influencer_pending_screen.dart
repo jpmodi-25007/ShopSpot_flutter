@@ -68,7 +68,7 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
       listener: (context, state) {
         if (state is InfluencerLoaded && state.profile != null) {
           final status = state.profile!.verificationStatus;
-          if (status == 'APPROVED') {
+          if (status == 'VERIFIED') {
             // Admin has approved — go to home
             context.go('/influencer/home');
           } else if (status == 'REJECTED') {
@@ -115,105 +115,117 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
 
                   const Spacer(flex: 2),
 
-                  // Pulsing Icon
-                  AnimatedBuilder(
-                    animation: _pulseAnim,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnim.value,
-                        child: child,
-                      );
-                    },
-                    child: Container(
-                      width: 110,
-                      height: 110,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7C3AED).withValues(alpha: 0.5),
-                            blurRadius: 40,
-                            spreadRadius: 10,
+                  BlocBuilder<InfluencerBloc, InfluencerState>(
+                    builder: (context, state) {
+                      final isRejected = state is InfluencerLoaded && state.profile?.verificationStatus == 'REJECTED';
+
+                      return Column(
+                        children: [
+                          // Pulsing Icon
+                          AnimatedBuilder(
+                            animation: _pulseAnim,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: isRejected ? 1.0 : _pulseAnim.value, // No pulse if rejected
+                                child: child,
+                              );
+                            },
+                            child: Container(
+                              width: 110,
+                              height: 110,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (isRejected ? AppColors.error500 : const Color(0xFF7C3AED)).withValues(alpha: 0.5),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isRejected ? LucideIcons.xOctagon : LucideIcons.shieldCheck,
+                                color: Colors.white,
+                                size: 52,
+                              ),
+                            ),
                           ),
+
+                          const SizedBox(height: 32),
+
+                          // Status badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: (isRejected ? AppColors.error500 : Colors.amber).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: (isRejected ? AppColors.error500 : Colors.amber).withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(isRejected ? LucideIcons.alertTriangle : LucideIcons.clock, size: 14, color: isRejected ? AppColors.error400 : Colors.amber),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isRejected ? 'APPLICATION REJECTED' : 'UNDER REVIEW',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: isRejected ? AppColors.error400 : Colors.amber,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Column(
+                              children: [
+                                Text(
+                                  isRejected ? 'Profile Application Rejected' : 'Your Profile is Under Verification',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.h2.copyWith(
+                                    color: Colors.white,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  isRejected 
+                                      ? 'Unfortunately, your influencer profile did not meet our current requirements. Please contact support for more details or to appeal.'
+                                      : 'Our team is currently reviewing your influencer profile. This usually takes 24–48 hours. You\'ll be able to access campaigns as soon as your profile is approved.',
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.body.copyWith(
+                                    color: Colors.white70,
+                                    height: 1.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          if (!isRejected)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Row(
+                                children: [
+                                  Expanded(child: _InfoCard(icon: LucideIcons.userCheck, label: 'Profile Submitted', done: true)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _InfoCard(icon: LucideIcons.searchCheck, label: 'Admin Review', done: false)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _InfoCard(icon: LucideIcons.rocket, label: 'Go Live!', done: false)),
+                                ],
+                              ),
+                            ),
                         ],
-                      ),
-                      child: const Icon(
-                        LucideIcons.shieldCheck,
-                        color: Colors.white,
-                        size: 52,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Status badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(LucideIcons.clock, size: 14, color: Colors.amber),
-                        const SizedBox(width: 6),
-                        Text(
-                          'UNDER REVIEW',
-                          style: AppTextStyles.caption.copyWith(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Your Profile is Under Verification',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.h2.copyWith(
-                            color: Colors.white,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Our team is currently reviewing your influencer profile. This usually takes 24–48 hours. You\'ll be able to access campaigns as soon as your profile is approved.',
-                          textAlign: TextAlign.center,
-                          style: AppTextStyles.body.copyWith(
-                            color: Colors.white70,
-                            height: 1.6,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Info cards
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Row(
-                      children: [
-                        Expanded(child: _InfoCard(icon: LucideIcons.userCheck, label: 'Profile Submitted', done: true)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _InfoCard(icon: LucideIcons.searchCheck, label: 'Admin Review', done: false)),
-                        const SizedBox(width: 12),
-                        Expanded(child: _InfoCard(icon: LucideIcons.rocket, label: 'Go Live!', done: false)),
-                      ],
-                    ),
+                      );
+                    }
                   ),
 
                   const Spacer(flex: 3),

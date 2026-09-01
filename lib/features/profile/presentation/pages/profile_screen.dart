@@ -80,16 +80,16 @@ class ProfileScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Container(
-                          width: 80,
-                          height: 80,
+                          width: 88,
+                          height: 88,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
+                            border: Border.all(color: Colors.white, width: 4),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                             image: user?.avatarUrl != null
@@ -97,14 +97,34 @@ class ProfileScreen extends StatelessWidget {
                                     image: NetworkImage(user!.avatarUrl!),
                                     fit: BoxFit.cover,
                                   )
-                                : null,
+                                : const DecorationImage(
+                                    image: AssetImage('assets/images/placeholder_avatar.png'), // Fallback if no network image
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
+                          child: user?.avatarUrl == null 
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.primary100,
+                                ),
+                                child: const Icon(LucideIcons.user, size: 40, color: AppColors.primary500),
+                              )
+                            : null,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Text(user?.name ?? 'Loading...', style: AppTextStyles.h3.copyWith(color: AppColors.white)),
-                        Text(
-                          user?.mobile ?? user?.email ?? '',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            user?.mobile ?? user?.email ?? '',
+                            style: AppTextStyles.bodySmall.copyWith(color: Colors.white, fontWeight: FontWeight.w500),
+                          ),
                         ),
                       ],
                     ),
@@ -113,9 +133,16 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(LucideIcons.edit2, color: Colors.white),
-                onPressed: () => context.push('/edit-profile'),
+              Container(
+                margin: const EdgeInsets.only(right: 8, top: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(LucideIcons.edit2, color: Colors.white, size: 20),
+                  onPressed: () => context.push('/edit-profile'),
+                ),
               ),
             ],
           ),
@@ -170,16 +197,23 @@ class ProfileScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.error50,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.error100),
+                        border: Border.all(color: AppColors.error100, width: 1.5),
+                        boxShadow: [
+                           BoxShadow(
+                             color: AppColors.error500.withValues(alpha: 0.05),
+                             blurRadius: 8,
+                             offset: const Offset(0, 2),
+                           )
+                        ]
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(LucideIcons.logOut, color: AppColors.error500, size: 20),
                           const SizedBox(width: 8),
-                          Text('Log Out', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: AppColors.error500)),
+                          Text('Log Out', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.error500)),
                         ],
                       ),
                     ),
@@ -270,35 +304,61 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildListTile(IconData icon, String title, {String? badge, int? badgeCount, String? trailingText, VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap ?? () {},
+      highlightColor: AppColors.primary50.withValues(alpha: 0.5),
+      splashColor: AppColors.primary50,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary500, size: 20),
-            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppColors.primary500, size: 20),
+            ),
+            const SizedBox(width: 16),
             Expanded(
-              child: Text(title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),
+              child: Text(title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: AppColors.neutral800)),
             ),
             if (badge != null)
               Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.warning500, borderRadius: BorderRadius.circular(6)),
-                child: Text(badge, style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 10)),
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.warning500.withValues(alpha: 0.1), 
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.warning500.withValues(alpha: 0.3)),
+                ),
+                child: Text(badge, style: AppTextStyles.caption.copyWith(color: AppColors.warning600, fontWeight: FontWeight.w800, fontSize: 10)),
               ),
             if (badgeCount != null)
               Container(
-                margin: const EdgeInsets.only(right: 8),
+                margin: const EdgeInsets.only(right: 12),
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: AppColors.primary500, shape: BoxShape.circle),
-                child: Text(badgeCount.toString(), style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w700, fontSize: 10)),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500, 
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: AppColors.primary500.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))
+                  ]
+                ),
+                child: Text(badgeCount.toString(), style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 10)),
               ),
             if (trailingText != null)
               Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Text(trailingText, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                padding: const EdgeInsets.only(right: 12),
+                child: Text(trailingText, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w500)),
               ),
-            const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.neutral400),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.neutral50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.chevronRight, size: 16, color: AppColors.neutral400),
+            ),
           ],
         ),
       ),

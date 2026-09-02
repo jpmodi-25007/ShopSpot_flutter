@@ -67,35 +67,43 @@ class _RetailerShellLayoutState extends State<RetailerShellLayout> {
   }
 
   Widget _buildMobileLayout() {
-    return Scaffold(
-      body: widget.navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.neutral900.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: AppColors.roleRetailer,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          primary: AppColors.roleRetailer,
         ),
-        child: BottomNavigationBar(
-          currentIndex: widget.navigationShell.currentIndex,
-          onTap: _goBranch,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.white,
-          selectedItemColor: AppColors.roleRetailer,
-          unselectedItemColor: AppColors.neutral500,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(LucideIcons.layoutDashboard), label: 'Overview'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.package), label: 'Inventory'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.messageSquare), label: 'Inquiries'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.megaphone), label: 'Campaigns'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.shoppingBag), label: 'Orders'),
-          ],
+      ),
+      child: Scaffold(
+        body: widget.navigationShell,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.neutral900.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: widget.navigationShell.currentIndex,
+            onTap: _goBranch,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.white,
+            selectedItemColor: AppColors.roleRetailer,
+            unselectedItemColor: AppColors.neutral500,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(LucideIcons.layoutDashboard), label: 'Overview'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.package), label: 'Inventory'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.messageSquare), label: 'Inquiries'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.megaphone), label: 'Campaigns'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.shoppingBag), label: 'Orders'),
+            ],
+          ),
         ),
       ),
     );

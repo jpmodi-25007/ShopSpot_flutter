@@ -773,10 +773,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () {
-                    // Navigate to campaign details
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Campaign details coming soon')),
-                    );
+                    context.push('/retailer/campaigns/${campaign.id}');
                   },
                   child: const Text('View Details',
                       style: TextStyle(fontWeight: FontWeight.w700)),
@@ -794,10 +791,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () {
-                    // Navigate to view bids for this campaign
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('View bids coming soon')),
-                    );
+                    context.push('/retailer/campaigns/${campaign.id}/bids');
                   },
                   child: const Text('View Bids',
                       style: TextStyle(fontWeight: FontWeight.w700)),

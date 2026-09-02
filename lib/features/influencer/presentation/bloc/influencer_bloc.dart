@@ -70,7 +70,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     if (!isLoadMore) {
       emit(_current.copyWith(isLoading: true, failure: null));
     }
-    final result = await _getCampaigns.execute(page: event.page, limit: event.limit, industry: event.industry);
+    final result = await _getCampaigns.execute(page: event.page, limit: event.limit, industry: event.industry, search: event.search);
     result.fold(
       (f) {
         if (!isLoadMore) emit(_current.copyWith(isLoading: false, failure: f));

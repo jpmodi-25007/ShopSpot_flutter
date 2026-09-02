@@ -8,7 +8,6 @@ import '../core/dependency_injection/injection.dart';
 import '../../features/authentication/presentation/pages/splash_screen.dart';
 import '../../features/authentication/presentation/pages/intro_screen.dart';
 
-
 import '../../features/authentication/presentation/pages/login_screen.dart';
 import '../../features/authentication/presentation/pages/signup_screen.dart';
 import '../../features/authentication/presentation/pages/forgot_password_screen.dart';
@@ -29,6 +28,9 @@ import '../../features/profile/presentation/pages/manage_addresses_screen.dart';
 import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_dashboard_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_profile_screen.dart';
+import '../../features/retailer_inventory/domain/entities/product_entity.dart';
+import '../../features/retailer_inventory/presentation/pages/retailer_inventory_report_screen.dart';
+import '../../features/retailer_campaigns/presentation/pages/retailer_campaign_detail_screen.dart';
 import '../../features/dashboard/presentation/pages/events_list_screen.dart';
 import '../../features/dashboard/presentation/pages/event_details_screen.dart';
 import '../../features/dashboard/presentation/pages/retailer_create_event_screen.dart';
@@ -51,6 +53,7 @@ import '../../features/influencer/presentation/pages/influencer_earnings_screen.
 import '../../features/influencer/presentation/pages/influencer_profile_screen.dart';
 import '../../features/influencer/presentation/pages/campaign_details_screen.dart';
 import '../../features/influencer/presentation/pages/submit_bid_screen.dart';
+import '../../features/influencer/presentation/pages/influencer_all_campaigns_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_pending_screen.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
 import 'shell_layout.dart';
@@ -66,7 +69,8 @@ import '../web/pages/about_page.dart';
 import '../web/pages/faq_page.dart';
 import '../web/pages/contact_page.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> _rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -129,7 +133,8 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/product-detail/:id',
-      builder: (context, state) => ProductDetailScreen(productId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          ProductDetailScreen(productId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/events',
@@ -137,15 +142,18 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/events/:id',
-      builder: (context, state) => EventDetailsScreen(eventId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          EventDetailsScreen(eventId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/shop-detail/:id',
-      builder: (context, state) => ShopDetailScreen(shopId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          ShopDetailScreen(shopId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/negotiation/:id',
-      builder: (context, state) => NegotiationChatScreen(negotiationId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          NegotiationChatScreen(negotiationId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/reservations',
@@ -183,7 +191,7 @@ final appRouter = GoRouter(
       path: '/edit-profile',
       builder: (context, state) => const EditProfileScreen(),
     ),
-    
+
     // CUSTOMER SHELL
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -202,7 +210,8 @@ final appRouter = GoRouter(
           routes: [
             GoRoute(
               path: '/search',
-              builder: (context, state) => SearchScreen(initialQuery: state.uri.queryParameters['q']),
+              builder: (context, state) =>
+                  SearchScreen(initialQuery: state.uri.queryParameters['q']),
             ),
           ],
         ),
@@ -263,7 +272,8 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: '/retailer/negotiations/:id',
-              builder: (context, state) => RetailerNegotiationChatScreen(negotiationId: state.pathParameters['id']!),
+              builder: (context, state) => RetailerNegotiationChatScreen(
+                  negotiationId: state.pathParameters['id']!),
             ),
           ],
         ),
@@ -296,11 +306,15 @@ final appRouter = GoRouter(
         ),
       ],
     ),
-    
+
     // RETAILER STANDALONE ROUTES
     GoRoute(
       path: '/retailer/add-product',
-      builder: (context, state) => const AddProductScreen(),
+      builder: (context, state) => AddProductScreen(product: state.extra as ProductEntity?),
+    ),
+    GoRoute(
+      path: '/retailer/inventory-report',
+      builder: (context, state) => const RetailerInventoryReportScreen(),
     ),
     GoRoute(
       path: '/retailer/events/create',
@@ -323,14 +337,20 @@ final appRouter = GoRouter(
       builder: (context, state) => const CreateCampaignScreen(),
     ),
     GoRoute(
+      path: '/retailer/campaigns/:id',
+      builder: (context, state) => RetailerCampaignDetailScreen(campaignId: state.pathParameters['id']!),
+    ),
+    GoRoute(
       path: '/retailer/campaigns/:id/bids',
-      builder: (context, state) => CampaignBidsScreen(campaignId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          CampaignBidsScreen(campaignId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/retailer/influencer-profile/:id',
-      builder: (context, state) => RetailerInfluencerProfileScreen(influencerId: state.pathParameters['id']!),
+      builder: (context, state) => RetailerInfluencerProfileScreen(
+          influencerId: state.pathParameters['id']!),
     ),
-    
+
     // INFLUENCER SHELL
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -379,6 +399,10 @@ final appRouter = GoRouter(
         final campaign = state.extra as InfluencerCampaignEntity?;
         return CampaignDetailsScreen(campaign: campaign);
       },
+    ),
+    GoRoute(
+      path: '/influencer/all-campaigns',
+      builder: (context, state) => const InfluencerAllCampaignsScreen(),
     ),
     GoRoute(
       path: '/influencer/submit-bid',

@@ -22,10 +22,11 @@ final class GetEligibleCampaignsRequested extends InfluencerEvent {
   final int page;
   final int limit;
   final String? industry;
-  const GetEligibleCampaignsRequested({this.page = 1, this.limit = 20, this.industry});
+  final String? search;
+  const GetEligibleCampaignsRequested({this.page = 1, this.limit = 20, this.industry, this.search});
   
   @override
-  List<Object?> get props => [page, limit, industry];
+  List<Object?> get props => [page, limit, industry, search];
 }
 
 final class GetMyBidsRequested extends InfluencerEvent {

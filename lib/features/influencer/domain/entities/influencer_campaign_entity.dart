@@ -16,6 +16,7 @@ class InfluencerCampaignEntity extends Equatable {
   final String? city;
   final List<String> targetCategories;
   final DateTime? applicationDeadline;
+  final DateTime? publishByDate;
   final String status;
   final DateTime createdAt;
 
@@ -35,6 +36,7 @@ class InfluencerCampaignEntity extends Equatable {
     this.city,
     required this.targetCategories,
     this.applicationDeadline,
+    this.publishByDate,
     required this.status,
     required this.createdAt,
   });
@@ -43,6 +45,6 @@ class InfluencerCampaignEntity extends Equatable {
   List<Object?> get props => [
         id, shopkeeperId, shopId, productId, title, description,
         platforms, contentTypes, creatorCount, budgetType, budgetMin,
-        budgetMax, city, targetCategories, applicationDeadline, status, createdAt,
+        budgetMax, city, targetCategories, applicationDeadline, publishByDate, status, createdAt,
       ];
 }

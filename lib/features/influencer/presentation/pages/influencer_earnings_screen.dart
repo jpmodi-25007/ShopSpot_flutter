@@ -14,7 +14,8 @@ class InfluencerEarningsScreen extends StatefulWidget {
   const InfluencerEarningsScreen({super.key});
 
   @override
-  State<InfluencerEarningsScreen> createState() => _InfluencerEarningsScreenState();
+  State<InfluencerEarningsScreen> createState() =>
+      _InfluencerEarningsScreenState();
 }
 
 class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
@@ -30,7 +31,8 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _counterAnim = CurvedAnimation(parent: _counterController, curve: Curves.easeOut);
+    _counterAnim =
+        CurvedAnimation(parent: _counterController, curve: Curves.easeOut);
     _counterController.forward();
     context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
   }
@@ -49,72 +51,91 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
         slivers: [
           // Gradient Header
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 240,
             pinned: true,
-            backgroundColor: const Color(0xFF7C3AED),
+            backgroundColor: AppColors.roleInfluencer,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF7C3AED), Color(0xFF6D28D9)],
-                  ),
+                  color: AppColors.roleInfluencer,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 90, 20, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Total Earnings', style: AppTextStyles.body.copyWith(color: Colors.white60)),
-                      const SizedBox(height: 4),
-                      AnimatedBuilder(
-                        animation: _counterAnim,
-                        builder: (context, _) {
-                          return BlocBuilder<InfluencerBloc, InfluencerState>(
-                            builder: (context, state) {
-                              double totalEarnings = 0;
-                              double pendingEarnings = 0;
-                              
-                              if (state is InfluencerLoaded && state.analytics != null) {
-                                totalEarnings = (state.analytics!['totalEarnings'] as num?)?.toDouble() ?? 0;
-                                // We don't have pendingEarnings explicitly in the backend, but we can calculate from payouts or just mock it or assume it's part of activeBids * some amount
-                                final payouts = state.analytics!['payouts'] as List<dynamic>? ?? [];
-                                for (var p in payouts) {
-                                  if (p['status'] == 'Pending') {
-                                    pendingEarnings += (p['amount'] as num?)?.toDouble() ?? 0;
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text('My Earnings',
+                            style: AppTextStyles.h3
+                                .copyWith(color: AppColors.white)),
+                        const SizedBox(height: 16),
+                        AnimatedBuilder(
+                          animation: _counterAnim,
+                          builder: (context, _) {
+                            return BlocBuilder<InfluencerBloc, InfluencerState>(
+                              builder: (context, state) {
+                                double totalEarnings = 0;
+                                double pendingEarnings = 0;
+
+                                if (state is InfluencerLoaded &&
+                                    state.analytics != null) {
+                                  totalEarnings =
+                                      (state.analytics!['totalEarnings']
+                                                  as num?)
+                                              ?.toDouble() ??
+                                          0;
+                                  final payouts = state.analytics!['payouts']
+                                          as List<dynamic>? ??
+                                      [];
+                                  for (var p in payouts) {
+                                    if (p['status'] == 'Pending') {
+                                      pendingEarnings +=
+                                          (p['amount'] as num?)?.toDouble() ??
+                                              0;
+                                    }
                                   }
                                 }
-                              }
-                              
-                              final displayValue = (totalEarnings * _counterAnim.value).toInt();
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '₹$displayValue',
-                                    style: AppTextStyles.display.copyWith(color: AppColors.white, fontSize: 36),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      _EarningsChip(label: 'Total Earned', value: '₹${totalEarnings.toStringAsFixed(0)}', icon: LucideIcons.trendingUp),
-                                      const SizedBox(width: 12),
-                                      _EarningsChip(label: 'Pending', value: '₹${pendingEarnings.toStringAsFixed(0)}', icon: LucideIcons.clock),
-                                    ],
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ],
+
+                                final displayValue =
+                                    (totalEarnings * _counterAnim.value)
+                                        .toInt();
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '₹$displayValue',
+                                      style: AppTextStyles.display.copyWith(
+                                          color: AppColors.white, fontSize: 40),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      children: [
+                                        _EarningsChip(
+                                            label: 'Total Earned',
+                                            value:
+                                                '₹${totalEarnings.toStringAsFixed(0)}',
+                                            icon: LucideIcons.trendingUp),
+                                        const SizedBox(width: 12),
+                                        _EarningsChip(
+                                            label: 'Pending',
+                                            value:
+                                                '₹${pendingEarnings.toStringAsFixed(0)}',
+                                            icon: LucideIcons.clock),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            title: Text('My Earnings', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
           ),
 
           SliverToBoxAdapter(
@@ -140,7 +161,8 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                     child: BlocBuilder<InfluencerBloc, InfluencerState>(
                       builder: (context, state) {
                         final payouts = state is InfluencerLoaded
-                            ? (state.analytics?['payouts'] as List<dynamic>? ?? [])
+                            ? (state.analytics?['payouts'] as List<dynamic>? ??
+                                [])
                             : [];
                         final isLoadingAnalytics =
                             state is InfluencerLoaded && state.isLoading;
@@ -170,8 +192,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Monthly Performance',
-                                style:
-                                    AppTextStyles.h4.copyWith(fontSize: 16)),
+                                style: AppTextStyles.h4.copyWith(fontSize: 16)),
                             const SizedBox(height: 4),
                             Text('Payout history by month',
                                 style: AppTextStyles.bodySmall
@@ -190,8 +211,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 24),
                                 child: Center(
-                                  child: Text(
-                                      'No monthly payout data yet.',
+                                  child: Text('No monthly payout data yet.',
                                       style: AppTextStyles.body.copyWith(
                                           color: AppColors.neutral500)),
                                 ),
@@ -203,8 +223,8 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceAround,
-                                  children: List.generate(
-                                      normalizedBars.length, (index) {
+                                  children: List.generate(normalizedBars.length,
+                                      (index) {
                                     return GestureDetector(
                                       onTap: () => setState(
                                           () => _selectedMonth = index),
@@ -240,20 +260,25 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                           ],
                         );
                       }
-                      final payouts = state is InfluencerLoaded ? (state.analytics?['payouts'] as List<dynamic>? ?? []) : [];
+                      final payouts = state is InfluencerLoaded
+                          ? (state.analytics?['payouts'] as List<dynamic>? ??
+                              [])
+                          : [];
                       if (payouts.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Center(child: Text('No payouts yet.', style: TextStyle(color: Colors.grey))),
+                          child: Center(
+                              child: Text('No payouts yet.',
+                                  style: TextStyle(color: Colors.grey))),
                         );
                       }
-                      
+
                       return Column(
                         children: payouts.map((p) {
                           final isPaid = p['status'] == 'Paid';
                           final monthStr = p['month'] ?? '';
                           final amount = (p['amount'] as num?)?.toInt() ?? 0;
-                          
+
                           return _PayoutCard(
                             payout: _PayoutItem(
                               'Payout for $monthStr',
@@ -289,7 +314,11 @@ class _BarChart extends StatelessWidget {
   final bool isSelected;
   final AnimationController animController;
   final double delay;
-  const _BarChart({required this.bar, required this.isSelected, required this.animController, required this.delay});
+  const _BarChart(
+      {required this.bar,
+      required this.isSelected,
+      required this.animController,
+      required this.delay});
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +344,9 @@ class _BarChart extends StatelessWidget {
         AnimatedBuilder(
           animation: animController,
           builder: (context, child) {
-            final h = (bar.value.toDouble() * animController.value).clamp(0, 100).toDouble();
+            final h = (bar.value.toDouble() * animController.value)
+                .clamp(0, 100)
+                .toDouble();
             return AnimatedContainer(
               duration: const Duration(milliseconds: 400),
               width: 36,
@@ -326,7 +357,10 @@ class _BarChart extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: isSelected
                       ? [const Color(0xFF7C3AED), const Color(0xFF6D28D9)]
-                      : [AppColors.roleInfluencerLight, AppColors.roleInfluencerLight.withValues(alpha: 0.5)],
+                      : [
+                          AppColors.roleInfluencerLight,
+                          AppColors.roleInfluencerLight.withValues(alpha: 0.5)
+                        ],
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -380,12 +414,14 @@ class _PayoutCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: payout.isPaid ? AppColors.success100 : AppColors.warning100,
+              color:
+                  payout.isPaid ? AppColors.success100 : AppColors.warning100,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               payout.isPaid ? LucideIcons.checkCircle : LucideIcons.clock,
-              color: payout.isPaid ? AppColors.success500 : AppColors.warning500,
+              color:
+                  payout.isPaid ? AppColors.success500 : AppColors.warning500,
               size: 20,
             ),
           ),
@@ -394,25 +430,39 @@ class _PayoutCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(payout.label, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.neutral900), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(payout.date, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
+                Text(payout.label,
+                    style: AppTextStyles.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.neutral900),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                Text(payout.date,
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.neutral400)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('₹${payout.amount}', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.neutral900)),
+              Text('₹${payout.amount}',
+                  style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.neutral900)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: payout.isPaid ? AppColors.success100 : AppColors.warning100,
+                  color: payout.isPaid
+                      ? AppColors.success100
+                      : AppColors.warning100,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   payout.isPaid ? 'Paid' : 'Pending',
                   style: AppTextStyles.caption.copyWith(
-                    color: payout.isPaid ? AppColors.success500 : AppColors.warning500,
+                    color: payout.isPaid
+                        ? AppColors.success500
+                        : AppColors.warning500,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -429,7 +479,8 @@ class _EarningsChip extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  const _EarningsChip({required this.label, required this.value, required this.icon});
+  const _EarningsChip(
+      {required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -447,8 +498,11 @@ class _EarningsChip extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppTextStyles.caption.copyWith(color: Colors.white60)),
-              Text(value, style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+              Text(label,
+                  style: AppTextStyles.caption.copyWith(color: Colors.white60)),
+              Text(value,
+                  style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.white, fontWeight: FontWeight.w700)),
             ],
           ),
         ],
@@ -456,5 +510,3 @@ class _EarningsChip extends StatelessWidget {
     );
   }
 }
-
-

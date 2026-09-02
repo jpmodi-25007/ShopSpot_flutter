@@ -67,33 +67,41 @@ class _InfluencerShellLayoutState extends State<InfluencerShellLayout> {
   }
 
   Widget _buildMobileLayout() {
-    return Scaffold(
-      body: widget.navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.neutral900.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: AppColors.roleInfluencer,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          primary: AppColors.roleInfluencer,
         ),
-        child: BottomNavigationBar(
-          currentIndex: widget.navigationShell.currentIndex,
-          onTap: _goBranch,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.white,
-          selectedItemColor: AppColors.primary500,
-          unselectedItemColor: AppColors.neutral500,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(LucideIcons.compass), label: 'Discover'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.megaphone), label: 'Campaigns'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.pieChart), label: 'Earnings'),
-            BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
-          ],
+      ),
+      child: Scaffold(
+        body: widget.navigationShell,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.neutral900.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: widget.navigationShell.currentIndex,
+            onTap: _goBranch,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: AppColors.white,
+            selectedItemColor: AppColors.roleInfluencer,
+            unselectedItemColor: AppColors.neutral500,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(LucideIcons.compass), label: 'Discover'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.megaphone), label: 'Campaigns'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.pieChart), label: 'Earnings'),
+              BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Profile'),
+            ],
+          ),
         ),
       ),
     );

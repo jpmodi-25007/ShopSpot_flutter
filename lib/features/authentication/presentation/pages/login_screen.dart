@@ -110,14 +110,22 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.neutral50,
-      extendBodyBehindAppBar: true,
-      body: SafeArea(
-        top: false,
-        child: ResponsiveBuilder(
-          mobile: _buildMobileLayout(context),
-          desktop: _buildDesktopLayout(context),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        primaryColor: _currentRole.color,
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          primary: _currentRole.color,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.neutral50,
+        extendBodyBehindAppBar: true,
+        body: SafeArea(
+          top: false,
+          child: ResponsiveBuilder(
+            mobile: _buildMobileLayout(context),
+            desktop: _buildDesktopLayout(context),
+          ),
         ),
       ),
     );

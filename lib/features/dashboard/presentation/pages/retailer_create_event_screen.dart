@@ -131,21 +131,22 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.neutral50,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900),
           onPressed: () => context.pop(),
         ),
         title: Text('Create Shop Event', style: AppTextStyles.h3),
+        centerTitle: true,
       ),
       body: BlocListener<EventBloc, EventState>(
         listener: (context, state) {
           if (state is EventCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Event created successfully!'), backgroundColor: AppColors.roleRetailer),
+              const SnackBar(content: Text('Event created successfully!'), backgroundColor: AppColors.success600),
             );
             context.read<EventBloc>().add(const GetEventsRequested()); // Refresh feed
             context.pop();
@@ -156,7 +157,8 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
           }
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          physics: const BouncingScrollPhysics(),
           child: Form(
             key: _formKey,
             child: Column(
@@ -167,25 +169,54 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                   onTap: _pickImage,
                   child: Container(
                     width: double.infinity,
-                    height: 200,
+                    height: 220,
                     decoration: BoxDecoration(
-                      color: AppColors.neutral100,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.neutral300, style: BorderStyle.solid),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.roleRetailerLight.withValues(alpha: 0.3),
+                          AppColors.neutral50,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.roleRetailerLight, width: 2),
                       image: _selectedImage != null && !kIsWeb
                           ? DecorationImage(
                               image: FileImage(File(_selectedImage!.path)),
                               fit: BoxFit.cover,
                             )
                           : null,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.roleRetailer.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        )
+                      ]
                     ),
                     child: _selectedImage == null
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(LucideIcons.imagePlus, size: 48, color: AppColors.neutral400),
-                              const SizedBox(height: 12),
-                              Text('Upload Event Poster', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.neutral900.withValues(alpha: 0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
+                                    )
+                                  ]
+                                ),
+                                child: const Icon(LucideIcons.imagePlus, size: 32, color: AppColors.roleRetailer),
+                              ),
+                              const SizedBox(height: 16),
+                              Text('Upload Event Poster', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 4),
                               Text('16:9 ratio recommended', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                             ],
                           )
@@ -195,91 +226,47 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                 const SizedBox(height: 32),
                 
                 // Form Fields
-                Text('Event Details', style: AppTextStyles.h4),
-                const SizedBox(height: 16),
-                TextFormField(
+                Text('Event Details', style: AppTextStyles.h3),
+                const SizedBox(height: 20),
+                _buildInputField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event Title',
-                    hintText: 'e.g. Summer Mega Sale',
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.roleRetailer)),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                  label: 'Event Title',
+                  hint: 'e.g. Summer Mega Sale',
+                  icon: LucideIcons.type,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                _buildInputField(
                   controller: _descriptionController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    hintText: 'What is this event about?',
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.roleRetailer)),
-                  ),
+                  label: 'Description',
+                  hint: 'What is this event about?',
+                  icon: LucideIcons.alignLeft,
+                  maxLines: 4,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                _buildInputField(
                   controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Location',
-                    hintText: 'In-store or Online link',
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.roleRetailer)),
-                  ),
+                  label: 'Location',
+                  hint: 'In-store or Online link',
+                  icon: LucideIcons.mapPin,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 
                 // Dates
-                Text('Duration & Expiry', style: AppTextStyles.h4),
-                const SizedBox(height: 16),
+                Text('Duration & Expiry', style: AppTextStyles.h3),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _selectDate(context, true),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.neutral300),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Start Date', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                              const SizedBox(height: 4),
-                              Text(
-                                _startDate != null ? DateFormat('MMM d, yyyy').format(_startDate!) : 'Select Date',
-                                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: _buildDateCard('Start Date', _startDate),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _selectDate(context, false),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.neutral300),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Expiry Date', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                              const SizedBox(height: 4),
-                              Text(
-                                _endDate != null ? DateFormat('MMM d, yyyy').format(_endDate!) : 'Select Date',
-                                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: _buildDateCard('Expiry Date', _endDate),
                       ),
                     ),
                   ],
@@ -296,19 +283,105 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                         onPressed: state is EventCreating || _isUploading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.roleRetailer,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                          shadowColor: AppColors.roleRetailer.withValues(alpha: 0.3),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: state is EventCreating || _isUploading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                             : const Text('Post Event', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     );
                   }
                 ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutral900.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+        border: Border.all(color: AppColors.neutral200.withValues(alpha: 0.5)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+          hintText: hint,
+          hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(bottom: maxLines > 1 ? (maxLines * 10).toDouble() : 0),
+            child: Icon(icon, color: AppColors.roleRetailer, size: 20),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.transparent,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+      ),
+    );
+  }
+
+  Widget _buildDateCard(String label, DateTime? date) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: Border.all(color: date != null ? AppColors.roleRetailer : AppColors.neutral200, width: date != null ? 1.5 : 1),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutral900.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ]
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.calendar, size: 14, color: AppColors.neutral500),
+              const SizedBox(width: 6),
+              Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            date != null ? DateFormat('MMM d, yyyy').format(date) : 'Select Date',
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.w700,
+              color: date != null ? AppColors.neutral900 : AppColors.neutral400
+            ),
+          ),
+        ],
       ),
     );
   }

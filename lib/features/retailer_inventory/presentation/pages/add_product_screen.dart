@@ -12,8 +12,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
+import '../bloc/retailer_inventory_bloc.dart';
+import '../../domain/entities/product_entity.dart';
+
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  final ProductEntity? product;
+  const AddProductScreen({super.key, this.product});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -34,6 +38,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
   List<XFile> _selectedImages = [];
   bool _isUploading = false;
   final CloudinaryService _cloudinary = getIt<CloudinaryService>();
+  List<String> _existingImages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.product != null) {
+      final p = widget.product!;
+      _nameController.text = p.name;
+      _brandController.text = p.brand ?? '';
+      _categoryController.text = p.categoryId ?? '';
+      _mrpController.text = p.mrp.toString();
+      _priceController.text = p.sellingPrice.toString();
+      _stockController.text = p.stockQuantity.toString();
+      _descController.text = p.description ?? '';
+      _existingImages = List.from(p.images);
+    }
+  }
 
   @override
   void dispose() {

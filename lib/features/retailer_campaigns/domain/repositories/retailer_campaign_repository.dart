@@ -10,6 +10,8 @@ class CreateCampaignParams {
   final double budgetMin;
   final double budgetMax;
   final String? productId;
+  final DateTime? applicationDeadline;
+  final DateTime? publishByDate;
 
   CreateCampaignParams({
     required this.title,
@@ -20,6 +22,8 @@ class CreateCampaignParams {
     required this.budgetMin,
     required this.budgetMax,
     this.productId,
+    this.applicationDeadline,
+    this.publishByDate,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +36,8 @@ class CreateCampaignParams {
       'budgetMin': budgetMin,
       'budgetMax': budgetMax,
       if (productId != null) 'productId': productId,
+      if (applicationDeadline != null) 'applicationDeadline': applicationDeadline!.toIso8601String(),
+      if (publishByDate != null) 'publishByDate': publishByDate!.toIso8601String(),
     };
   }
 }

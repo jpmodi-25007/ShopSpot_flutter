@@ -23,6 +23,8 @@ class ProductManagementScreen extends StatefulWidget {
 
 class _ProductManagementScreenState extends State<ProductManagementScreen> {
   String _searchQuery = '';
+  String _selectedFilter = 'All';
+  String _selectedSort = 'Newest';
   
   @override
   void initState() {
@@ -58,7 +60,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (ctx) => const _ProductFilterBottomSheet(),
+                builder: (ctx) => _ProductFilterBottomSheet(
+                  currentFilter: _selectedFilter,
+                  currentSort: _selectedSort,
+                ),
               );
             },
           ),
@@ -158,8 +163,27 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
-                  builder: (context, state) {
+                BlocListener<RetailerInventoryBloc, RetailerInventoryState>(
+                  listener: (context, state) {
+                    if (state is RetailerInventoryError) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(LucideIcons.alertCircle, color: AppColors.white, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(child: Text(state.failure.message)),
+                            ],
+                          ),
+                          backgroundColor: AppColors.error500,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                    }
+                  },
+                  child: BlocBuilder<RetailerInventoryBloc, RetailerInventoryState>(
+                    builder: (context, state) {
                     int totalItems = 0;
                     double totalValue = 0.0;
                     if (state is RetailerInventoryLoaded) {
@@ -177,47 +201,62 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       children: [
                         // Total Stock Value
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.roleRetailer.withValues(alpha: 0.9),
+                                AppColors.roleRetailer.withValues(alpha: 0.7),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                  color: AppColors.neutral900
-                                      .withValues(alpha: 0.03),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8)),
+                                  color: AppColors.roleRetailer.withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10)),
                             ],
-                            border: Border.all(
-                                color: AppColors.neutral200
-                                    .withValues(alpha: 0.5)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(10),
+                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                        color: AppColors.roleRetailerLight
-                                            .withValues(alpha: 0.5),
+                                        color: AppColors.white.withValues(alpha: 0.2),
                                         shape: BoxShape.circle),
                                     child: const Icon(LucideIcons.wallet,
-                                        color: AppColors.roleRetailer,
-                                        size: 24),
+                                        color: AppColors.white, size: 24),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(LucideIcons.trendingUp, color: AppColors.white, size: 14),
+                                        SizedBox(width: 4),
+                                        Text('+4.2%', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 24),
                               Text('Total Stock Value',
                                   style: AppTextStyles.bodySmall
-                                      .copyWith(color: AppColors.neutral500)),
+                                      .copyWith(color: AppColors.white.withValues(alpha: 0.8))),
                               const SizedBox(height: 6),
                               Text(currencyFormat.format(totalValue),
-                                  style: AppTextStyles.h1),
+                                  style: AppTextStyles.h1.copyWith(color: AppColors.white)),
                             ],
                           ),
                         ),
@@ -225,45 +264,49 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
                         // Total Items in Stock
                         Container(
+                          width: double.infinity,
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: AppColors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                  color: AppColors.neutral900
-                                      .withValues(alpha: 0.03),
-                                  blurRadius: 16,
+                                  color: AppColors.neutral900.withValues(alpha: 0.04),
+                                  blurRadius: 24,
                                   offset: const Offset(0, 8)),
                             ],
                             border: Border.all(
-                                color: AppColors.neutral200
-                                    .withValues(alpha: 0.5)),
+                                color: AppColors.neutral200.withValues(alpha: 0.5)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
                                     color: AppColors.warning50,
-                                    shape: BoxShape.circle),
-                                child: const Icon(LucideIcons.package,
-                                    color: AppColors.warning600, size: 24),
+                                    borderRadius: BorderRadius.circular(20)),
+                                child: const Icon(LucideIcons.packageOpen,
+                                    color: AppColors.warning600, size: 28),
                               ),
-                              const SizedBox(height: 20),
-                              Text('Total Items in Stock',
-                                  style: AppTextStyles.bodySmall
-                                      .copyWith(color: AppColors.neutral500)),
-                              const SizedBox(height: 6),
-                              Text(NumberFormat.compact().format(totalItems),
-                                  style: AppTextStyles.h1),
+                              const SizedBox(width: 20),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Total Items in Stock',
+                                      style: AppTextStyles.bodySmall
+                                          .copyWith(color: AppColors.neutral500)),
+                                  const SizedBox(height: 4),
+                                  Text(NumberFormat.compact().format(totalItems),
+                                      style: AppTextStyles.h2.copyWith(color: AppColors.neutral900)),
+                                ],
+                              ),
                             ],
                           ),
                         ),
                       ],
                     );
                   },
+                ),
                 ),
                 const SizedBox(height: 40),
 
@@ -337,10 +380,20 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         Text('Low Stock Alerts', style: AppTextStyles.h3),
                       ],
                     ),
-                    Text('View All',
-                        style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.roleRetailer,
-                            fontWeight: FontWeight.w700)),
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedFilter = 'Low Stock';
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Filtered by Low Stock! Scroll down to view.'), behavior: SnackBarBehavior.floating),
+                        );
+                      },
+                      child: Text('View All',
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.roleRetailer,
+                              fontWeight: FontWeight.w700)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -374,10 +427,43 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('All Products', style: AppTextStyles.h3),
-                    Text('Filter',
-                        style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.roleRetailer,
-                            fontWeight: FontWeight.w700)),
+                    InkWell(
+                      onTap: () async {
+                        final result = await showModalBottomSheet<Map<String, String>>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => _ProductFilterBottomSheet(
+                            currentFilter: _selectedFilter,
+                            currentSort: _selectedSort,
+                          ),
+                        );
+                        if (result != null) {
+                          setState(() {
+                            _selectedFilter = result['filter'] ?? 'All';
+                            _selectedSort = result['sort'] ?? 'Newest';
+                          });
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          if (_selectedFilter != 'All')
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.roleRetailer.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Text(_selectedFilter, style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.bold)),
+                            ),
+                          Text('Filter',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.roleRetailer,
+                                  fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -395,18 +481,71 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             const ProductListItemSkeleton(),
                       );
                     } else if (state is RetailerInventoryError) {
-                      return Center(
-                          child: Text(state.failure.message,
-                              style: const TextStyle(color: Colors.red)));
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40.0),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.error50.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(LucideIcons.wifiOff, color: AppColors.error500, size: 32),
+                              ),
+                              const SizedBox(height: 16),
+                              Text('Failed to load products', style: AppTextStyles.h4),
+                              const SizedBox(height: 8),
+                              Text('Please check your connection and try again.', 
+                                style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  context.read<RetailerInventoryBloc>().add(const GetMyProductsRequested());
+                                },
+                                icon: const Icon(LucideIcons.refreshCw, size: 16, color: AppColors.roleRetailer),
+                                label: const Text('Try Again', style: TextStyle(color: AppColors.roleRetailer)),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppColors.roleRetailer),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      );
                     } else if (state is RetailerInventoryLoaded) {
-                      final filteredProducts = _searchQuery.isEmpty 
-                        ? state.products 
-                        : state.products.where((p) => p.name.toLowerCase().contains(_searchQuery)).toList();
+                      List<dynamic> filteredProducts = state.products;
+                      
+                      if (_searchQuery.isNotEmpty) {
+                        filteredProducts = filteredProducts.where((p) => 
+                          p.name.toLowerCase().contains(_searchQuery) || 
+                          (p.sku?.toLowerCase().contains(_searchQuery) ?? false)
+                        ).toList();
+                      }
+                      
+                      if (_selectedFilter == 'Low Stock') {
+                        filteredProducts = filteredProducts.where((p) => p.stockQuantity > 0 && p.stockQuantity < 10).toList();
+                      } else if (_selectedFilter == 'Out of Stock') {
+                        filteredProducts = filteredProducts.where((p) => p.stockQuantity <= 0).toList();
+                      }
+                      
+                      if (_selectedSort == 'Newest') {
+                         filteredProducts.sort((a, b) => b.createdAt?.compareTo(a.createdAt ?? DateTime.now()) ?? 0);
+                      } else if (_selectedSort == 'Price: High to Low') {
+                         filteredProducts.sort((a, b) => b.sellingPrice.compareTo(a.sellingPrice));
+                      } else if (_selectedSort == 'Price: Low to High') {
+                         filteredProducts.sort((a, b) => a.sellingPrice.compareTo(b.sellingPrice));
+                      }
                         
                       if (filteredProducts.isEmpty) {
                         return const Center(child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 24.0),
-                          child: Text('No products found matching your search.'),
+                          child: Text('No products found matching your filters.'),
                         ));
                       }
                       return Column(
@@ -415,6 +554,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             padding: const EdgeInsets.only(bottom: 16.0),
                             child: _buildPremiumProductListItem(
                               context,
+                              product,
                               product.id,
                               product.name,
                               product.categoryId ?? 'Uncategorized',
@@ -466,7 +606,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         flex: 1,
                         child: OutlinedButton(
                           onPressed: () {
-                            context.push('/retailer/add-product');
+                            context.push('/retailer/inventory-report');
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -552,45 +692,48 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   }
 
   Widget _buildCategoryProgress(String label, double percentage, Color color) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 80,
-          child: Text(label,
-              style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.neutral700, fontWeight: FontWeight.w600)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.neutral700, fontWeight: FontWeight.w600)),
+            Text('${(percentage * 100).toInt()}%',
+                style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.neutral900, fontWeight: FontWeight.w700)),
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Stack(
-            children: [
-              Container(
-                height: 10,
+        const SizedBox(height: 8),
+        Stack(
+          children: [
+            Container(
+              height: 8,
+              decoration: BoxDecoration(
+                color: AppColors.neutral100,
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+            FractionallySizedBox(
+              widthFactor: percentage,
+              child: Container(
+                height: 8,
                 decoration: BoxDecoration(
-                  color: AppColors.neutral100,
+                  color: color,
                   borderRadius: BorderRadius.circular(100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
                 ),
               ),
-              FractionallySizedBox(
-                widthFactor: percentage,
-                child: Container(
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(
-          width: 44,
-          child: Text('${(percentage * 100).toInt()}%',
-              style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.neutral900, fontWeight: FontWeight.w800),
-              textAlign: TextAlign.right),
+            ),
+          ],
         ),
       ],
     );
@@ -654,6 +797,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
   Widget _buildPremiumProductListItem(
       BuildContext context,
+      dynamic productObj,
       String id,
       String title,
       String category,
@@ -729,7 +873,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   borderRadius: BorderRadius.circular(12)),
               onSelected: (value) {
                 if (value == 'edit') {
-                  context.push('/retailer/add-product');
+                  context.push('/retailer/add-product', extra: productObj);
                 } else if (value == 'delete') {
                   // Handle delete
                 }
@@ -769,7 +913,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 }
 
 class _ProductFilterBottomSheet extends StatefulWidget {
-  const _ProductFilterBottomSheet();
+  final String currentFilter;
+  final String currentSort;
+  const _ProductFilterBottomSheet({required this.currentFilter, required this.currentSort});
 
   @override
   State<_ProductFilterBottomSheet> createState() =>
@@ -777,7 +923,15 @@ class _ProductFilterBottomSheet extends StatefulWidget {
 }
 
 class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
-  String _selectedSort = 'Newest';
+  late String _selectedSort;
+  late String _selectedFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSort = widget.currentSort;
+    _selectedFilter = widget.currentFilter;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -801,6 +955,38 @@ class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
                       icon: const Icon(LucideIcons.x),
                       onPressed: () => context.pop()),
                 ],
+              ),
+              const SizedBox(height: 24),
+              Text('Status',
+                  style: AppTextStyles.bodySmall
+                      .copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  'All',
+                  'Low Stock',
+                  'Out of Stock',
+                ]
+                    .map((s) => ChoiceChip(
+                          label: Text(s),
+                          selected: _selectedFilter == s,
+                          onSelected: (val) {
+                            if (val) setState(() => _selectedFilter = s);
+                          },
+                          selectedColor: AppColors.roleRetailerLight
+                              .withValues(alpha: 0.2),
+                          labelStyle: TextStyle(
+                            color: _selectedFilter == s
+                                ? AppColors.roleRetailer
+                                : AppColors.neutral700,
+                            fontWeight: _selectedFilter == s
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ))
+                    .toList(),
               ),
               const SizedBox(height: 24),
               Text('Sort By',
@@ -844,7 +1030,9 @@ class _ProductFilterBottomSheetState extends State<_ProductFilterBottomSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  context.pop({'filter': _selectedFilter, 'sort': _selectedSort});
+                },
                 child: const Text('Apply Filters',
                     style: TextStyle(fontWeight: FontWeight.w700)),
               ),

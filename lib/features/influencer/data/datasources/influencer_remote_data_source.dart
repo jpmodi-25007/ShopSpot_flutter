@@ -5,7 +5,7 @@ import '../models/influencer_campaign_model.dart';
 abstract interface class InfluencerRemoteDataSource {
   Future<InfluencerProfileModel> getProfile();
   Future<InfluencerProfileModel> updateProfile(Map<String, dynamic> data);
-  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry});
+  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry, String? search});
   Future<List<InfluencerBidModel>> getMyBids({int page = 1, int limit = 20});
   Future<InfluencerBidModel> submitBid({
     required String campaignId,
@@ -32,11 +32,12 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
   }
 
   @override
-  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry}) async {
+  Future<List<InfluencerCampaignModel>> getEligibleCampaigns({int page = 1, int limit = 20, String? industry, String? search}) async {
     final queryParams = {
       'page': page, 
       'limit': limit,
       if (industry != null && industry.isNotEmpty && industry != 'All Campaigns') 'industry': industry,
+      if (search != null && search.isNotEmpty) 'search': search,
     };
     final response = await apiClient.get('/influencer/campaigns', queryParameters: queryParams);
     

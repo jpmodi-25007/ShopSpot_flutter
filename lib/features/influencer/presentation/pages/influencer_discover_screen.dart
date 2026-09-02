@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -15,11 +16,14 @@ class InfluencerDiscoverScreen extends StatefulWidget {
   const InfluencerDiscoverScreen({super.key});
 
   @override
-  State<InfluencerDiscoverScreen> createState() => _InfluencerDiscoverScreenState();
+  State<InfluencerDiscoverScreen> createState() =>
+      _InfluencerDiscoverScreenState();
 }
 
 class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
   String _selectedFilter = 'All Campaigns';
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -27,10 +31,26 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
     context.read<InfluencerBloc>().add(const GetEligibleCampaignsRequested());
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _refresh();
+    });
+  }
+
   Future<void> _refresh() async {
     context.read<InfluencerBloc>().add(GetEligibleCampaignsRequested(
-      industry: _selectedFilter == 'All Campaigns' ? null : _selectedFilter,
-    ));
+          industry: _selectedFilter == 'All Campaigns' ? null : _selectedFilter,
+          search:
+              _searchController.text.isNotEmpty ? _searchController.text : null,
+        ));
   }
 
   @override
@@ -55,14 +75,18 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
               border: Border.all(color: AppColors.roleInfluencer, width: 2),
             ),
             child: const CircleAvatar(
-              backgroundImage: AssetImage('assets/images/web_hero_boutique.jpg'),
+              backgroundImage:
+                  AssetImage('assets/images/web_hero_boutique.jpg'),
             ),
           ),
         ),
-        title: Text('Discover', style: AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
+        title: Text('Discover',
+            style: AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(LucideIcons.bell, color: AppColors.neutral900), onPressed: () => context.push('/notifications')),
+          IconButton(
+              icon: const Icon(LucideIcons.bell, color: AppColors.neutral900),
+              onPressed: () => context.push('/notifications')),
           const SizedBox(width: 8),
         ],
       ),
@@ -71,185 +95,241 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
         color: AppColors.roleInfluencer,
         backgroundColor: AppColors.white,
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            // Floating Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 10)),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 20),
-                    const Icon(LucideIcons.search, size: 24, color: AppColors.neutral400),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Search campaigns, brands...',
-                          hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              // Floating Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.neutral900.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 20),
+                      const Icon(LucideIcons.search,
+                          size: 24, color: AppColors.neutral400),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: _onSearchChanged,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: 'Search campaigns, brands...',
+                            hintStyle: AppTextStyles.body
+                                .copyWith(color: AppColors.neutral400),
+                          ),
                         ),
                       ),
-                    ),
-                    Container(
-                      height: 48,
-                      width: 48,
-                      margin: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: AppColors.roleInfluencer,
-                        shape: BoxShape.circle,
+                      Container(
+                        height: 48,
+                        width: 48,
+                        margin: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.roleInfluencer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.slidersHorizontal,
+                            color: AppColors.white, size: 20),
                       ),
-                      child: const Icon(LucideIcons.slidersHorizontal, color: AppColors.white, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Chips
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _buildPremiumChip('All Campaigns'),
+                    const SizedBox(width: 12),
+                    _buildPremiumChip('Fashion'),
+                    const SizedBox(width: 12),
+                    _buildPremiumChip('Food & Beverage'),
+                    const SizedBox(width: 12),
+                    _buildPremiumChip('Electronics'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Recommended for You', style: AppTextStyles.h3),
+                    GestureDetector(
+                      onTap: () => context.push('/influencer/all-campaigns'),
+                      child: Text('See All',
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.roleInfluencer,
+                              fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-            // Chips
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _buildPremiumChip('All Campaigns'),
-                  const SizedBox(width: 12),
-                  _buildPremiumChip('Fashion'),
-                  const SizedBox(width: 12),
-                  _buildPremiumChip('Food & Beverage'),
-                  const SizedBox(width: 12),
-                  _buildPremiumChip('Electronics'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Recommended for You', style: AppTextStyles.h3),
-                  Text('See All', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Live Campaigns from BLoC
-            BlocBuilder<InfluencerBloc, InfluencerState>(
-              builder: (context, state) {
-                if (state is InfluencerLoaded && state.isLoading) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-                    child: Column(
-                      children: const [
-                        CampaignCardSkeleton(),
-                        SizedBox(height: 24),
-                        CampaignCardSkeleton(),
-                      ],
-                    ),
-                  );
-                }
-                final campaigns = state is InfluencerLoaded ? state.campaigns ?? [] : [];
-                if (campaigns.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
-                    child: Center(
+              // Live Campaigns from BLoC
+              BlocBuilder<InfluencerBloc, InfluencerState>(
+                builder: (context, state) {
+                  if (state is InfluencerLoaded && state.isLoading) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 24.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: AppColors.roleInfluencerLight.withValues(alpha: 0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(LucideIcons.telescope, size: 48, color: AppColors.roleInfluencer),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'No Campaigns Found',
-                            style: AppTextStyles.h3.copyWith(color: AppColors.neutral900),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Check back later or try adjusting your industry filters.',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
-                          ),
+                        children: const [
+                          CampaignCardSkeleton(),
+                          SizedBox(height: 24),
+                          CampaignCardSkeleton(),
                         ],
                       ),
+                    );
+                  }
+                  final campaigns =
+                      state is InfluencerLoaded ? state.campaigns ?? [] : [];
+                  if (campaigns.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 48.0),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: AppColors.roleInfluencerLight
+                                    .withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(LucideIcons.telescope,
+                                  size: 48, color: AppColors.roleInfluencer),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'No Campaigns Found',
+                              style: AppTextStyles.h3
+                                  .copyWith(color: AppColors.neutral900),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Check back later or try adjusting your industry filters.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.body
+                                  .copyWith(color: AppColors.neutral500),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isDesktop = constraints.maxWidth > 600;
+                        return Wrap(
+                          spacing: 24,
+                          runSpacing: 24,
+                          children: campaigns.map((campaign) {
+                            return SizedBox(
+                              width: isDesktop
+                                  ? (constraints.maxWidth / 2) - 12
+                                  : constraints.maxWidth,
+                              child: _buildPremiumCampaignCard(
+                                context,
+                                campaign: campaign,
+                                title: campaign.title,
+                                brand: campaign.city ?? 'Brand',
+                                matchPercent: '98%',
+                                budget:
+                                    '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
+                                platforms: campaign.platforms,
+                                imageUrl: 'invalid', // force errorBuilder
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
                     ),
                   );
-                }
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isDesktop = constraints.maxWidth > 600;
-                      return Wrap(
-                        spacing: 24,
-                        runSpacing: 24,
-                        children: campaigns.map((campaign) {
-                          return SizedBox(
-                            width: isDesktop ? (constraints.maxWidth / 2) - 12 : constraints.maxWidth,
-                            child: _buildPremiumCampaignCard(
-                              context,
-                              campaign: campaign,
-                              title: campaign.title,
-                              brand: campaign.city ?? 'Brand',
-                              matchPercent: '98%',
-                              budget: '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
-                              platforms: campaign.platforms,
-                              imageUrl: 'invalid', // force errorBuilder
-                            ),
-                          );
-                        }).toList(),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 40),
-
-            // High Budget
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text('High Budget Opportunities', style: AppTextStyles.h3),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 160,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _buildPremiumMiniCard('Premium Watch Review', 'Chronos Lux', '₹2,000+', 'invalid'),
-                  const SizedBox(width: 16),
-                  _buildPremiumMiniCard('Skincare Routine Reel', 'Glow Botanica', '₹1,200', 'invalid'),
-                ],
+                },
               ),
-            ),
-            const SizedBox(height: 80),
-          ],
-        ),
+              const SizedBox(height: 40),
+
+              // High Budget
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child:
+                    Text('High Budget Opportunities', style: AppTextStyles.h3),
+              ),
+              const SizedBox(height: 20),
+              BlocBuilder<InfluencerBloc, InfluencerState>(
+                builder: (context, state) {
+                  if (state is InfluencerLoaded && state.isLoading) {
+                    return const SizedBox(
+                        height: 160,
+                        child: Center(child: CircularProgressIndicator()));
+                  }
+                  final campaigns =
+                      state is InfluencerLoaded ? state.campaigns ?? [] : [];
+                  final highBudgetCampaigns =
+                      campaigns.where((c) => c.isHighBudget).toList();
+
+                  if (highBudgetCampaigns.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text('No high budget opportunities at the moment.',
+                          style: AppTextStyles.body
+                              .copyWith(color: AppColors.neutral500)),
+                    );
+                  }
+
+                  return SizedBox(
+                    height: 160,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: highBudgetCampaigns.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final c = highBudgetCampaigns[index];
+                        return _buildPremiumMiniCard(
+                          c.title,
+                          c.shopName ?? 'Brand',
+                          '₹${c.budgetMax.toStringAsFixed(0)}',
+                          c.shopLogo ?? 'invalid',
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
@@ -261,8 +341,8 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
       onTap: () {
         setState(() => _selectedFilter = label);
         context.read<InfluencerBloc>().add(GetEligibleCampaignsRequested(
-          industry: label == 'All Campaigns' ? null : label,
-        ));
+              industry: label == 'All Campaigns' ? null : label,
+            ));
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -270,9 +350,16 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.roleInfluencer : AppColors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.roleInfluencer : AppColors.neutral200),
+          border: Border.all(
+              color:
+                  isSelected ? AppColors.roleInfluencer : AppColors.neutral200),
           boxShadow: isSelected
-              ? [BoxShadow(color: AppColors.roleInfluencer.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
+              ? [
+                  BoxShadow(
+                      color: AppColors.roleInfluencer.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4))
+                ]
               : [],
         ),
         child: Center(
@@ -288,7 +375,8 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
     );
   }
 
-  Widget _buildPremiumCampaignCard(BuildContext context, {
+  Widget _buildPremiumCampaignCard(
+    BuildContext context, {
     required InfluencerCampaignEntity campaign,
     required String title,
     required String brand,
@@ -306,9 +394,13 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.neutral200.withValues(alpha: 0.8)),
+          border:
+              Border.all(color: AppColors.neutral200.withValues(alpha: 0.8)),
           boxShadow: [
-            BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 10)),
+            BoxShadow(
+                color: AppColors.neutral900.withValues(alpha: 0.04),
+                blurRadius: 20,
+                offset: const Offset(0, 10)),
           ],
         ),
         clipBehavior: Clip.antiAlias,
@@ -318,9 +410,9 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
             Stack(
               children: [
                 Image.network(
-                  imageUrl, 
-                  height: 200, 
-                  width: double.infinity, 
+                  imageUrl,
+                  height: 200,
+                  width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (ctx, err, st) => Image.asset(
                     'assets/images/web_lifestyle_shopping.jpg',
@@ -333,16 +425,21 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                   top: 16,
                   right: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.success500,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.sparkles, size: 12, color: AppColors.white),
+                        const Icon(LucideIcons.sparkles,
+                            size: 12, color: AppColors.white),
                         const SizedBox(width: 4),
-                        Text('$matchPercent Match', style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
+                        Text('$matchPercent Match',
+                            style: AppTextStyles.caption.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w800)),
                       ],
                     ),
                   ),
@@ -351,16 +448,24 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                   bottom: 16,
                   left: 16,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.neutral900.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const CircleAvatar(radius: 10, backgroundColor: AppColors.white, child: Icon(LucideIcons.store, size: 10, color: AppColors.neutral900)),
+                        const CircleAvatar(
+                            radius: 10,
+                            backgroundColor: AppColors.white,
+                            child: Icon(LucideIcons.store,
+                                size: 10, color: AppColors.neutral900)),
                         const SizedBox(width: 8),
-                        Text(brand, style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w700)),
+                        Text(brand,
+                            style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -375,23 +480,35 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                   Text(title, style: AppTextStyles.h3),
                   const SizedBox(height: 16),
                   Row(
-                    children: platforms.map((p) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.roleInfluencerLight.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(p.contains('Instagram') ? LucideIcons.camera : LucideIcons.video, size: 14, color: AppColors.roleInfluencer),
-                            const SizedBox(width: 6),
-                            Text(p, style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                      ),
-                    )).toList(),
+                    children: platforms
+                        .map((p) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.roleInfluencerLight
+                                      .withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                        p.contains('Instagram')
+                                            ? LucideIcons.camera
+                                            : LucideIcons.video,
+                                        size: 14,
+                                        color: AppColors.roleInfluencer),
+                                    const SizedBox(width: 6),
+                                    Text(p,
+                                        style: AppTextStyles.caption.copyWith(
+                                            color: AppColors.roleInfluencer,
+                                            fontWeight: FontWeight.w700)),
+                                  ],
+                                ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -400,9 +517,13 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Budget Range', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                          Text('Budget Range',
+                              style: AppTextStyles.caption
+                                  .copyWith(color: AppColors.neutral500)),
                           const SizedBox(height: 4),
-                          Text(budget, style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
+                          Text(budget,
+                              style: AppTextStyles.h3
+                                  .copyWith(color: AppColors.neutral900)),
                         ],
                       ),
                       ElevatedButton(
@@ -410,14 +531,18 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                           backgroundColor: AppColors.roleInfluencer,
                           foregroundColor: AppColors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 14),
                         ),
                         onPressed: () async {
-                          await context.push('/influencer/campaign-details', extra: campaign);
+                          await context.push('/influencer/campaign-details',
+                              extra: campaign);
                           if (mounted) _refresh();
                         },
-                        child: const Text('View Details', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: const Text('View Details',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ],
                   ),
@@ -430,7 +555,8 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
     );
   }
 
-  Widget _buildPremiumMiniCard(String title, String brand, String budget, String imageUrl) {
+  Widget _buildPremiumMiniCard(
+      String title, String brand, String budget, String imageUrl) {
     return Container(
       width: 280,
       decoration: BoxDecoration(
@@ -438,7 +564,10 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.neutral200.withValues(alpha: 0.8)),
         boxShadow: [
-          BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -447,9 +576,9 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              imageUrl, 
-              width: 100, 
-              height: 120, 
+              imageUrl,
+              width: 100,
+              height: 120,
               fit: BoxFit.cover,
               errorBuilder: (ctx, err, st) => Image.asset(
                 'assets/images/web_hero_boutique.jpg',
@@ -465,14 +594,26 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(title,
+                    style: AppTextStyles.body
+                        .copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Text(brand, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                Text(brand,
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.neutral500)),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.success50, borderRadius: BorderRadius.circular(6)),
-                  child: Text(budget, style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.w800)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: AppColors.success50,
+                      borderRadius: BorderRadius.circular(6)),
+                  child: Text(budget,
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.success600,
+                          fontWeight: FontWeight.w800)),
                 ),
               ],
             ),

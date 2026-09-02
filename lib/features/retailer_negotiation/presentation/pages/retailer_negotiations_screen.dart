@@ -17,6 +17,9 @@ class RetailerNegotiationsScreen extends StatefulWidget {
 }
 
 class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen> {
+  String _selectedTab = 'Active';
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -28,10 +31,10 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(LucideIcons.store, color: AppColors.primary500),
+          icon: const Icon(LucideIcons.store, color: AppColors.roleRetailer),
           onPressed: () => context.go('/retailer/profile'),
         ),
-        title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+        title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -73,6 +76,11 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Search customers or products...',
@@ -94,9 +102,9 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
             ),
             child: Row(
               children: [
-                Expanded(child: _buildTabItem('Active', true)),
-                Expanded(child: _buildTabItem('Accepted', false)),
-                Expanded(child: _buildTabItem('Expired', false)),
+                Expanded(child: _buildTabItem('Active')),
+                Expanded(child: _buildTabItem('Accepted')),
+                Expanded(child: _buildTabItem('Expired')),
               ],
             ),
           ),
@@ -107,29 +115,40 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
               padding: const EdgeInsets.all(16),
               children: [
                 // Conversion banner
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.success500.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.trendingUp, size: 16, color: AppColors.success500),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('You\'ve converted 15 deals this week!', style: AppTextStyles.bodySmall.copyWith(color: AppColors.success500, fontWeight: FontWeight.w600)),
-                            Text('Up 20% from last week', style: AppTextStyles.caption.copyWith(color: AppColors.success500)),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
+                BlocBuilder<RetailerNegotiationBloc, RetailerNegotiationState>(
+                  builder: (context, state) {
+                    if (state is RetailerNegotiationLoaded) {
+                      final allNegs = state.negotiations ?? [];
+                      final acceptedCount = allNegs.where((n) => n.status.name == 'ACCEPTED').length;
+                      if (acceptedCount > 0) {
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: AppColors.success500.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.trendingUp, size: 16, color: AppColors.success500),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('You\'ve converted $acceptedCount deals!', style: AppTextStyles.bodySmall.copyWith(color: AppColors.success500, fontWeight: FontWeight.w600)),
+                                    Text('Keep up the good work', style: AppTextStyles.caption.copyWith(color: AppColors.success500)),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      }
+                    }
+                    return const SizedBox.shrink();
+                  }
                 ),
-                const SizedBox(height: 16),
 
                 // Negotiation Cards
                 BlocBuilder<RetailerNegotiationBloc, RetailerNegotiationState>(
@@ -144,15 +163,39 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                       );
                     }
                     if (state is RetailerNegotiationLoaded) {
-                      final negotiations = state.negotiations ?? [];
-                      if (negotiations.isEmpty) {
+                      var filteredList = state.negotiations ?? [];
+                      
+                      // Search filter
+                      if (_searchQuery.isNotEmpty) {
+                        filteredList = filteredList.where((n) {
+                          final productMatch = (n.product?.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+                          return productMatch;
+                        }).toList();
+                      }
+                      
+                      // Tab filter
+                      if (_selectedTab == 'Active') {
+                        filteredList = filteredList.where((n) => 
+                          n.status.name == 'PENDING' || n.status.name == 'COUNTER_OFFER'
+                        ).toList();
+                      } else if (_selectedTab == 'Accepted') {
+                        filteredList = filteredList.where((n) => 
+                          n.status.name == 'ACCEPTED'
+                        ).toList();
+                      } else if (_selectedTab == 'Expired') {
+                        filteredList = filteredList.where((n) => 
+                          n.status.name == 'REJECTED' || n.status.name == 'EXPIRED' || n.status.name == 'CANCELLED'
+                        ).toList();
+                      }
+
+                      if (filteredList.isEmpty) {
                         return const Padding(
                           padding: EdgeInsets.all(32.0),
                           child: Center(child: Text("No negotiations found.")),
                         );
                       }
                       return Column(
-                        children: negotiations.map((n) {
+                        children: filteredList.map((n) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: _buildNegotiationCard(
@@ -183,18 +226,26 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
     );
   }
 
-  Widget _buildTabItem(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: isActive ? AppColors.primary500 : Colors.transparent, width: 2)),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isActive ? AppColors.primary500 : AppColors.neutral500,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+  Widget _buildTabItem(String label) {
+    bool isActive = _selectedTab == label;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedTab = label;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: isActive ? AppColors.roleRetailer : Colors.transparent, width: 2)),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: AppTextStyles.body.copyWith(
+              color: isActive ? AppColors.roleRetailer : AppColors.neutral500,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+            ),
           ),
         ),
       ),

@@ -17,6 +17,7 @@ class InfluencerCampaignModel {
   final String? city;
   final List<String> targetCategories;
   final DateTime? applicationDeadline;
+  final DateTime? publishByDate;
   final String status;
   final DateTime createdAt;
 
@@ -36,6 +37,7 @@ class InfluencerCampaignModel {
     this.city,
     required this.targetCategories,
     this.applicationDeadline,
+    this.publishByDate,
     required this.status,
     required this.createdAt,
   });
@@ -59,6 +61,9 @@ class InfluencerCampaignModel {
       applicationDeadline: json['applicationDeadline'] != null
           ? DateTime.parse(json['applicationDeadline'])
           : null,
+      publishByDate: json['publishByDate'] != null
+          ? DateTime.parse(json['publishByDate'])
+          : null,
       status: json['status'] ?? 'DRAFT',
       createdAt: DateTime.parse(json['createdAt']),
     );
@@ -80,6 +85,7 @@ class InfluencerCampaignModel {
         city: city,
         targetCategories: targetCategories,
         applicationDeadline: applicationDeadline,
+        publishByDate: publishByDate,
         status: status,
         createdAt: createdAt,
       );

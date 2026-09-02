@@ -41,6 +41,8 @@ class InfluencerCampaignEntity extends Equatable {
     required this.createdAt,
   });
 
+  bool get isHighBudget => budgetMax >= 10000;
+
   @override
   List<Object?> get props => [
         id, shopkeeperId, shopId, productId, title, description,

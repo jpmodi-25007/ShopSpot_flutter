@@ -41,14 +41,16 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
     };
     final response = await apiClient.get('/influencer/campaigns', queryParameters: queryParams);
     
-    final List<dynamic> data = response.data['data'] ?? [];
+    final responseData = response.data;
+    final List<dynamic> data = responseData is List ? responseData : (responseData['data'] ?? []);
     return data.map((json) => InfluencerCampaignModel.fromJson(json)).toList();
   }
 
   @override
   Future<List<InfluencerBidModel>> getMyBids({int page = 1, int limit = 20}) async {
     final response = await apiClient.get('/influencer/bids', queryParameters: {'page': page, 'limit': limit});
-    final List<dynamic> list = response.data['data'] ?? response.data;
+    final responseData = response.data;
+    final List<dynamic> list = responseData is List ? responseData : (responseData['data'] ?? []);
     return list.map((j) => InfluencerBidModel.fromJson(j)).toList();
   }
 

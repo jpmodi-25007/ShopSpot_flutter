@@ -13,7 +13,7 @@ import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../bloc/retailer_inventory_bloc.dart';
-import '../../domain/entities/product_entity.dart';
+import '../../../product/domain/entities/product_entity.dart';
 
 class AddProductScreen extends StatefulWidget {
   final ProductEntity? product;

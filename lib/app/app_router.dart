@@ -28,7 +28,7 @@ import '../../features/profile/presentation/pages/manage_addresses_screen.dart';
 import '../../features/profile/presentation/pages/edit_profile_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_dashboard_screen.dart';
 import '../../features/retailer_dashboard/presentation/pages/retailer_profile_screen.dart';
-import '../../features/retailer_inventory/domain/entities/product_entity.dart';
+import '../../features/product/domain/entities/product_entity.dart';
 import '../../features/retailer_inventory/presentation/pages/retailer_inventory_report_screen.dart';
 import '../../features/retailer_campaigns/presentation/pages/retailer_campaign_detail_screen.dart';
 import '../../features/dashboard/presentation/pages/events_list_screen.dart';

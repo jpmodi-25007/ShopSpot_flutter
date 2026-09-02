@@ -13,6 +13,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<GetShopEventsRequested>(_onGetShopEventsRequested);
     on<GetEventDetailRequested>(_onGetEventDetailRequested);
     on<CreateEventRequested>(_onCreateEventRequested);
+    on<UpdateEventRequested>(_onUpdateEventRequested);
+    on<DeleteEventRequested>(_onDeleteEventRequested);
   }
 
   Future<void> _onGetEventsRequested(
@@ -71,6 +73,36 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       );
       await remoteDataSource.createEvent(newEvent);
       emit(EventCreated());
+    } catch (e) {
+      emit(EventError(ServerFailure(e.toString())));
+    }
+  }
+
+  Future<void> _onUpdateEventRequested(UpdateEventRequested event, Emitter<EventState> emit) async {
+    emit(EventLoading());
+    try {
+      final eventModel = EventModel(
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        startDate: event.startDate,
+        endDate: event.endDate,
+        imageUrl: event.imageUrl,
+        isActive: true,
+      );
+      await remoteDataSource.updateEvent(event.id, eventModel);
+      emit(const EventActionSuccess('Event updated successfully'));
+    } catch (e) {
+      emit(EventError(ServerFailure(e.toString())));
+    }
+  }
+
+  Future<void> _onDeleteEventRequested(DeleteEventRequested event, Emitter<EventState> emit) async {
+    emit(EventLoading());
+    try {
+      await remoteDataSource.deleteEvent(event.id);
+      emit(const EventActionSuccess('Event deleted successfully'));
     } catch (e) {
       emit(EventError(ServerFailure(e.toString())));
     }

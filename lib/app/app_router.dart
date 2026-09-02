@@ -17,6 +17,8 @@ import '../../features/dashboard/presentation/pages/search_screen.dart';
 import '../../features/dashboard/presentation/pages/chats_screen.dart';
 import '../../features/dashboard/presentation/pages/notifications_screen.dart';
 import '../../features/product/presentation/pages/product_detail_screen.dart';
+import '../../features/dashboard/domain/entities/event_entity.dart';
+
 import '../../features/shop/presentation/pages/shop_detail_screen.dart';
 import '../../features/negotiation/presentation/pages/negotiation_chat_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
@@ -318,7 +320,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/retailer/events/create',
-      builder: (context, state) => const RetailerCreateEventScreen(),
+      builder: (context, state) {
+        final eventToEdit = state.extra as EventEntity?;
+        return RetailerCreateEventScreen(eventToEdit: eventToEdit);
+      },
     ),
     GoRoute(
       path: '/retailer/stock-history',

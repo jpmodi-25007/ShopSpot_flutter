@@ -50,7 +50,8 @@ class RetailerDashboardScreen extends StatelessWidget {
               getIt<RetailerCampaignBloc>()..add(const GetMyCampaignsRequested()),
         ),
       ],
-      child: Scaffold(
+      child: Builder(
+        builder: (context) => Scaffold(
         backgroundColor: AppColors.neutral50,
         appBar: AppBar(
           backgroundColor: AppColors.white.withValues(alpha: 0.9),
@@ -297,7 +298,12 @@ class RetailerDashboardScreen extends StatelessWidget {
                     children: [
                       Text('Influencer Campaigns', style: AppTextStyles.h3),
                       GestureDetector(
-                        onTap: () => context.push('/retailer/create-campaign'),
+                        onTap: () async {
+                          await context.push('/retailer/create-campaign');
+                          if (context.mounted) {
+                            context.read<RetailerCampaignBloc>().add(const GetMyCampaignsRequested());
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
@@ -316,7 +322,12 @@ class RetailerDashboardScreen extends StatelessWidget {
                       final campaigns = campState is RetailerCampaignLoaded ? campState.campaigns ?? [] : [];
                       if (campaigns.isEmpty) {
                         return GestureDetector(
-                          onTap: () => context.push('/retailer/create-campaign'),
+                          onTap: () async {
+                          await context.push('/retailer/create-campaign');
+                          if (context.mounted) {
+                            context.read<RetailerCampaignBloc>().add(const GetMyCampaignsRequested());
+                          }
+                        },
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(24),
@@ -356,7 +367,12 @@ class RetailerDashboardScreen extends StatelessWidget {
                     children: [
                       Text('Shop Events', style: AppTextStyles.h3),
                       GestureDetector(
-                        onTap: () => context.push('/retailer/events/create'),
+                        onTap: () async {
+                          await context.push('/retailer/events/create');
+                          if (context.mounted) {
+                            context.read<EventBloc>().add(const GetShopEventsRequested());
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
@@ -376,7 +392,12 @@ class RetailerDashboardScreen extends StatelessWidget {
                       
                       if (events.isEmpty) {
                         return GestureDetector(
-                          onTap: () => context.push('/retailer/events/create'),
+                          onTap: () async {
+                          await context.push('/retailer/events/create');
+                          if (context.mounted) {
+                            context.read<EventBloc>().add(const GetShopEventsRequested());
+                          }
+                        },
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(24),

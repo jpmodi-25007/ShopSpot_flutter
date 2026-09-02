@@ -69,7 +69,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _pickImages() async {
-    if (_selectedImages.length >= 5) {
+    final currentTotal = _existingImages.length + _selectedImages.length;
+    if (currentTotal >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Maximum 5 images allowed.')));
       return;
     }
@@ -77,8 +78,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (picked.isNotEmpty) {
       setState(() {
         _selectedImages.addAll(picked);
-        if (_selectedImages.length > 5) {
-           _selectedImages = _selectedImages.sublist(0, 5);
+        if (_existingImages.length + _selectedImages.length > 5) {
+           final allowedNew = 5 - _existingImages.length;
+           _selectedImages = _selectedImages.sublist(0, allowedNew);
         }
       });
     }
@@ -97,7 +99,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       return;
     }
 
-    if (_selectedImages.isEmpty) {
+    if (_selectedImages.isEmpty && _existingImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one product image.')),
       );
@@ -111,16 +113,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
       
       // Upload sequentially for stability (can be parallelized)
       for (var img in _selectedImages) {
-        if (kIsWeb) {
-           // Skip direct upload for web mockup, would need bytes in real scenario
-           continue;
-        }
         final result = await _cloudinary.uploadImage(
-          imageFile: File(img.path),
-          folder: 'products/temp', // Wait for actual product ID in real flow
+          imageFile: img,
+          folder: 'products/temp',
         );
         uploadResults.add(result);
       }
+
+      final existingMedia = _existingImages.map((url) => {
+        'publicId': 'existing',
+        'secureUrl': url,
+      }).toList();
+
+      final newMedia = uploadResults.map((r) => {
+        'publicId': r.publicId,
+        'secureUrl': r.secureUrl,
+        'width': r.width,
+        'height': r.height,
+        'format': r.format,
+        'bytes': r.bytes,
+        'resourceType': r.resourceType,
+      }).toList();
 
       final payload = {
         'name': _nameController.text,
@@ -129,11 +142,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'sellingPrice': sp ?? 0,
         'stockQuantity': int.tryParse(_stockController.text) ?? 0,
         'description': _descController.text.isNotEmpty ? _descController.text : null,
-        'mediaAssets': uploadResults.map((r) => r.toJson()).toList(),
+        'mediaAssets': [...existingMedia, ...newMedia],
       };
       
       final ApiClient apiClient = getIt<ApiClient>();
-      await apiClient.post('/shopkeeper/products', data: payload);
+      if (widget.product != null) {
+        await apiClient.put('/shopkeeper/products/${widget.product!.id}', data: payload);
+      } else {
+        await apiClient.post('/shopkeeper/products', data: payload);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -216,6 +233,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  ..._existingImages.asMap().entries.map((entry) => Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: _buildExistingImageThumb(entry.value, index: entry.key),
+                  )),
                   ..._selectedImages.asMap().entries.map((entry) => Padding(
                     padding: const EdgeInsets.only(right: 12.0),
                     child: _buildImageThumb(entry.value, index: entry.key),
@@ -384,7 +405,44 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
+
+  Widget _buildExistingImageThumb(String url, {required int index}) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: AppColors.neutral200,
+        borderRadius: BorderRadius.circular(12),
+        image: DecorationImage(
+          image: NetworkImage(url),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _existingImages.removeAt(index);
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
+                child: const Icon(LucideIcons.x, size: 12, color: AppColors.neutral900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildImageThumb(XFile file, {required int index}) {
+
     return Container(
       width: 80,
       height: 80,

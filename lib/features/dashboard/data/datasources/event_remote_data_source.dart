@@ -8,6 +8,8 @@ abstract class EventRemoteDataSource {
   Future<List<EventEntity>> getShopEvents();
   Future<EventEntity> getEventDetail(String id);
   Future<void> createEvent(EventModel event);
+  Future<void> updateEvent(String id, EventModel event);
+  Future<void> deleteEvent(String id);
 }
 
 class EventRemoteDataSourceImpl implements EventRemoteDataSource {
@@ -65,6 +67,33 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       );
       if (response.data['status'] != 'success') {
         throw Exception('Failed to create event');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  @override
+  Future<void> updateEvent(String id, EventModel event) async {
+    try {
+      final response = await dio.patch(
+        '${ApiConstants.baseUrl}/events/$id',
+        data: event.toJson(),
+      );
+      if (response.data['status'] != 'success') {
+        throw Exception('Failed to update event');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteEvent(String id) async {
+    try {
+      final response = await dio.delete('${ApiConstants.baseUrl}/events/$id');
+      if (response.data['status'] != 'success') {
+        throw Exception('Failed to delete event');
       }
     } catch (e) {
       throw Exception('Network error: $e');

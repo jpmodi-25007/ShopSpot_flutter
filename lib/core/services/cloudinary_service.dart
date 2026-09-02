@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
@@ -85,14 +86,17 @@ class CloudinaryService {
 
   /// Complete flow: compress -> sign -> upload to Cloudinary -> return result
   Future<CloudinaryUploadResult> uploadImage({
-    required File imageFile,
+    required XFile imageFile,
     required String folder,
     void Function(double)? onProgress,
   }) async {
     try {
       // 1. Compress image
-      final compressedFile = await _compressImage(imageFile);
-      final fileToUpload = compressedFile ?? imageFile;
+      File? compressedFile;
+      if (!kIsWeb) {
+        compressedFile = await _compressImage(File(imageFile.path));
+      }
+      final fileToUploadPath = compressedFile?.path ?? imageFile.path;
 
       // 2. Request Signature from Backend
       final signatureResponse = await _apiClient.post(
@@ -116,12 +120,22 @@ class CloudinaryService {
       request.fields['signature'] = signature;
       request.fields['folder'] = finalFolder;
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          fileToUpload.path,
-        ),
-      );
+      if (kIsWeb) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            await imageFile.readAsBytes(),
+            filename: imageFile.name,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            fileToUploadPath,
+          ),
+        );
+      }
 
       // We'd ideally use a streamed request with progress, but http.MultipartRequest doesn't natively support byte-level upload progress well. 
       // For a more advanced progress bar, Dio is better, but http works perfectly for direct uploads.

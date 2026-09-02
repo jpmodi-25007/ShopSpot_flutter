@@ -51,3 +51,12 @@ class EventError extends EventState {
 class EventCreating extends EventState {}
 
 class EventCreated extends EventState {}
+
+
+class EventActionSuccess extends EventState {
+  final String message;
+  const EventActionSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

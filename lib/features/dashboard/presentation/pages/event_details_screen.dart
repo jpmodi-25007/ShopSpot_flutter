@@ -8,6 +8,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 
 class EventDetailsScreen extends StatefulWidget {
@@ -45,6 +47,48 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
                     onPressed: () => context.pop(),
                   ),
+                  actions: [
+                    BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                      builder: (context, authState) {
+                        if (authState is AuthenticationLoaded && authState.user.role == 'SHOPKEEPER') {
+                          return Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(LucideIcons.edit3, color: Colors.white),
+                                onPressed: () {
+                                  context.push('/retailer/events/create', extra: event);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(LucideIcons.trash2, color: Colors.white),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Delete Event'),
+                                      content: const Text('Are you sure you want to delete this event?'),
+                                      actions: [
+                                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                        TextButton(
+                                          onPressed: () {
+                                            context.read<EventBloc>().add(DeleteEventRequested(event.id));
+                                            Navigator.pop(context);
+                                            context.pop(); // Go back to dashboard
+                                          },
+                                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
                   flexibleSpace: FlexibleSpaceBar(
                     background: Stack(
                       fit: StackFit.expand,

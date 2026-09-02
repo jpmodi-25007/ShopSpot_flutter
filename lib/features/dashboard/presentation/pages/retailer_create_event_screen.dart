@@ -14,8 +14,11 @@ import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
 
+import '../../domain/entities/event_entity.dart';
+
 class RetailerCreateEventScreen extends StatefulWidget {
-  const RetailerCreateEventScreen({super.key});
+  final EventEntity? eventToEdit;
+  const RetailerCreateEventScreen({super.key, this.eventToEdit});
 
   @override
   State<RetailerCreateEventScreen> createState() => _RetailerCreateEventScreenState();
@@ -34,6 +37,22 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
   XFile? _selectedImage;
   bool _isUploading = false;
   final CloudinaryService _cloudinary = getIt<CloudinaryService>();
+
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.eventToEdit != null) {
+      _titleController.text = widget.eventToEdit!.title;
+      _descriptionController.text = widget.eventToEdit!.description ?? '';
+      _locationController.text = widget.eventToEdit!.location ?? '';
+      _startDate = widget.eventToEdit!.startDate;
+      _endDate = widget.eventToEdit!.endDate;
+      // We can't set _selectedImage from network URL easily without downloading, 
+      // so if they want to keep the old image they don't pick a new one.
+    }
+  }
+
 
   Future<void> _pickImage() async {
     final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
@@ -100,13 +119,11 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
       if (_selectedImage != null) {
         setState(() => _isUploading = true);
         try {
-          if (!kIsWeb) {
-            final result = await _cloudinary.uploadImage(
-              imageFile: File(_selectedImage!.path),
-              folder: 'events',
-            );
-            imageUrl = result.secureUrl;
-          }
+          final result = await _cloudinary.uploadImage(
+            imageFile: _selectedImage!,
+            folder: 'events',
+          );
+          imageUrl = result.secureUrl;
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
           setState(() => _isUploading = false);
@@ -181,9 +198,11 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                       ),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.roleRetailerLight, width: 2),
-                      image: _selectedImage != null && !kIsWeb
+                      image: _selectedImage != null
                           ? DecorationImage(
-                              image: FileImage(File(_selectedImage!.path)),
+                              image: kIsWeb 
+                                  ? NetworkImage(_selectedImage!.path) 
+                                  : FileImage(File(_selectedImage!.path)) as ImageProvider,
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -196,7 +215,12 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                       ]
                     ),
                     child: _selectedImage == null
-                        ? Column(
+                        ? (widget.eventToEdit != null && widget.eventToEdit!.imageUrl != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Image.network(widget.eventToEdit!.imageUrl!, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                              )
+                            : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
@@ -219,7 +243,7 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                               const SizedBox(height: 4),
                               Text('16:9 ratio recommended', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                             ],
-                          )
+                          ))
                         : const SizedBox(),
                   ),
                 ),

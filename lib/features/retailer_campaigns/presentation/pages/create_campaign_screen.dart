@@ -14,6 +14,7 @@ import '../../domain/repositories/retailer_campaign_repository.dart';
 import '../../../retailer_inventory/presentation/bloc/retailer_inventory_bloc.dart';
 import '../../../retailer_inventory/presentation/bloc/retailer_inventory_event.dart';
 import '../../../retailer_inventory/presentation/bloc/retailer_inventory_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class CreateCampaignScreen extends StatefulWidget {
   const CreateCampaignScreen({super.key});
@@ -332,7 +333,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                           price: '₹${p.sellingPrice}',
                                           imageUrl: p.images.isNotEmpty
                                               ? p.images.first
-                                              : 'https://placehold.co/200x200.png',
+                                              : '',
                                         ))
                                     .toList(),
                               );
@@ -465,6 +466,17 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                             : () {
                                 if (!_formKey.currentState!.validate()) return;
 
+                                String? imageUrl;
+                                if (_isSpecificProduct && _selectedProductId != null) {
+                                  final inventoryState = context.read<RetailerInventoryBloc>().state;
+                                  if (inventoryState is RetailerInventoryLoaded) {
+                                    try {
+                                      final product = inventoryState.products.firstWhere((p) => p.id == _selectedProductId);
+                                      if (product.images.isNotEmpty) imageUrl = product.images.first;
+                                    } catch (_) {}
+                                  }
+                                }
+
                                 final params = CreateCampaignParams(
                                   title: _titleController.text.trim(),
                                   description:
@@ -475,6 +487,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                   budgetMin: 0,
                                   budgetMax: double.tryParse(_budgetController.text) ?? 0,
                                   productId: _isSpecificProduct ? _selectedProductId : null,
+                                  imageUrl: imageUrl,
                                   applicationDeadline: _applicationDeadline,
                                   publishByDate: _publishByDate,
                                 );
@@ -519,8 +532,13 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(imageUrl,
-                  width: 48, height: 48, fit: BoxFit.cover),
+              child: AppNetworkImage(
+                url: imageUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -285,6 +285,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => GetEligibleCampaignsUseCase(getIt()));
   getIt.registerLazySingleton(() => GetMyBidsUseCase(getIt()));
   getIt.registerLazySingleton(() => SubmitBidUseCase(getIt()));
+  getIt.registerLazySingleton(() => WithdrawBidUseCase(getIt()));
   getIt.registerLazySingleton(() => GetInfluencerAnalyticsUseCase(getIt()));
 
   getIt.registerFactory(() => InfluencerBloc(
@@ -293,6 +294,7 @@ Future<void> configureDependencies() async {
         getCampaigns: getIt(),
         getMyBids: getIt(),
         submitBid: getIt(),
+        withdrawBid: getIt(),
         getAnalytics: getIt(),
       ));
 

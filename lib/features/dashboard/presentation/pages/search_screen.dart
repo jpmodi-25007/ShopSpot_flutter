@@ -10,6 +10,7 @@ import '../bloc/search_state.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -562,21 +563,14 @@ class _SearchResultCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
+            AppNetworkImage(
+              url: imageUrl.isNotEmpty ? imageUrl : null,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
               borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   bottomLeft: Radius.circular(20)),
-              child: Image.network(
-                imageUrl.isNotEmpty ? imageUrl : 'invalid',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Image.asset(
-                    'assets/images/web_lifestyle_shopping.jpg',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover),
-              ),
             ),
             const SizedBox(width: 16),
             Expanded(

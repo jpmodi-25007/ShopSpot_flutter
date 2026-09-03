@@ -218,7 +218,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                               )
                             else
                               SizedBox(
-                                height: 120,
+                                height: 160,
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   mainAxisAlignment:

@@ -20,6 +20,12 @@ class InfluencerCampaignModel {
   final DateTime? publishByDate;
   final String status;
   final DateTime createdAt;
+  
+  final String? shopName;
+  final String? shopLogoUrl;
+  final String? shopCoverUrl;
+  final String? productName;
+  final String? productImageUrl;
 
   InfluencerCampaignModel({
     required this.id,
@@ -40,6 +46,11 @@ class InfluencerCampaignModel {
     this.publishByDate,
     required this.status,
     required this.createdAt,
+    this.shopName,
+    this.shopLogoUrl,
+    this.shopCoverUrl,
+    this.productName,
+    this.productImageUrl,
   });
 
   factory InfluencerCampaignModel.fromJson(Map<String, dynamic> json) {
@@ -66,7 +77,29 @@ class InfluencerCampaignModel {
           : null,
       status: json['status'] ?? 'DRAFT',
       createdAt: DateTime.parse(json['createdAt']),
+      shopName: json['shop']?['name'],
+      shopLogoUrl: json['shop']?['logoUrl'],
+      shopCoverUrl: json['shop']?['coverImageUrl'],
+      productName: json['product']?['name'],
+      productImageUrl: json['imageUrl'] ?? json['coverImage'] ?? json['coverImageUrl'] ?? _parseProductImage(json['product']),
     );
+  }
+
+  static String? _parseProductImage(Map<String, dynamic>? productJson) {
+    if (productJson == null) return null;
+    if (productJson['imageUrl'] != null) return productJson['imageUrl'];
+    
+    if (productJson['mediaAssets'] != null && productJson['mediaAssets'] is List && (productJson['mediaAssets'] as List).isNotEmpty) {
+      final media = (productJson['mediaAssets'] as List).first;
+      if (media is Map && media['secureUrl'] != null) {
+        return media['secureUrl'].toString();
+      }
+    }
+    
+    if (productJson['images'] != null && productJson['images'] is List && (productJson['images'] as List).isNotEmpty) {
+      return productJson['images'][0].toString();
+    }
+    return null;
   }
 
   InfluencerCampaignEntity toEntity() => InfluencerCampaignEntity(
@@ -88,6 +121,11 @@ class InfluencerCampaignModel {
         publishByDate: publishByDate,
         status: status,
         createdAt: createdAt,
+        shopName: shopName,
+        shopLogoUrl: shopLogoUrl,
+        shopCoverUrl: shopCoverUrl,
+        productName: productName,
+        productImageUrl: productImageUrl,
       );
 }
 
@@ -102,6 +140,14 @@ class InfluencerBidModel {
   final String status;
   final bool isShortlisted;
   final DateTime createdAt;
+  
+  final String? influencerName;
+  final String? influencerAvatar;
+  final String? influencerInstagram;
+  final String? influencerBio;
+  final int? influencerFollowers;
+  final double? influencerEngagement;
+  final String? influencerNiche;
 
   InfluencerBidModel({
     required this.id,
@@ -114,6 +160,13 @@ class InfluencerBidModel {
     required this.status,
     required this.isShortlisted,
     required this.createdAt,
+    this.influencerName,
+    this.influencerAvatar,
+    this.influencerInstagram,
+    this.influencerBio,
+    this.influencerFollowers,
+    this.influencerEngagement,
+    this.influencerNiche,
   });
 
   factory InfluencerBidModel.fromJson(Map<String, dynamic> json) {
@@ -128,6 +181,13 @@ class InfluencerBidModel {
       status: json['status'] ?? 'SUBMITTED',
       isShortlisted: json['isShortlisted'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
+      influencerName: json['influencer']?['name'],
+      influencerAvatar: json['influencer']?['profileImage'] ?? json['influencer']?['profileImageUrl'],
+      influencerInstagram: json['influencer']?['instagramHandle'],
+      influencerBio: json['influencer']?['bio'],
+      influencerFollowers: json['influencer']?['followersCount'] != null ? int.tryParse(json['influencer']!['followersCount'].toString()) : null,
+      influencerEngagement: json['influencer']?['engagementRate'] != null ? double.tryParse(json['influencer']!['engagementRate'].toString()) : null,
+      influencerNiche: json['influencer']?['niche'],
     );
   }
 
@@ -142,5 +202,12 @@ class InfluencerBidModel {
         status: status,
         isShortlisted: isShortlisted,
         createdAt: createdAt,
+        influencerName: influencerName,
+        influencerAvatar: influencerAvatar,
+        influencerInstagram: influencerInstagram,
+        influencerBio: influencerBio,
+        influencerFollowers: influencerFollowers,
+        influencerEngagement: influencerEngagement,
+        influencerNiche: influencerNiche,
       );
 }

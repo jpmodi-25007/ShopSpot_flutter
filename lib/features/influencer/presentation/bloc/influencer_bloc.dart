@@ -11,6 +11,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
   final GetEligibleCampaignsUseCase _getCampaigns;
   final GetMyBidsUseCase _getMyBids;
   final SubmitBidUseCase _submitBid;
+  final WithdrawBidUseCase _withdrawBid;
   final GetInfluencerAnalyticsUseCase _getAnalytics;
 
   InfluencerBloc({
@@ -19,12 +20,14 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     required GetEligibleCampaignsUseCase getCampaigns,
     required GetMyBidsUseCase getMyBids,
     required SubmitBidUseCase submitBid,
+    required WithdrawBidUseCase withdrawBid,
     required GetInfluencerAnalyticsUseCase getAnalytics,
   })  : _getProfile = getProfile,
         _updateProfile = updateProfile,
         _getCampaigns = getCampaigns,
         _getMyBids = getMyBids,
         _submitBid = submitBid,
+        _withdrawBid = withdrawBid,
         _getAnalytics = getAnalytics,
         super(const InfluencerInitial()) {
     on<GetInfluencerProfileRequested>(_onGetProfile);
@@ -32,6 +35,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     on<GetEligibleCampaignsRequested>(_onGetCampaigns);
     on<GetMyBidsRequested>(_onGetMyBids);
     on<SubmitBidRequested>(_onSubmitBid);
+    on<WithdrawBidRequested>(_onWithdrawBid);
     on<GetInfluencerAnalyticsRequested>(_onGetAnalytics);
   }
 
@@ -135,6 +139,19 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
       (bid) {
         // Append to bids list
         final updatedBids = <InfluencerBidEntity>[...(_current.bids ?? []), bid];
+        emit(_current.copyWith(isLoading: false, bids: updatedBids, isSuccess: true));
+      },
+    );
+  }
+
+  Future<void> _onWithdrawBid(WithdrawBidRequested event, Emitter<InfluencerState> emit) async {
+    emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
+    final result = await _withdrawBid.execute(event.bidId);
+    result.fold(
+      (f) => emit(_current.copyWith(isLoading: false, failure: f)),
+      (_) {
+        // Remove from bids list
+        final updatedBids = _current.bids?.where((b) => b.id != event.bidId).toList() ?? [];
         emit(_current.copyWith(isLoading: false, bids: updatedBids, isSuccess: true));
       },
     );

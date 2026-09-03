@@ -14,7 +14,7 @@ class NotificationModel extends NotificationEntity {
     return NotificationModel(
       id: json['id'],
       title: json['title'],
-      message: json['message'],
+      message: json['message'] ?? json['body'] ?? '',
       isRead: json['isRead'] ?? false,
       type: json['type'],
       createdAt: DateTime.parse(json['createdAt']),

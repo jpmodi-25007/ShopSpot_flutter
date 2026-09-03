@@ -7,6 +7,9 @@ import 'package:mobile_web/core/widgets/app_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/influencer_bloc.dart';
+import '../bloc/influencer_state.dart';
 
 class CampaignDetailsScreen extends StatelessWidget {
   final InfluencerCampaignEntity? campaign;
@@ -30,10 +33,21 @@ class CampaignDetailsScreen extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             slivers: [
               SliverAppBar(
-                expandedHeight: MediaQuery.of(context).size.height * 0.45,
+                expandedHeight: 300,
                 pinned: true,
-                backgroundColor: AppColors.white.withValues(alpha: 0.9),
+                backgroundColor: AppColors.white,
                 elevation: 0,
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(24),
+                  child: Container(
+                    height: 24,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: AppColors.neutral50,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    ),
+                  ),
+                ),
                 leading: Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: AppColors.white.withValues(alpha: 0.8), shape: BoxShape.circle),
@@ -59,10 +73,17 @@ class CampaignDetailsScreen extends StatelessWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(
-                        'assets/images/web_hero_boutique.jpg',
-                        fit: BoxFit.cover,
-                      ),
+                      if (campaign?.shopCoverUrl != null || campaign?.productImageUrl != null)
+                        Image.network(
+                          campaign!.shopCoverUrl ?? campaign!.productImageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/web_hero_boutique.jpg', fit: BoxFit.cover),
+                        )
+                      else
+                        Image.asset(
+                          'assets/images/web_hero_boutique.jpg',
+                          fit: BoxFit.cover,
+                        ),
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -79,8 +100,8 @@ class CampaignDetailsScreen extends StatelessWidget {
                         ),
                       ),
                       Positioned(
-                        bottom: 16,
-                        left: 16,
+                        bottom: 40,
+                        left: 24,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
@@ -102,13 +123,9 @@ class CampaignDetailsScreen extends StatelessWidget {
               ),
               SliverToBoxAdapter(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.neutral50,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  ),
-                  transform: Matrix4.translationValues(0, -32, 0),
+                  color: AppColors.neutral50,
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -157,18 +174,35 @@ class CampaignDetailsScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
-                                child: const Icon(LucideIcons.store, color: AppColors.roleInfluencer, size: 24),
-                              ),
+                              if (campaign?.shopLogoUrl != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    campaign!.shopLogoUrl!,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
+                                      child: const Icon(LucideIcons.store, color: AppColors.roleInfluencer, size: 24),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
+                                  child: const Icon(LucideIcons.store, color: AppColors.roleInfluencer, size: 24),
+                                ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('FashionNova', style: AppTextStyles.h4),
+                                    Text(campaign!.shopName ?? 'Brand', style: AppTextStyles.h4),
                                     const SizedBox(height: 4),
                                     Text(campaign!.city ?? 'Global', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
                                   ],
@@ -246,23 +280,29 @@ class CampaignDetailsScreen extends StatelessWidget {
                     color: AppColors.white.withValues(alpha: 0.8),
                     border: const Border(top: BorderSide(color: AppColors.neutral200)),
                   ),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.roleInfluencer,
-                      foregroundColor: AppColors.white,
-                      elevation: 0,
-                      minimumSize: const Size.fromHeight(56),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () => context.push('/influencer/submit-bid', extra: campaign),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(LucideIcons.send, size: 20),
-                        const SizedBox(width: 12),
-                        Text('Place Bid', style: AppTextStyles.h4.copyWith(color: AppColors.white)),
-                      ],
-                    ),
+                  child: BlocBuilder<InfluencerBloc, InfluencerState>(
+                    builder: (context, state) {
+                      final hasBid = state.bids?.any((b) => b.campaignId == campaign?.id) ?? false;
+                      
+                      return ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: hasBid ? AppColors.neutral300 : AppColors.roleInfluencer,
+                          foregroundColor: AppColors.white,
+                          elevation: 0,
+                          minimumSize: const Size.fromHeight(56),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: hasBid ? null : () => context.push('/influencer/submit-bid', extra: campaign),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(hasBid ? LucideIcons.check : LucideIcons.send, size: 20),
+                            const SizedBox(width: 12),
+                            Text(hasBid ? 'Already Applied' : 'Place Bid', style: AppTextStyles.h4.copyWith(color: hasBid ? AppColors.neutral500 : AppColors.white)),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

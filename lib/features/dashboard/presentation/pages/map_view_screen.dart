@@ -18,6 +18,7 @@ import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
 import '../../../../core/widgets/shimmer/skeletons/shop_card_skeleton.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class MapViewScreen extends StatefulWidget {
   const MapViewScreen({super.key});
@@ -319,19 +320,11 @@ class _MapViewScreenState extends State<MapViewScreen> {
           Expanded(
             child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(15)),
-                  child: Image.network(
-                    imageUrl.isNotEmpty ? imageUrl : 'invalid',
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Image.asset(
-                            'assets/images/web_lifestyle_shopping.jpg',
-                            fit: BoxFit.cover,
-                            width: double.infinity),
-                  ),
+                AppNetworkImage(
+                  url: imageUrl.isNotEmpty ? imageUrl : null,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                 ),
                 if (discount.isNotEmpty)
                   Positioned(
@@ -412,16 +405,13 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     color: AppColors.neutral50,
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.neutral200)),
-                child: ClipOval(
-                  child: Image.network(
-                    'invalid',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Image.asset('assets/images/web_hero_boutique.jpg',
-                            fit: BoxFit.cover),
-                  ),
-                ),
-              ),
+                child: AppNetworkImage(
+                url: null,
+                width: 56,
+                height: 56,
+                borderRadius: BorderRadius.circular(28),
+                placeholderIcon: LucideIcons.store,
+              ),),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

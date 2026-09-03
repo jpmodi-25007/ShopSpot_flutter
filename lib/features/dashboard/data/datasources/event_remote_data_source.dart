@@ -23,7 +23,9 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       final response = await dio.get('${ApiConstants.baseUrl}/events/all');
       if (response.data['status'] == 'success') {
         final List<dynamic> data = response.data['data'];
-        return data.map((json) => EventModel.fromJson(json).toEntity()).toList();
+        return data
+            .map((json) => EventModel.fromJson(json).toEntity())
+            .toList();
       }
       throw Exception('Failed to load events');
     } catch (e) {
@@ -37,7 +39,9 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       final response = await dio.get('${ApiConstants.baseUrl}/events/shop');
       if (response.data['status'] == 'success') {
         final List<dynamic> data = response.data['data'];
-        return data.map((json) => EventModel.fromJson(json).toEntity()).toList();
+        return data
+            .map((json) => EventModel.fromJson(json).toEntity())
+            .toList();
       }
       throw Exception('Failed to load shop events');
     } catch (e) {

@@ -40,3 +40,9 @@ class SubmitBidUseCase {
   }) =>
       repository.submitBid(campaignId: campaignId, data: data);
 }
+
+class WithdrawBidUseCase {
+  final InfluencerRepository repository;
+  WithdrawBidUseCase(this.repository);
+  Future<Either<Failure, void>> execute(String bidId) => repository.withdrawBid(bidId);
+}

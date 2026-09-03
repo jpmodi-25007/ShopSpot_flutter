@@ -13,5 +13,6 @@ abstract interface class InfluencerRepository {
     required String campaignId,
     required Map<String, dynamic> data,
   });
+  Future<Either<Failure, void>> withdrawBid(String bidId);
   Future<Either<Failure, Map<String, dynamic>>> getInfluencerAnalytics();
 }

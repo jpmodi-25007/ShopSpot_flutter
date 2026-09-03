@@ -11,6 +11,14 @@ class InfluencerBidEntity extends Equatable {
   final String status;
   final bool isShortlisted;
   final DateTime createdAt;
+  
+  final String? influencerName;
+  final String? influencerAvatar;
+  final String? influencerInstagram;
+  final String? influencerBio;
+  final int? influencerFollowers;
+  final double? influencerEngagement;
+  final String? influencerNiche;
 
   const InfluencerBidEntity({
     required this.id,
@@ -23,11 +31,20 @@ class InfluencerBidEntity extends Equatable {
     required this.status,
     required this.isShortlisted,
     required this.createdAt,
+    this.influencerName,
+    this.influencerAvatar,
+    this.influencerInstagram,
+    this.influencerBio,
+    this.influencerFollowers,
+    this.influencerEngagement,
+    this.influencerNiche,
   });
 
   @override
   List<Object?> get props => [
         id, campaignId, influencerId, proposedAmount, availableDate,
         deliveryDate, proposal, status, isShortlisted, createdAt,
+        influencerName, influencerAvatar, influencerInstagram, influencerBio,
+        influencerFollowers, influencerEngagement, influencerNiche,
       ];
 }

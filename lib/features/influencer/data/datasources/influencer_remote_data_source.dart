@@ -11,6 +11,7 @@ abstract interface class InfluencerRemoteDataSource {
     required String campaignId,
     required Map<String, dynamic> data,
   });
+  Future<void> withdrawBid(String bidId);
   Future<Map<String, dynamic>> getInfluencerAnalytics();
 }
 
@@ -70,5 +71,10 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
   Future<Map<String, dynamic>> getInfluencerAnalytics() async {
     final response = await apiClient.get('/analytics/influencer');
     return response.data;
+  }
+
+  @override
+  Future<void> withdrawBid(String bidId) async {
+    await apiClient.delete('/influencer/bids/$bidId');
   }
 }

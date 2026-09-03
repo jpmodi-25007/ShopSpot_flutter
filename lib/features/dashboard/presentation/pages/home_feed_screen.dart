@@ -28,6 +28,7 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
 import '../../../saved/presentation/bloc/saved_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -683,19 +684,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: Stack(
                 children: [
-                  Image.network(
-                    imageUrl.isNotEmpty ? imageUrl : 'invalid',
+                  AppNetworkImage(
+                    url: imageUrl.isNotEmpty ? imageUrl : null,
                     height: 140,
                     width: double.infinity,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/images/web_hero_boutique.jpg',
-                        height: 140,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      );
-                    },
                   ),
                   Positioned(
                     top: 12,
@@ -805,19 +798,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Image.network(
-                      imageUrl.isNotEmpty ? imageUrl : 'invalid',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset(
-                          'assets/images/web_lifestyle_shopping.jpg',
-                          fit: BoxFit.cover,
-                        );
-                      },
-                    ),
+                  AppNetworkImage(
+                    url: imageUrl.isNotEmpty ? imageUrl : null,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   ),
                   if (badgeType != null)
                     Positioned(

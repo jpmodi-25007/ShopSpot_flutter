@@ -28,15 +28,13 @@ class RetailerCampaignRepositoryImpl implements RetailerCampaignRepository {
   }
 
   @override
-  Future<InfluencerBidEntity> acceptBid(String bidId) async {
-    final model = await remoteDataSource.acceptBid(bidId);
-    return model.toEntity();
+  Future<void> acceptBid(String bidId) async {
+    await remoteDataSource.acceptBid(bidId);
   }
 
   @override
-  Future<InfluencerBidEntity> counterBid(String bidId, double amount, {String? message}) async {
-    final model = await remoteDataSource.counterBid(bidId, amount, message: message);
-    return model.toEntity();
+  Future<void> counterBid(String bidId, double amount, {String? message}) async {
+    await remoteDataSource.counterBid(bidId, amount, message: message);
   }
 
   @override

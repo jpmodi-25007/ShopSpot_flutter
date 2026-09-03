@@ -19,6 +19,12 @@ class InfluencerCampaignEntity extends Equatable {
   final DateTime? publishByDate;
   final String status;
   final DateTime createdAt;
+  
+  final String? shopName;
+  final String? shopLogoUrl;
+  final String? shopCoverUrl;
+  final String? productName;
+  final String? productImageUrl;
 
   const InfluencerCampaignEntity({
     required this.id,
@@ -39,6 +45,11 @@ class InfluencerCampaignEntity extends Equatable {
     this.publishByDate,
     required this.status,
     required this.createdAt,
+    this.shopName,
+    this.shopLogoUrl,
+    this.shopCoverUrl,
+    this.productName,
+    this.productImageUrl,
   });
 
   bool get isHighBudget => budgetMax >= 10000;
@@ -48,5 +59,6 @@ class InfluencerCampaignEntity extends Equatable {
         id, shopkeeperId, shopId, productId, title, description,
         platforms, contentTypes, creatorCount, budgetType, budgetMin,
         budgetMax, city, targetCategories, applicationDeadline, publishByDate, status, createdAt,
+        shopName, shopLogoUrl, shopCoverUrl, productName, productImageUrl,
       ];
 }

@@ -1,4 +1,5 @@
 import '../../features/profile/presentation/pages/help_support_screen.dart';
+import '../features/influencer/domain/entities/influencer_bid_entity.dart';
 import '../../features/profile/presentation/pages/about_findivo_screen.dart';
 
 import 'package:go_router/go_router.dart';
@@ -352,8 +353,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/retailer/influencer-profile/:id',
-      builder: (context, state) => RetailerInfluencerProfileScreen(
-          influencerId: state.pathParameters['id']!),
+      builder: (context, state) {
+        final bid = state.extra as InfluencerBidEntity?;
+        return RetailerInfluencerProfileScreen(
+          influencerId: state.pathParameters['id']!,
+          bid: bid,
+        );
+      },
     ),
 
     // INFLUENCER SHELL

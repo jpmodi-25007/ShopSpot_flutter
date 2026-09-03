@@ -115,8 +115,10 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.neutral50,
+      child: Theme(
+        data: Theme.of(context).copyWith(primaryColor: AppColors.roleInfluencer),
+        child: Scaffold(
+          backgroundColor: AppColors.neutral50,
         appBar: AppBar(
           backgroundColor: AppColors.neutral50,
           leading: IconButton(
@@ -142,15 +144,27 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                 ),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        'assets/images/web_hero_boutique.jpg',
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
+                    if (widget.campaign?.shopCoverUrl != null || widget.campaign?.productImageUrl != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          widget.campaign!.shopCoverUrl ?? widget.campaign!.productImageUrl!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/web_hero_boutique.jpg', width: 60, height: 60, fit: BoxFit.cover),
+                        ),
+                      )
+                    else
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/web_hero_boutique.jpg',
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -188,6 +202,30 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                 label: 'Available to Start',
                 hintText: 'dd/mm/yyyy',
                 suffixIcon: const Icon(LucideIcons.calendar, size: 20),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: AppColors.roleInfluencer,
+                            onPrimary: AppColors.white,
+                            onSurface: AppColors.neutral900,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (date != null) {
+                    _startDateController.text = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                  }
+                },
               ),
               const SizedBox(height: 16),
               AppTextField(
@@ -195,6 +233,30 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                 label: 'Estimated Delivery',
                 hintText: 'dd/mm/yyyy',
                 suffixIcon: const Icon(LucideIcons.calendar, size: 20),
+                readOnly: true,
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 7)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: const ColorScheme.light(
+                            primary: AppColors.roleInfluencer,
+                            onPrimary: AppColors.white,
+                            onSurface: AppColors.neutral900,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (date != null) {
+                    _deliveryDateController.text = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+                  }
+                },
               ),
               const SizedBox(height: 32),
 
@@ -257,6 +319,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

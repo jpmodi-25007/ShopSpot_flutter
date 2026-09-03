@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import '../bloc/retailer_inventory_bloc.dart';
 import '../bloc/retailer_inventory_event.dart';
 import '../bloc/retailer_inventory_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
@@ -831,20 +832,13 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         ),
         child: Row(
           children: [
-            ClipRRect(
+            AppNetworkImage(
+              url: image.isNotEmpty ? image : null,
+              width: 72,
+              height: 72,
+              fit: BoxFit.cover,
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                image.isNotEmpty ? image : 'invalid',
-                width: 72,
-                height: 72,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Image.asset(
-                  'assets/images/web_retailer_inventory.jpg',
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                ),
-              ),
+              placeholderIcon: LucideIcons.package,
             ),
             const SizedBox(width: 16),
             Expanded(

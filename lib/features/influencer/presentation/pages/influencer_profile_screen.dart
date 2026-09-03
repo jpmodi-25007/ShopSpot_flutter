@@ -10,6 +10,11 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/dependency_injection/injection.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class InfluencerProfileScreen extends StatefulWidget {
   const InfluencerProfileScreen({super.key});
@@ -23,6 +28,9 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
     with SingleTickerProviderStateMixin {
   bool _isAvailable = true;
   late AnimationController _animController;
+  bool _isUploadingAvatar = false;
+  final CloudinaryService _cloudinary = getIt<CloudinaryService>();
+  final ImagePicker _picker = ImagePicker();
 
   final List<_PortfolioItem> _portfolio = [
     _PortfolioItem('ElectroHub Summer Campaign', '2.4M views',
@@ -51,6 +59,39 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
   void dispose() {
     _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    setState(() => _isUploadingAvatar = true);
+    try {
+      final result = await _cloudinary.uploadImage(
+        imageFile: image,
+        folder: 'influencer/avatars',
+      );
+      if (mounted) {
+        context.read<InfluencerBloc>().add(
+          UpdateInfluencerProfileRequested({'profileImage': result.secureUrl}),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Profile photo updated!'),
+          backgroundColor: AppColors.roleInfluencer,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to upload image. Please try again.'),
+          backgroundColor: AppColors.error500,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
   }
 
   @override
@@ -127,26 +168,43 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                               return Stack(
                                 alignment: Alignment.bottomRight,
                                 children: [
-                                  Container(
-                                    width: 76,
-                                    height: 76,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: AppColors.white, width: 3),
-                                    ),
-                                    child: ClipOval(
-                                      child: avatarUrl != null &&
-                                              avatarUrl.isNotEmpty
-                                          ? Image.network(avatarUrl,
-                                              fit: BoxFit.cover)
-                                          : Container(
-                                              color: Colors.white24,
-                                              child: const Icon(
-                                                  LucideIcons.user,
-                                                  color: Colors.white,
-                                                  size: 36),
-                                            ),
+                                  GestureDetector(
+                                    onTap: _isUploadingAvatar ? null : _pickAndUploadAvatar,
+                                    child: Stack(
+                                      alignment: Alignment.bottomRight,
+                                      children: [
+                                        Container(
+                                          width: 76,
+                                          height: 76,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                                color: AppColors.white, width: 3),
+                                          ),
+                                          child: _isUploadingAvatar
+                                              ? const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.roleInfluencer)
+                                              : AppNetworkImage(
+                                                  url: avatarUrl,
+                                                  width: 76,
+                                                  height: 76,
+                                                  fit: BoxFit.cover,
+                                                  borderRadius: BorderRadius.circular(38),
+                                                  placeholderIcon: LucideIcons.user,
+                                                ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.roleInfluencer,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: Colors.white, width: 1.5),
+                                          ),
+                                          child: const Icon(LucideIcons.camera,
+                                              color: Colors.white, size: 12),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   if (isApproved)

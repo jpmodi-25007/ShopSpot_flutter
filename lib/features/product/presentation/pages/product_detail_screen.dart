@@ -21,6 +21,7 @@ import '../../../negotiation/presentation/bloc/negotiation_event.dart';
 import '../../../negotiation/presentation/bloc/negotiation_state.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import 'dart:ui';
+import '../../../../core/widgets/app_network_image.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -388,8 +389,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       style: const TextStyle(color: Colors.red)));
             } else if (state is ProductDetailLoaded) {
               final product = state.product;
-              final images =
-                  product.images.isNotEmpty ? product.images : ['invalid'];
+              final images = product.images.where((i) => i.isNotEmpty).toList();
 
               return Stack(
                 children: [
@@ -403,17 +403,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           height: screenH * 0.55,
                           width: double.infinity,
                           child: PageView.builder(
-                            itemCount: images.length,
+                            itemCount: images.isEmpty ? 1 : images.length,
                             itemBuilder: (context, index) {
-                              return Image.network(
-                                images[index],
+                              return AppNetworkImage(
+                                url: images.isEmpty ? null : images[index],
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.asset(
-                                    'assets/images/web_lifestyle_shopping.jpg',
-                                    fit: BoxFit.cover,
-                                  );
-                                },
+                                width: double.infinity,
+                                placeholderIcon: LucideIcons.package,
                               );
                             },
                           ),

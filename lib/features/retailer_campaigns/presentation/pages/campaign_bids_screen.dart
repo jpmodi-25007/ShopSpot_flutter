@@ -118,14 +118,25 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Image.network('https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop', width: 48, height: 48, fit: BoxFit.cover),
+                child: Image.network(
+                  bid.influencerAvatar ?? 'https://ui-avatars.com/api/?name=${bid.influencerName ?? 'Influencer'}&background=random',
+                  width: 48,
+                  height: 48,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, st) => Container(
+                    width: 48,
+                    height: 48,
+                    color: AppColors.neutral200,
+                    child: const Icon(LucideIcons.user, color: AppColors.neutral500),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Influencer', style: AppTextStyles.h4),
+                    Text(bid.influencerName ?? 'Influencer', style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
                     Text('View Profile', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                   ],
                 ),

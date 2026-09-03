@@ -4,10 +4,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../influencer/domain/entities/influencer_bid_entity.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class RetailerInfluencerProfileScreen extends StatelessWidget {
   final String influencerId;
-  const RetailerInfluencerProfileScreen({super.key, required this.influencerId});
+  final InfluencerBidEntity? bid;
+  const RetailerInfluencerProfileScreen({super.key, required this.influencerId, this.bid});
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +32,9 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primary100, AppColors.white],
+                    colors: [AppColors.roleRetailer.withValues(alpha: 0.1), AppColors.white],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -50,16 +53,18 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
                         children: [
-                          Text('Influencer #$influencerId', style: AppTextStyles.h2),
+                          Text(bid?.influencerName ?? 'Influencer #$influencerId', style: AppTextStyles.h2, textAlign: TextAlign.center),
                           const SizedBox(height: 4),
-                          Text('@elena.creates', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
-                          const SizedBox(height: 8),
+                          if (bid?.influencerInstagram != null) ...[
+                            Text('@${bid!.influencerInstagram}', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+                            const SizedBox(height: 8),
+                          ],
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(LucideIcons.mapPin, size: 14, color: AppColors.neutral500),
                               const SizedBox(width: 4),
-                              Text('Seattle, WA', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                              Text('Global', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                               const SizedBox(width: 12),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -71,7 +76,7 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                                   children: [
                                     const Icon(LucideIcons.zap, size: 12, color: AppColors.success600),
                                     const SizedBox(width: 4),
-                                    Text('98% Match', style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.bold)),
+                                    Text('Match', style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
@@ -83,9 +88,9 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildStat('45.2K', 'Followers'),
-                              _buildStat('4.8%', 'Engagement'),
-                              _buildStat('Lifestyle', 'Niche'),
+                              _buildStat(bid?.influencerFollowers?.toString() ?? '--', 'Followers'),
+                              _buildStat('${bid?.influencerEngagement?.toStringAsFixed(1) ?? '--'}%', 'Engagement'),
+                              _buildStat(bid?.influencerNiche ?? 'General', 'Niche'),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -101,10 +106,10 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('About Elena', style: AppTextStyles.h4),
+                                Text('About ${bid?.influencerName ?? 'Influencer'}', style: AppTextStyles.h4),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'I create cozy lifestyle and home aesthetic content. Passionate about sharing beautifully crafted items that elevate everyday routines. My audience loves discovering unique artisanal pieces!',
+                                  bid?.influencerBio ?? 'No bio provided.',
                                   style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600, height: 1.5),
                                 ),
                               ],
@@ -117,15 +122,16 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text('Recent Work', style: AppTextStyles.h4),
-                              GestureDetector(
-                                onTap: () async {
-                                  final url = Uri.parse('https://instagram.com');
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(url);
-                                  }
-                                },
-                                child: Text('View Instagram', style: AppTextStyles.caption.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
-                              ),
+                              if (bid?.influencerInstagram != null)
+                                GestureDetector(
+                                  onTap: () async {
+                                    final url = Uri.parse('https://instagram.com/${bid!.influencerInstagram}');
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url);
+                                    }
+                                  },
+                                  child: Text('View Instagram', style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -158,14 +164,13 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                         color: AppColors.white,
                         shape: BoxShape.circle,
                       ),
-                      child: ClipRRect(
+                      child: AppNetworkImage(
+                        url: bid?.influencerAvatar,
+                        width: 104,
+                        height: 104,
+                        fit: BoxFit.cover,
                         borderRadius: BorderRadius.circular(56),
-                        child: Container(
-                          width: 104,
-                          height: 104,
-                          color: AppColors.neutral100,
-                          child: const Icon(LucideIcons.user, size: 48, color: AppColors.neutral400),
-                        ),
+                        placeholderIcon: LucideIcons.user,
                       ),
                     ),
                   ),
@@ -232,7 +237,7 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: AppColors.primary500,
+                  backgroundColor: AppColors.roleRetailer,
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -248,7 +253,7 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
   Widget _buildStat(String value, String label) {
     return Column(
       children: [
-        Text(value, style: AppTextStyles.h2.copyWith(color: AppColors.primary600)),
+        Text(value, style: AppTextStyles.h2.copyWith(color: AppColors.roleRetailer)),
         const SizedBox(height: 4),
         Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
       ],

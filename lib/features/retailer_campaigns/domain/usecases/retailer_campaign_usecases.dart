@@ -33,7 +33,7 @@ class AcceptBidUseCase {
   final RetailerCampaignRepository repository;
   AcceptBidUseCase(this.repository);
 
-  Future<InfluencerBidEntity> call(String bidId) {
+  Future<void> call(String bidId) {
     return repository.acceptBid(bidId);
   }
 }
@@ -42,7 +42,7 @@ class CounterBidUseCase {
   final RetailerCampaignRepository repository;
   CounterBidUseCase(this.repository);
 
-  Future<InfluencerBidEntity> call(String bidId, double amount, {String? message}) {
+  Future<void> call(String bidId, double amount, {String? message}) {
     return repository.counterBid(bidId, amount, message: message);
   }
 }

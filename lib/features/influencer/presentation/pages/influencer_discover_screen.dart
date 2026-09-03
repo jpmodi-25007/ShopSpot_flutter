@@ -11,6 +11,7 @@ import '../../domain/entities/influencer_campaign_entity.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class InfluencerDiscoverScreen extends StatefulWidget {
   const InfluencerDiscoverScreen({super.key});
@@ -260,12 +261,12 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                                 context,
                                 campaign: campaign,
                                 title: campaign.title,
-                                brand: campaign.city ?? 'Brand',
+                                brand: campaign.shopName ?? 'Brand',
                                 matchPercent: '98%',
                                 budget:
                                     '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
                                 platforms: campaign.platforms,
-                                imageUrl: 'invalid', // force errorBuilder
+                                imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
                               ),
                             );
                           }).toList(),
@@ -320,7 +321,7 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                           c.title,
                           c.shopName ?? 'Brand',
                           '₹${c.budgetMax.toStringAsFixed(0)}',
-                          c.shopLogo ?? 'invalid',
+                          c.shopLogoUrl ?? c.shopCoverUrl,
                         );
                       },
                     ),
@@ -383,7 +384,7 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
     required String matchPercent,
     required String budget,
     required List<String> platforms,
-    required String imageUrl,
+    String? imageUrl,
   }) {
     return GestureDetector(
       onTap: () async {
@@ -409,17 +410,12 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
           children: [
             Stack(
               children: [
-                Image.network(
-                  imageUrl,
+                AppNetworkImage(
+                  url: imageUrl,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, st) => Image.asset(
-                    'assets/images/web_lifestyle_shopping.jpg',
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  placeholderIcon: LucideIcons.store,
                 ),
                 Positioned(
                   top: 16,
@@ -556,7 +552,7 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
   }
 
   Widget _buildPremiumMiniCard(
-      String title, String brand, String budget, String imageUrl) {
+      String title, String brand, String budget, String? imageUrl) {
     return Container(
       width: 280,
       decoration: BoxDecoration(
@@ -573,20 +569,13 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          ClipRRect(
+          AppNetworkImage(
+            url: imageUrl,
+            width: 100,
+            height: 120,
+            fit: BoxFit.cover,
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              imageUrl,
-              width: 100,
-              height: 120,
-              fit: BoxFit.cover,
-              errorBuilder: (ctx, err, st) => Image.asset(
-                'assets/images/web_hero_boutique.jpg',
-                width: 100,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
-            ),
+            placeholderIcon: LucideIcons.store,
           ),
           const SizedBox(width: 16),
           Expanded(

@@ -51,3 +51,11 @@ final class SubmitBidRequested extends InfluencerEvent {
 final class GetInfluencerAnalyticsRequested extends InfluencerEvent {
   const GetInfluencerAnalyticsRequested();
 }
+
+final class WithdrawBidRequested extends InfluencerEvent {
+  final String bidId;
+  const WithdrawBidRequested(this.bidId);
+
+  @override
+  List<Object?> get props => [bidId];
+}

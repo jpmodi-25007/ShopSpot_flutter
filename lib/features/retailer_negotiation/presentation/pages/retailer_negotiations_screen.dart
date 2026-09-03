@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/retailer_negotiation_bloc.dart';
 import '../bloc/retailer_negotiation_event.dart';
 import '../bloc/retailer_negotiation_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class RetailerNegotiationsScreen extends StatefulWidget {
   const RetailerNegotiationsScreen({super.key});
@@ -206,7 +207,7 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                               customerName: 'Customer', // Would come from Customer entity
                               offeredPrice: '₹${n.offeredPrice.toStringAsFixed(0)}',
                               askingPrice: '₹${n.initialPrice.toStringAsFixed(0)}',
-                              imageUrl: n.product?.images.isNotEmpty == true ? n.product!.images.first : 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=100&auto=format&fit=crop',
+                              imageUrl: n.product?.images.isNotEmpty == true ? n.product!.images.first : '',
                               actionBtnText: 'Review Offer',
                               actionBtnPrimary: true,
                               onActionPressed: () => context.push('/retailer/negotiations/${n.id}'),
@@ -289,9 +290,13 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                ClipRRect(
+                AppNetworkImage(
+                  url: imageUrl.isNotEmpty ? imageUrl : null,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                  placeholderIcon: LucideIcons.package,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

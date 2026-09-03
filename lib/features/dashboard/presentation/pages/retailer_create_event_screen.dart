@@ -139,7 +139,7 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
           location: _locationController.text,
           startDate: _startDate!,
           endDate: _endDate!,
-          imageUrl: imageUrl ?? 'https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg',
+          imageUrl: imageUrl, // null is valid — no image selected
         ),
       );
     }

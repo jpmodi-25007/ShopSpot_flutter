@@ -9,6 +9,7 @@ import '../bloc/influencer_state.dart';
 import '../bloc/influencer_event.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class InfluencerAllCampaignsScreen extends StatefulWidget {
   const InfluencerAllCampaignsScreen({super.key});
@@ -75,9 +76,10 @@ class _InfluencerAllCampaignsScreenState
                   title: campaign.title,
                   brand: campaign.shopName ?? 'Brand',
                   matchPercent: '98%',
-                  budget: '₹${campaign.budgetMax.toStringAsFixed(0)}',
+                  budget:
+                      '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
                   platforms: campaign.platforms,
-                  imageUrl: campaign.shopLogo ?? 'invalid',
+                  imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
                 );
               },
             ),
@@ -95,11 +97,11 @@ class _InfluencerAllCampaignsScreenState
     required String matchPercent,
     required String budget,
     required List<String> platforms,
-    required String imageUrl,
+    String? imageUrl,
   }) {
     return GestureDetector(
       onTap: () =>
-          context.push('/influencer/campaigns/${campaign.id}', extra: campaign),
+          context.push('/influencer/campaign-details', extra: campaign),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -115,20 +117,12 @@ class _InfluencerAllCampaignsScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: AppColors.neutral200,
-                    child: const Center(
-                        child: Icon(LucideIcons.image,
-                            color: AppColors.neutral400)),
-                  ),
-                ),
+              child: AppNetworkImage(
+                url: imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                placeholderIcon: LucideIcons.store,
               ),
             ),
             Padding(

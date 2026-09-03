@@ -13,6 +13,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool filled;
   final bool readOnly;
+  final VoidCallback? onTap;
 
   const AppTextField({
     super.key,
@@ -26,6 +27,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.filled = false,
     this.readOnly = false,
+    this.onTap,
   });
 
   @override
@@ -44,6 +46,7 @@ class AppTextField extends StatelessWidget {
           cursorColor: Theme.of(context).primaryColor,
           validator: validator,
           readOnly: readOnly,
+          onTap: onTap,
           style: AppTextStyles.body.copyWith(color: AppColors.neutral900),
           decoration: InputDecoration(
             hintText: hintText,

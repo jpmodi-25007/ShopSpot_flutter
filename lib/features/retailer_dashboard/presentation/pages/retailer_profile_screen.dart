@@ -13,6 +13,10 @@ import '../../../../core/dependency_injection/injection.dart';
 import '../bloc/retailer_dashboard_bloc.dart';
 import '../bloc/retailer_dashboard_event.dart';
 import '../bloc/retailer_dashboard_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/services/cloudinary_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class RetailerProfileScreen extends StatefulWidget {
   const RetailerProfileScreen({super.key});
@@ -70,25 +74,26 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                           Container(
                             decoration: BoxDecoration(
                               color: AppColors.neutral200,
-                              image: shop?.coverImageUrl != null &&
-                                      shop!.coverImageUrl!.isNotEmpty
-                                  ? DecorationImage(
-                                      image: NetworkImage(shop.coverImageUrl!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
                               gradient: shop?.coverImageUrl == null ||
                                       shop!.coverImageUrl!.isEmpty
                                   ? const LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        Color(0xFF0F766E),
-                                        Color(0xFF14B8A6)
+                                        AppColors.roleRetailer,
+                                        AppColors.secondary500
                                       ],
                                     )
                                   : null,
                             ),
+                            child: shop?.coverImageUrl != null && shop!.coverImageUrl!.isNotEmpty
+                                ? AppNetworkImage(
+                                    url: shop.coverImageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  )
+                                : null,
                           ),
                           Positioned(
                             top: -40,
@@ -136,13 +141,13 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(18),
-                                    child: shop?.logoUrl != null &&
-                                            shop!.logoUrl!.isNotEmpty
-                                        ? Image.network(shop.logoUrl!,
-                                            fit: BoxFit.cover)
-                                        : const Icon(LucideIcons.store,
-                                            color: AppColors.roleRetailer,
-                                            size: 36),
+                                    child: AppNetworkImage(
+                                      url: shop?.logoUrl,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      placeholderIcon: LucideIcons.store,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -544,9 +549,14 @@ class _EditRetailerProfileBottomSheetState
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
-  late TextEditingController _logoUrlController;
-  late TextEditingController _coverUrlController;
   final _formKey = GlobalKey<FormState>();
+
+  String? _logoUrl;
+  String? _coverUrl;
+  bool _isUploadingLogo = false;
+  bool _isUploadingCover = false;
+  final ImagePicker _picker = ImagePicker();
+  final CloudinaryService _cloudinary = getIt<CloudinaryService>();
 
   double? _latitude;
   double? _longitude;
@@ -592,6 +602,46 @@ class _EditRetailerProfileBottomSheetState
     }
   }
 
+  Future<void> _pickAndUploadImage({required bool isLogo}) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    if (mounted) {
+      setState(() {
+        if (isLogo) _isUploadingLogo = true;
+        else _isUploadingCover = true;
+      });
+    }
+
+    try {
+      final result = await _cloudinary.uploadImage(
+        imageFile: image,
+        folder: 'shop/images',
+      );
+      if (mounted) {
+        setState(() {
+          if (isLogo) _logoUrl = result.secureUrl;
+          else _coverUrl = result.secureUrl;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to upload image. Please try again.'),
+          backgroundColor: AppColors.error500,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (isLogo) _isUploadingLogo = false;
+          else _isUploadingCover = false;
+        });
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -603,10 +653,8 @@ class _EditRetailerProfileBottomSheetState
         TextEditingController(text: widget.shop?.address ?? '');
     _phoneController = TextEditingController(text: widget.shop?.phone ?? '');
     _emailController = TextEditingController(text: widget.shop?.email ?? '');
-    _logoUrlController =
-        TextEditingController(text: widget.shop?.logoUrl ?? '');
-    _coverUrlController =
-        TextEditingController(text: widget.shop?.coverImageUrl ?? '');
+    _logoUrl = widget.shop?.logoUrl;
+    _coverUrl = widget.shop?.coverImageUrl;
     _latitude = widget.shop?.latitude;
     _longitude = widget.shop?.longitude;
   }
@@ -619,8 +667,6 @@ class _EditRetailerProfileBottomSheetState
     _addressController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
-    _logoUrlController.dispose();
-    _coverUrlController.dispose();
     super.dispose();
   }
 
@@ -648,12 +694,8 @@ class _EditRetailerProfileBottomSheetState
       'address': address,
       'phone': phone,
       'email': email,
-      'logoUrl': _logoUrlController.text.trim().isEmpty
-          ? null
-          : _logoUrlController.text.trim(),
-      'coverImageUrl': _coverUrlController.text.trim().isEmpty
-          ? null
-          : _coverUrlController.text.trim(),
+      'logoUrl': _logoUrl,
+      'coverImageUrl': _coverUrl,
       if (_latitude != null) 'latitude': _latitude,
       if (_longitude != null) 'longitude': _longitude,
     };
@@ -859,30 +901,84 @@ class _EditRetailerProfileBottomSheetState
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _logoUrlController,
-                    keyboardType: TextInputType.url,
-                    decoration: InputDecoration(
-                      labelText: 'Logo Image URL',
-                      filled: true,
-                      fillColor: AppColors.neutral50,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _coverUrlController,
-                    keyboardType: TextInputType.url,
-                    decoration: InputDecoration(
-                      labelText: 'Cover Image URL',
-                      filled: true,
-                      fillColor: AppColors.neutral50,
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Logo Image', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700)),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: _isUploadingLogo ? null : () => _pickAndUploadImage(isLogo: true),
+                              child: Container(
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: AppColors.neutral50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.neutral200),
+                                ),
+                                child: _isUploadingLogo
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : _logoUrl != null && _logoUrl!.isNotEmpty
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: AppNetworkImage(url: _logoUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                                          )
+                                        : const Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(LucideIcons.uploadCloud, color: AppColors.neutral400),
+                                                SizedBox(height: 4),
+                                                Text('Upload Logo', style: TextStyle(fontSize: 12, color: AppColors.neutral500)),
+                                              ],
+                                            ),
+                                          ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cover Image', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700)),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: _isUploadingCover ? null : () => _pickAndUploadImage(isLogo: false),
+                              child: Container(
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: AppColors.neutral50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.neutral200),
+                                ),
+                                child: _isUploadingCover
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : _coverUrl != null && _coverUrl!.isNotEmpty
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: AppNetworkImage(url: _coverUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                                          )
+                                        : const Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(LucideIcons.uploadCloud, color: AppColors.neutral400),
+                                                SizedBox(height: 4),
+                                                Text('Upload Cover', style: TextStyle(fontSize: 12, color: AppColors.neutral500)),
+                                              ],
+                                            ),
+                                          ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(

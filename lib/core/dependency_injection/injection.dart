@@ -287,6 +287,8 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => SubmitBidUseCase(getIt()));
   getIt.registerLazySingleton(() => WithdrawBidUseCase(getIt()));
   getIt.registerLazySingleton(() => GetInfluencerAnalyticsUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetMyAssignmentsUseCase(getIt()));
+  getIt.registerLazySingleton(() => SubmitDeliverableUseCase(getIt()));
 
   getIt.registerFactory(() => InfluencerBloc(
         getProfile: getIt(),
@@ -296,6 +298,8 @@ Future<void> configureDependencies() async {
         submitBid: getIt(),
         withdrawBid: getIt(),
         getAnalytics: getIt(),
+        getMyAssignments: getIt(),
+        submitDeliverable: getIt(),
       ));
 
   // Features (Negotiation)

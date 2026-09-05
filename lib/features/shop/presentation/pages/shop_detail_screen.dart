@@ -9,6 +9,8 @@ import '../../../../core/widgets/app_badge.dart';
 import '../../../../core/network/api_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/dependency_injection/injection.dart';
 import '../../domain/entities/shop_entity.dart';
 import '../bloc/shop_bloc.dart';
 import '../bloc/shop_event.dart';
@@ -18,7 +20,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class ShopDetailScreen extends StatefulWidget {
   final String shopId;
-  const ShopDetailScreen({super.key, required this.shopId});
+  final bool isInfluencer;
+  const ShopDetailScreen({super.key, required this.shopId, this.isInfluencer = false});
 
   @override
   State<ShopDetailScreen> createState() => _ShopDetailScreenState();
@@ -27,6 +30,10 @@ class ShopDetailScreen extends StatefulWidget {
 class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedCategoryIndex = 0;
+  List<dynamic> _reviews = [];
+  List<dynamic> _offers = [];
+  bool _isLoadingReviews = true;
+  bool _isLoadingOffers = true;
 
   @override
   void initState() {
@@ -34,6 +41,52 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
     _tabController = TabController(length: 4, vsync: this);
     context.read<ShopBloc>().add(GetPublicShopRequested(widget.shopId));
     context.read<ShopBloc>().add(GetShopProductsRequested(id: widget.shopId));
+    _fetchReviews();
+    _fetchOffers();
+  }
+
+  Future<void> _fetchOffers() async {
+    try {
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.get('/shops/${widget.shopId}/offers');
+      if (mounted) {
+        setState(() {
+          _offers = response.data is List ? response.data : (response.data['data'] ?? []);
+          _isLoadingOffers = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingOffers = false);
+      }
+    }
+  }
+
+  Future<void> _fetchReviews() async {
+    try {
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.get('/shops/${widget.shopId}/reviews');
+      if (mounted) {
+        setState(() {
+          _reviews = response.data is List ? response.data : (response.data['data'] ?? []);
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingReviews = false);
+      }
+    }
+  }
+
+  String _formatAddress(ShopEntity? shop) {
+    if (shop == null) return '';
+    final addressLine = shop.address.isNotEmpty ? shop.address : null;
+    final otherParts = [shop.city, shop.state, shop.pincode].where((p) => p != null && p.isNotEmpty).toList();
+    if (addressLine == null && otherParts.isEmpty) return 'Address not provided';
+    if (addressLine != null && otherParts.isNotEmpty) return '$addressLine\n${otherParts.join(', ')}';
+    if (addressLine != null) return addressLine;
+    return otherParts.join(', ');
   }
 
   @override
@@ -85,9 +138,16 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           decoration: BoxDecoration(color: AppColors.white.withValues(alpha: 0.8), shape: BoxShape.circle),
                           child: const Icon(LucideIcons.share2, color: AppColors.neutral900),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (shop != null) {
-                            Share.share('Check out ${shop.name} on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                            try {
+                              final name = shop.name.isNotEmpty ? shop.name : 'Shop Name';
+                              await Share.share('Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
+                              }
+                            }
                           }
                         },
                       ),
@@ -147,7 +207,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                     children: [
                                       Row(
                                         children: [
-                                          Expanded(child: Text(shop?.name ?? 'Shop Name', style: AppTextStyles.h2.copyWith(fontSize: 20), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                                          Expanded(child: Text(shop?.name != null && shop!.name.isNotEmpty ? shop!.name : 'Shop Name', style: AppTextStyles.h2.copyWith(fontSize: 20), maxLines: 3, overflow: TextOverflow.ellipsis)),
                                           const SizedBox(width: 4),
                                           if (shop?.isKycVerified == true)
                                             const Icon(LucideIcons.shieldCheck, size: 20, color: AppColors.primary500),
@@ -158,7 +218,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                         children: [
                                           const Icon(LucideIcons.star, size: 14, color: AppColors.secondary500),
                                           const SizedBox(width: 4),
-                                          Text('${shop?.rating ?? 0.0} (${shop?.reviewCount ?? 0} Reviews) • ${shop?.city ?? ""}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral700)),
+                                          Text('${shop?.rating ?? 0.0} (${shop?.reviewCount ?? 0} Reviews)${(shop?.city != null && shop!.city!.isNotEmpty) ? ' • ${shop.city}' : ''}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral700)),
                                         ],
                                       ),
                                     ],
@@ -203,10 +263,13 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           _buildActionItem(context, LucideIcons.share, 'Share', onTap: () async {
                             if (shop != null) {
                               try {
-                                await Share.share('Check out ${shop.name} on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                                final name = shop.name.isNotEmpty ? shop.name : 'Shop Name';
+                                await Share.share('Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
                               } catch (e) {
                                 // Fallback if Share plugin is missing on this platform (e.g., dev environment)
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
+                                }
                               }
                             }
                           }),
@@ -230,7 +293,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                   const Icon(LucideIcons.mapPin, size: 20, color: AppColors.neutral500),
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Text('${shop?.address ?? ''}\n${shop?.city ?? ''}, ${shop?.state ?? ''} ${shop?.pincode ?? ''}', style: AppTextStyles.bodySmall),
+                                    child: Text(_formatAddress(shop), style: AppTextStyles.bodySmall),
                                   )
                                 ],
                               ),
@@ -258,9 +321,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                 delegate: _SliverAppBarDelegate(
                   TabBar(
                     controller: _tabController,
-                    labelColor: AppColors.primary500,
+                    labelColor: widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500,
                     unselectedLabelColor: AppColors.neutral500,
-                    indicatorColor: AppColors.primary500,
+                    indicatorColor: widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500,
                     indicatorWeight: 3,
                     labelStyle: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
                     unselectedLabelStyle: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
@@ -280,7 +343,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
             children: [
               _buildProductsTab(products),
               _buildOffersTab(),
-              _buildReviewsTab(),
+              _buildReviewsTab(shop),
               _buildAboutTab(shop),
             ],
           ),
@@ -293,6 +356,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
       );
   }
   Widget _buildActionItem(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
+    final color = widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500;
     return InkWell(
       onTap: onTap ?? () {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label action tapped')));
@@ -304,13 +368,13 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.primary500),
+              border: Border.all(color: color),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: AppColors.primary500),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(height: 8),
-          Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.primary500)),
+          Text(label, style: AppTextStyles.caption.copyWith(color: color)),
         ],
       ),
     );
@@ -342,13 +406,17 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary500 : AppColors.primary100,
+                        color: isSelected
+                            ? (widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500)
+                            : (widget.isInfluencer ? AppColors.roleInfluencerLight : AppColors.primary100),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         categories[index],
                         style: AppTextStyles.caption.copyWith(
-                          color: isSelected ? AppColors.white : AppColors.primary500,
+                          color: isSelected
+                              ? AppColors.white
+                              : (widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -398,7 +466,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
 
   Widget _buildProductCard(String productId, String title, String price, String imageUrl, AppBadgeType? badgeType, String badgeText) {
     return InkWell(
-      onTap: () => context.push('/product-detail/$productId'),
+      onTap: () => context.push(
+        '/product-detail/$productId${widget.isInfluencer ? '?from=influencer' : ''}',
+      ),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -464,10 +534,38 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
   }
 
   Widget _buildOffersTab() {
+    if (_isLoadingOffers) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(24.0),
+        child: CircularProgressIndicator(),
+      ));
+    }
+    
+    if (_offers.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            children: [
+              const Icon(LucideIcons.tag, size: 48, color: AppColors.neutral300),
+              const SizedBox(height: 16),
+              Text('No active offers', style: AppTextStyles.h4.copyWith(color: AppColors.neutral500)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-      children: [
-        Container(
+      children: _offers.map((offer) {
+        final title = offer['title'] ?? 'Special Offer';
+        final description = offer['description'] ?? 'Limited time only';
+        final discountType = offer['discountType'] ?? 'PERCENTAGE';
+        final discountValue = offer['discountValue']?.toString() ?? '0';
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -478,64 +576,80 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('FESTIVAL SALE', style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.bold)),
+              Text(
+                discountType == 'PERCENTAGE' ? 'FLAT $discountValue% OFF' : '₹$discountValue OFF', 
+                style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.bold)
+              ),
               const SizedBox(height: 8),
-              Text('Flat 20% Off on Audio', style: AppTextStyles.h2.copyWith(color: AppColors.white)),
+              Text(title, style: AppTextStyles.h2.copyWith(color: AppColors.white)),
               const SizedBox(height: 4),
-              Text('Valid till Oct 31. T&C Apply.', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white.withValues(alpha: 0.9))),
+              Text(description, style: AppTextStyles.bodySmall.copyWith(color: AppColors.white.withValues(alpha: 0.9))),
             ],
           ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.neutral100,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.neutral300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('BUNDLE OFFER', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text('Buy 1 Get 1 on Accessories', style: AppTextStyles.h3),
-              const SizedBox(height: 4),
-              Text('Selected items only.', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
-            ],
-          ),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildReviewsTab() {
+  Widget _buildReviewsTab(ShopEntity? shop) {
+    if (_isLoadingReviews) {
+      return const Center(child: Padding(
+        padding: EdgeInsets.all(24.0),
+        child: CircularProgressIndicator(),
+      ));
+    }
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('4.8', style: AppTextStyles.h1.copyWith(fontSize: 48)),
+            Text('${shop?.rating ?? 0.0}', style: AppTextStyles.h1.copyWith(fontSize: 48)),
             const SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  children: List.generate(5, (index) => Icon(LucideIcons.star, color: index < 4 ? AppColors.secondary500 : AppColors.neutral300, size: 20)),
+                  children: List.generate(5, (index) {
+                    final rating = shop?.rating ?? 0;
+                    return Icon(LucideIcons.star, color: index < rating ? AppColors.secondary500 : AppColors.neutral300, size: 20);
+                  }),
                 ),
                 const SizedBox(height: 4),
-                Text('Based on 124 reviews', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+                Text('Based on ${shop?.reviewCount ?? 0} reviews', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
               ],
             )
           ],
         ),
         const SizedBox(height: 24),
-        _buildReviewItem('Sarah J.', '2 weeks ago', 5, 'Great experience! I bought a TV and they delivered it within 2 hours. Very professional staff.'),
-        const Divider(),
-        _buildReviewItem('Mike T.', '1 month ago', 4, 'Good collection of gadgets, but parking is a bit tight near the store.'),
-        const Divider(),
-        _buildReviewItem('Priya S.', '2 months ago', 5, 'Authentic products and amazing discounts. Highly recommend for electronics!'),
+        if (_reviews.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                children: [
+                  const Icon(LucideIcons.messageSquare, size: 48, color: AppColors.neutral300),
+                  const SizedBox(height: 16),
+                  Text('No reviews yet', style: AppTextStyles.h4.copyWith(color: AppColors.neutral500)),
+                ],
+              ),
+            ),
+          )
+        else
+          ..._reviews.map((r) {
+            final customer = r['customer'];
+            final name = customer != null ? (customer['displayName'] ?? customer['name'] ?? 'User') : 'Anonymous';
+            final date = r['createdAt'] != null ? DateTime.parse(r['createdAt']).toLocal().toString().split(' ')[0] : 'Recently';
+            final rating = (r['rating'] as num?)?.toInt() ?? 5;
+            final comment = r['comment'] ?? r['title'] ?? 'No comment provided';
+            return Column(
+              children: [
+                _buildReviewItem(name, date, rating, comment),
+                const Divider(),
+              ],
+            );
+          }),
       ],
     );
   }

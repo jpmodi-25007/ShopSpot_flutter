@@ -59,3 +59,16 @@ final class WithdrawBidRequested extends InfluencerEvent {
   @override
   List<Object?> get props => [bidId];
 }
+
+final class GetMyAssignmentsRequested extends InfluencerEvent {
+  const GetMyAssignmentsRequested();
+}
+
+final class SubmitDeliverableRequested extends InfluencerEvent {
+  final String assignmentId;
+  final String contentUrl;
+  const SubmitDeliverableRequested({required this.assignmentId, required this.contentUrl});
+
+  @override
+  List<Object?> get props => [assignmentId, contentUrl];
+}

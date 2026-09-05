@@ -94,10 +94,19 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
             ),
           ),
           child: SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: Column(
-                children: [
+            child: BlocBuilder<InfluencerBloc, InfluencerState>(
+              builder: (context, state) {
+                // Prevent flash if we are still fetching the initial profile check
+                if (state is InfluencerInitial || (state is InfluencerLoaded && state.isLoading && state.profile == null)) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                }
+                
+                return FadeTransition(
+                  opacity: _fadeAnim,
+                  child: Column(
+                    children: [
                   // Top bar with logout
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -267,11 +276,13 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
                   const SizedBox(height: 32),
                 ],
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

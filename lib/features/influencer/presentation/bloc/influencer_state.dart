@@ -8,6 +8,7 @@ sealed class InfluencerState extends Equatable {
   final InfluencerProfileEntity? profile;
   final List<InfluencerCampaignEntity>? campaigns;
   final List<InfluencerBidEntity>? bids;
+  final List<Map<String, dynamic>>? assignments;
   final bool campaignsHasReachedMax;
   final int campaignsCurrentPage;
   final bool bidsHasReachedMax;
@@ -20,6 +21,7 @@ sealed class InfluencerState extends Equatable {
     this.profile,
     this.campaigns,
     this.bids,
+    this.assignments,
     this.campaignsHasReachedMax = false,
     this.campaignsCurrentPage = 1,
     this.bidsHasReachedMax = false,
@@ -34,6 +36,7 @@ sealed class InfluencerState extends Equatable {
         profile,
         campaigns,
         bids,
+        assignments,
         campaignsHasReachedMax,
         campaignsCurrentPage,
         bidsHasReachedMax,
@@ -55,6 +58,7 @@ final class InfluencerLoaded extends InfluencerState {
     super.profile,
     super.campaigns,
     super.bids,
+    super.assignments,
     super.campaignsHasReachedMax,
     super.campaignsCurrentPage,
     super.bidsHasReachedMax,
@@ -69,6 +73,7 @@ final class InfluencerLoaded extends InfluencerState {
     InfluencerProfileEntity? profile,
     List<InfluencerCampaignEntity>? campaigns,
     List<InfluencerBidEntity>? bids,
+    List<Map<String, dynamic>>? assignments,
     bool? campaignsHasReachedMax,
     int? campaignsCurrentPage,
     bool? bidsHasReachedMax,
@@ -82,6 +87,7 @@ final class InfluencerLoaded extends InfluencerState {
       profile: profile ?? this.profile,
       campaigns: campaigns ?? this.campaigns,
       bids: bids ?? this.bids,
+      assignments: assignments ?? this.assignments,
       campaignsHasReachedMax: campaignsHasReachedMax ?? this.campaignsHasReachedMax,
       campaignsCurrentPage: campaignsCurrentPage ?? this.campaignsCurrentPage,
       bidsHasReachedMax: bidsHasReachedMax ?? this.bidsHasReachedMax,
@@ -98,6 +104,7 @@ final class InfluencerLoaded extends InfluencerState {
         profile,
         campaigns,
         bids,
+        assignments,
         campaignsHasReachedMax,
         campaignsCurrentPage,
         bidsHasReachedMax,

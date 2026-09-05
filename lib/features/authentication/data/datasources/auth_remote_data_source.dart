@@ -10,6 +10,7 @@ abstract interface class AuthRemoteDataSource {
   Future<UserModel> getMe();
   Future<UserModel> updateProfile(String name);
   Future<void> logout();
+  Future<void> changePassword(String oldPassword, String newPassword);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -77,5 +78,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         // Logout failure is non-fatal — local session will still be cleared by the repository
       }
     }
+  }
+  @override
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    await apiClient.post(
+      '/auth/change-password',
+      data: {
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      },
+    );
   }
 }

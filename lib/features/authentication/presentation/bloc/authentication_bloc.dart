@@ -43,7 +43,7 @@ class AuthenticationBloc extends Bloc<AuthenticationEvent, AuthenticationState> 
     try {
       final dataSource = getIt<InfluencerRemoteDataSource>();
       final profile = await dataSource.getProfile();
-      return profile.verificationStatus == 'APPROVED';
+      return profile.verificationStatus == 'VERIFIED';
     } catch (_) {
       // If we can't fetch the profile (e.g. newly signed up, profile not yet created),
       // treat as PENDING to be safe.

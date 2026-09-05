@@ -43,18 +43,22 @@ class DioApiClient implements ApiClient {
     try {
       final response = await request();
       return response;
-    } on DioException catch (e) {
+      } on DioException catch (e) {
       if (e.response != null) {
+        String dataMsg = 'Server error occurred';
+        if (e.response!.data is Map<String, dynamic> && e.response!.data['message'] != null) {
+          final msgData = e.response!.data['message'];
+          dataMsg = msgData is List ? msgData.join(', ') : msgData.toString();
+        } else if (e.response!.data is String) {
+          dataMsg = e.response!.data;
+        }
+
         if (e.response!.statusCode == 401) {
           throw const UnauthorizedException();
         } else if (e.response!.statusCode == 422 || e.response!.statusCode == 400) {
-          final dataMsg = e.response!.data['message'];
-          final msg = dataMsg is List ? dataMsg.join(', ') : (dataMsg ?? 'Validation failed');
-          throw ValidationException(msg.toString());
+          throw ValidationException(dataMsg);
         }
-        final dataMsg = e.response!.data['message'];
-        final msg = dataMsg is List ? dataMsg.join(', ') : (dataMsg ?? 'Server error occurred');
-        throw ServerException(msg.toString());
+        throw ServerException(dataMsg);
       } else {
         throw const NetworkException('Please check your internet connection.');
       }

@@ -93,8 +93,8 @@ class AppNetworkImage extends StatelessWidget {
 
     final optimizedUrl = CloudinaryUrlBuilder.buildUrl(
       secureUrl: url!,
-      width: width?.toInt(),
-      height: height?.toInt(),
+      width: width?.isFinite == true ? width!.toInt() : null,
+      height: height?.isFinite == true ? height!.toInt() : null,
       cropMode: 'fill',
     );
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -10,7 +12,6 @@ import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
 import '../../domain/entities/influencer_bid_entity.dart';
-import '../../domain/entities/influencer_campaign_entity.dart';
 
 class InfluencerDashboardScreen extends StatefulWidget {
   const InfluencerDashboardScreen({super.key});
@@ -24,6 +25,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _earningsAnim;
   late Animation<double> _earningsCurve;
+  bool _successShown = false;
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
     context.read<InfluencerBloc>().add(const GetInfluencerProfileRequested());
     context.read<InfluencerBloc>().add(const GetMyBidsRequested());
     context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
+    context.read<InfluencerBloc>().add(const GetMyAssignmentsRequested());
   }
 
   @override
@@ -48,6 +51,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
     context.read<InfluencerBloc>().add(const GetInfluencerProfileRequested());
     context.read<InfluencerBloc>().add(const GetMyBidsRequested());
     context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
+    context.read<InfluencerBloc>().add(const GetMyAssignmentsRequested());
   }
 
   @override
@@ -56,17 +60,34 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
       listener: (context, state) {
         if (state is InfluencerLoaded) {
           if (state.failure != null) {
+            // Only show error once per error object
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content: Text(state.failure!.message),
                   backgroundColor: AppColors.error500),
             );
-          } else if (state.isSuccess) {
+          } else if (state.isSuccess && !_successShown) {
+            // Guard so success toast only fires once
+            _successShown = true;
+            ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: const Text('Action successful!'),
-                  backgroundColor: AppColors.success500),
+                content: const Row(children: [
+                  Icon(LucideIcons.checkCircle2, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Flexible(child: Text('Work submitted! Shopkeeper has been notified.')),
+                ]),
+                backgroundColor: AppColors.success500,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                duration: const Duration(seconds: 3),
+              ),
             );
+            // Reset after a delay so the flag can be used for future submissions
+            Future.delayed(const Duration(seconds: 4), () {
+              if (mounted) setState(() => _successShown = false);
+            });
           }
         }
       },
@@ -293,13 +314,13 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                 ),
                 const SizedBox(height: 40),
 
-                // Active Bids from BLoC
+                // ─── ACTIVE BIDS ────────────────────────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Active Bids', style: AppTextStyles.h3),
                     GestureDetector(
-                      onTap: () => context.go('/influencer/campaigns'),
+                      onTap: () => context.push('/influencer/all-bids'),
                       child: Text('View All',
                           style: AppTextStyles.bodySmall.copyWith(
                               color: AppColors.roleInfluencer,
@@ -312,7 +333,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                   builder: (context, state) {
                     final bids =
                         state is InfluencerLoaded ? state.bids ?? [] : [];
-                    if (state is InfluencerLoaded && state.isLoading) {
+                    if (state is InfluencerLoaded && state.isLoading && bids.isEmpty) {
                       return Column(
                         children: const [
                           BidCardSkeleton(),
@@ -321,109 +342,79 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                         ],
                       );
                     }
-                    if (bids.isEmpty) {
+                    // Show all bids that are not in a final state (ACCEPTED/REJECTED/COMPLETED)
+                    final activeBids = bids
+                        .where((b) => b.status != 'ACCEPTED' && b.status != 'REJECTED' && b.status != 'COMPLETED')
+                        .toList();
+                    if (activeBids.isEmpty) {
                       return Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Text('No active bids yet.',
-                              style: AppTextStyles.body
-                                  .copyWith(color: AppColors.neutral500)),
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Column(
+                            children: [
+                              const Icon(LucideIcons.inbox, size: 36, color: AppColors.neutral300),
+                              const SizedBox(height: 12),
+                              Text('No active bids yet.',
+                                  style: AppTextStyles.body
+                                      .copyWith(color: AppColors.neutral500)),
+                            ],
+                          ),
                         ),
                       );
                     }
+                    final displayBids = activeBids.take(3).toList();
                     return Column(
-                      children: bids.map((bid) {
+                      children: displayBids.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final bid = entry.value;
                         Color statusColor;
                         switch (bid.status) {
-                          case 'ACCEPTED':
-                            statusColor = AppColors.success500;
-                            break;
-                          case 'REJECTED':
-                            statusColor = AppColors.error500;
-                            break;
                           case 'SHORTLISTED':
-                            statusColor = AppColors.success500;
+                            statusColor = const Color(0xFF4F46E5);
+                            break;
+                          case 'COUNTERED':
+                            statusColor = AppColors.warning600;
                             break;
                           default:
-                            statusColor = AppColors.warning600;
+                            statusColor = AppColors.neutral600;
                         }
-                        // Build a human-readable subtitle from the proposal or a short campaign reference
-                        final subtitle = bid.proposal?.isNotEmpty == true
-                            ? bid.proposal!
-                            : 'Campaign ref: ${bid.campaignId.length > 8 ? bid.campaignId.substring(0, 8) : bid.campaignId}…';
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildPremiumBidCard(
-                            bid: bid,
-                            subtitle: subtitle,
-                            statusLabel: bid.status,
-                            statusColor: statusColor,
-                            yourBid:
-                                '₹${bid.proposedAmount.toStringAsFixed(0)}',
-                            brandStatus:
-                                bid.isShortlisted ? 'Shortlisted' : null,
-                            onTap: () {
-                              // Try to find the campaign in state.campaigns
-                              final campaign = state.campaigns
-                                  ?.cast<InfluencerCampaignEntity?>()
-                                  .firstWhere(
-                                    (c) => c?.id == bid.campaignId,
-                                    orElse: () => null,
-                                  );
-                              // We pass the campaign, or a dummy if not found, since campaign_details screen requires it.
-                              // However, we only have campaignId here. The best way is to pass campaign if available.
-                              if (campaign != null) {
-                                context.push('/influencer/campaign-details',
-                                    extra: campaign);
-                              } else {
-                                // Fetching or passing just the id might be needed later, for now we pass a dummy if missing
-                                context.push('/influencer/campaign-details',
-                                    extra: InfluencerCampaignEntity(
-                                      id: bid.campaignId,
-                                      shopkeeperId: '',
-                                      shopId: '',
-                                      title: 'Loading Campaign...',
-                                      description:
-                                          'Details will be loaded soon.',
-                                      platforms: [],
-                                      contentTypes: [],
-                                      creatorCount: 1,
-                                      budgetType: 'PER_CREATOR',
-                                      budgetMin: 0,
-                                      budgetMax: 0,
-                                      targetCategories: [],
-                                      status: 'PUBLISHED',
-                                      createdAt: DateTime.now(),
-                                    ));
-                              }
-                            },
-                            onWithdraw: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Withdraw Bid'),
-                                  content: const Text(
-                                      'Are you sure you want to withdraw this bid?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(ctx);
-                                        context
-                                            .read<InfluencerBloc>()
-                                            .add(WithdrawBidRequested(bid.id));
-                                      },
-                                      child: const Text('Withdraw',
-                                          style: TextStyle(
-                                              color: AppColors.error500)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                        return AnimatedFadeSlide(
+                          delay: Duration(milliseconds: idx * 100),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildPremiumBidCard(
+                              bid: bid,
+                              statusColor: statusColor,
+                              onTap: () => context.push('/influencer/bid-detail', extra: bid),
+                              onWithdraw: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    title: const Text('Withdraw Bid'),
+                                    content: const Text(
+                                        'Are you sure you want to withdraw this bid?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(ctx);
+                                          context
+                                              .read<InfluencerBloc>()
+                                              .add(WithdrawBidRequested(bid.id));
+                                        },
+                                        child: const Text('Withdraw',
+                                            style: TextStyle(
+                                                color: AppColors.error500)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         );
                       }).toList(),
@@ -432,16 +423,17 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                 ),
                 const SizedBox(height: 40),
 
-                // Ongoing (Accepted) Campaigns — driven by real bid data
+                // ─── ONGOING CAMPAIGNS ──────────────────────────────────────
                 Text('Ongoing Campaigns', style: AppTextStyles.h3),
                 const SizedBox(height: 20),
                 BlocBuilder<InfluencerBloc, InfluencerState>(
                   builder: (context, state) {
-                    if (state is InfluencerLoaded && state.isLoading) {
+                    if (state is InfluencerLoaded && state.isLoading && (state.bids == null || state.bids!.isEmpty)) {
                       return const BidCardSkeleton();
                     }
                     final bids =
                         state is InfluencerLoaded ? state.bids ?? [] : [];
+                    final assignments = state is InfluencerLoaded ? state.assignments ?? [] : [];
                     final acceptedBids =
                         bids.where((b) => b.status == 'ACCEPTED').toList();
                     if (acceptedBids.isEmpty) {
@@ -487,18 +479,31 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                       );
                     }
                     return Column(
-                      children: acceptedBids.map((bid) {
-                        final deadlineText =
-                            '${bid.deliveryDate.day}/${bid.deliveryDate.month}/${bid.deliveryDate.year}';
-                        final campaignRef = bid.campaignId.length > 8
-                            ? bid.campaignId.substring(0, 8)
-                            : bid.campaignId;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildAcceptedCampaignCard(
-                            campaignRef: 'Campaign #$campaignRef',
-                            bid: '₹${bid.proposedAmount.toStringAsFixed(0)}',
-                            deadlineText: deadlineText,
+                      children: acceptedBids.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final bid = entry.value;
+                        // Safe assignment lookup — no crash if missing
+                        Map<String, dynamic>? assignment;
+                        try {
+                          assignment = assignments.firstWhere(
+                            (a) => a['campaignId'] == bid.campaignId || a['bidId'] == bid.id,
+                          );
+                        } catch (_) {
+                          assignment = null;
+                        }
+                        final assignmentId = assignment != null && assignment.isNotEmpty ? assignment['id'] as String? : null;
+                        final submittedUrl = assignment != null && assignment.isNotEmpty
+                            ? assignment['submittedContentUrl'] as String?
+                            : bid.submittedContentUrl;
+                        return AnimatedFadeSlide(
+                          delay: Duration(milliseconds: idx * 100),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildAcceptedCampaignCard(
+                              bid: bid,
+                              assignmentId: assignmentId,
+                              submittedContentUrl: submittedUrl,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -514,144 +519,106 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
     );
   }
 
+  // ─── ACTIVE BID CARD ────────────────────────────────────────────────────────
   Widget _buildPremiumBidCard({
     required InfluencerBidEntity bid,
-    required String subtitle,
-    required String statusLabel,
     required Color statusColor,
-    required String yourBid,
-    String? brandStatus,
     VoidCallback? onTap,
     VoidCallback? onWithdraw,
   }) {
+    final statusBg = statusColor.withValues(alpha: 0.1);
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: AppColors.neutral900.withValues(alpha: 0.03),
+                color: AppColors.neutral900.withValues(alpha: 0.04),
                 blurRadius: 16,
-                offset: const Offset(0, 8)),
+                offset: const Offset(0, 6)),
           ],
-          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+          border: Border.all(color: statusColor.withValues(alpha: 0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header row: status badge + date
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
+                    color: statusBg,
                     borderRadius: BorderRadius.circular(100),
                   ),
-                  child: Text(statusLabel,
+                  child: Text(bid.status,
                       style: AppTextStyles.caption.copyWith(
                           color: statusColor, fontWeight: FontWeight.w800)),
                 ),
                 Text(
-                  '${bid.availableDate.day}/${bid.availableDate.month}/${bid.availableDate.year}',
-                  style: AppTextStyles.caption
-                      .copyWith(color: AppColors.neutral400),
+                  '${bid.createdAt.day}/${bid.createdAt.month}/${bid.createdAt.year}',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.neutral400),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text('Bid #${bid.id.length > 8 ? bid.id.substring(0, 8) : bid.id}…',
-                style: AppTextStyles.h4),
-            const SizedBox(height: 4),
-            Text(subtitle,
-                style:
-                    AppTextStyles.caption.copyWith(color: AppColors.neutral500),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                        color: AppColors.neutral50,
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Your Bid',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.neutral500)),
-                        const SizedBox(height: 4),
-                        Text(yourBid,
-                            style: AppTextStyles.body.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.neutral900)),
-                      ],
-                    ),
-                  ),
-                ),
-                if (brandStatus != null) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                          color: AppColors.roleInfluencerLight
-                              .withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(12)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Status',
-                              style: AppTextStyles.caption
-                                  .copyWith(color: AppColors.neutral600)),
-                          const SizedBox(height: 4),
-                          Text(brandStatus,
-                              style: AppTextStyles.body.copyWith(
-                                  color: AppColors.roleInfluencer,
-                                  fontWeight: FontWeight.w800)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]
-              ],
+            const SizedBox(height: 12),
+
+            // Campaign title
+            Text(
+              bid.campaignTitle ?? 'Campaign #${bid.campaignId.length > 8 ? bid.campaignId.substring(0, 8) : bid.campaignId}',
+              style: AppTextStyles.h4,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 16),
+
+            // Shop + Product row
+            if (bid.shopName != null || bid.productName != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(LucideIcons.store, size: 12, color: AppColors.neutral400),
+                  const SizedBox(width: 4),
+                  if (bid.shopName != null)
+                    Flexible(
+                      child: Text(bid.shopName!,
+                          style: AppTextStyles.caption.copyWith(color: AppColors.neutral500),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  if (bid.productName != null) ...[
+                    Text(' • ', style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
+                    Flexible(
+                      child: Text(bid.productName!,
+                          style: AppTextStyles.caption.copyWith(color: AppColors.neutral500),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+            const SizedBox(height: 14),
+
+            // Stats row
             Row(
               children: [
-                const Icon(LucideIcons.clock,
-                    size: 14, color: AppColors.neutral500),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    bid.status == 'ACCEPTED'
-                        ? 'Campaign accepted — coordinate with brand'
-                        : bid.status == 'REJECTED'
-                            ? 'Bid not selected this time'
-                            : 'Awaiting brand decision',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.neutral500),
-                  ),
-                ),
-                if (bid.status != 'ACCEPTED')
+                _InfoChip(label: '₹${bid.proposedAmount.toStringAsFixed(0)}', icon: LucideIcons.indianRupee, color: AppColors.roleInfluencer),
+                const SizedBox(width: 8),
+                _InfoChip(label: 'Due ${bid.deliveryDate.day}/${bid.deliveryDate.month}', icon: LucideIcons.calendar, color: AppColors.neutral600),
+                const Spacer(),
+                if (bid.status != 'ACCEPTED' && bid.status != 'REJECTED')
                   TextButton(
                     onPressed: onWithdraw,
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.error500,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       minimumSize: Size.zero,
                     ),
-                    child: const Text('Withdraw',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: const Text('Withdraw', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                   ),
+                const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.neutral300),
               ],
             ),
           ],
@@ -660,11 +627,15 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
     );
   }
 
+  // ─── ONGOING CAMPAIGN CARD ───────────────────────────────────────────────────
   Widget _buildAcceptedCampaignCard({
-    required String campaignRef,
-    required String bid,
-    required String deadlineText,
+    required InfluencerBidEntity bid,
+    String? assignmentId,
+    String? submittedContentUrl,
   }) {
+    final deadlineText = '${bid.deliveryDate.day}/${bid.deliveryDate.month}/${bid.deliveryDate.year}';
+    final alreadySubmitted = submittedContentUrl != null && submittedContentUrl.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -676,82 +647,385 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
               blurRadius: 20,
               offset: const Offset(0, 10)),
         ],
-        border:
-            Border.all(color: AppColors.roleInfluencer.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.success500.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.success100,
+                  color: alreadySubmitted ? AppColors.neutral100 : AppColors.success100,
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(LucideIcons.checkCircle2,
-                        size: 12, color: AppColors.success600),
+                    Icon(
+                      alreadySubmitted ? LucideIcons.checkCheck : LucideIcons.checkCircle2,
+                      size: 12,
+                      color: alreadySubmitted ? AppColors.neutral600 : AppColors.success600,
+                    ),
                     const SizedBox(width: 4),
-                    Text('Accepted',
-                        style: AppTextStyles.caption.copyWith(
-                            color: AppColors.success600,
-                            fontWeight: FontWeight.w800)),
+                    Text(
+                      alreadySubmitted ? 'Submitted' : 'In Progress',
+                      style: AppTextStyles.caption.copyWith(
+                          color: alreadySubmitted ? AppColors.neutral600 : AppColors.success600,
+                          fontWeight: FontWeight.w800),
+                    ),
                   ],
                 ),
               ),
-              Text(
-                'Deliver by $deadlineText',
-                style:
-                    AppTextStyles.caption.copyWith(color: AppColors.neutral500),
-              ),
+              Text('Deliver by $deadlineText',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(campaignRef, style: AppTextStyles.h4),
-          const SizedBox(height: 4),
-          Text('Your accepted bid: $bid',
-              style: AppTextStyles.body.copyWith(color: AppColors.neutral600)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
+
+          // Campaign Name
+          Text(
+            bid.campaignTitle ?? 'Campaign #${bid.campaignId.length > 8 ? bid.campaignId.substring(0, 8) : bid.campaignId}',
+            style: AppTextStyles.h4,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (bid.productName != null) ...[
+            const SizedBox(height: 2),
+            Text(bid.productName!,
+                style: AppTextStyles.caption.copyWith(color: AppColors.neutral500),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+          const SizedBox(height: 14),
+
+          // Shop info card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.neutral50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.neutral200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    if (bid.shopLogoUrl != null)
+                      Container(
+                        width: 36,
+                        height: 36,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.neutral200),
+                          image: DecorationImage(
+                            image: NetworkImage(bid.shopLogoUrl!),
+                            fit: BoxFit.cover,
+                            onError: (e, s) {},
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 36, height: 36,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.roleInfluencerLight,
+                        ),
+                        child: const Icon(LucideIcons.store, size: 16, color: AppColors.roleInfluencer),
+                      ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(bid.shopName ?? 'Shop', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
+                          if (bid.shopAddress != null)
+                            Text(bid.shopAddress!, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (bid.shopEmail != null || bid.shopPhone != null) ...[
+                  const SizedBox(height: 10),
+                  const Divider(height: 1, color: AppColors.neutral200),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      if (bid.shopEmail != null)
+                        GestureDetector(
+                          onTap: () => launchUrl(Uri.parse('mailto:${bid.shopEmail}')),
+                          child: _ContactChip(icon: LucideIcons.mail, text: bid.shopEmail!),
+                        ),
+                      if (bid.shopPhone != null)
+                        GestureDetector(
+                          onTap: () => launchUrl(Uri.parse('tel:${bid.shopPhone}')),
+                          child: _ContactChip(icon: LucideIcons.phone, text: bid.shopPhone!),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Agreed amount chip
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.white,
-                    foregroundColor: AppColors.roleInfluencer,
-                    elevation: 0,
-                    side: const BorderSide(
-                        color: AppColors.roleInfluencer, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                            '📤 Submit your content URL to the shopkeeper via Chat.'),
-                        backgroundColor: AppColors.roleInfluencer,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                    );
-                  },
-                  child: const Text('Submit Work',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
+              _InfoChip(label: 'Agreed: ₹${bid.proposedAmount.toStringAsFixed(0)}', icon: LucideIcons.indianRupee, color: AppColors.success600),
             ],
+          ),
+
+          // Submitted content URL
+          if (alreadySubmitted) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.success50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.success500.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.link, color: AppColors.success500, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      submittedContentUrl!,
+                      style: AppTextStyles.caption.copyWith(color: AppColors.success600),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
+          // Submit Work button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: assignmentId == null
+                  ? null
+                  : () => _showSubmitWorkSheet(assignmentId, initialUrl: submittedContentUrl),
+              icon: Icon(
+                alreadySubmitted ? LucideIcons.edit3 : LucideIcons.upload,
+                size: 16,
+              ),
+              label: Text(
+                alreadySubmitted
+                    ? 'Edit Submitted Work'
+                    : assignmentId == null
+                        ? 'Loading...'
+                        : 'Submit Work',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    alreadySubmitted ? AppColors.neutral200 : AppColors.roleInfluencer,
+                foregroundColor: alreadySubmitted ? AppColors.neutral700 : Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showSubmitWorkSheet(String assignmentId, {String? initialUrl}) {
+    final urlController = TextEditingController(text: initialUrl);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(color: AppColors.neutral200, borderRadius: BorderRadius.circular(2)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.roleInfluencerLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(LucideIcons.upload, color: AppColors.roleInfluencer, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Submit Your Work', style: AppTextStyles.h4),
+                        Text('Paste your content URL below', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: TextField(
+                    controller: urlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      hintText: 'https://instagram.com/p/... or YouTube link',
+                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+                      prefixIcon: const Icon(LucideIcons.link, color: AppColors.neutral400, size: 18),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.success50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.info, size: 16, color: AppColors.success600),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'After submission, the shopkeeper will review your content and release payment.',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.success600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                BlocConsumer<InfluencerBloc, InfluencerState>(
+                  listener: (context, state) {
+                    if (state is InfluencerLoaded && !state.isLoading && state.isSuccess) {
+                      Navigator.pop(ctx);
+                      // Refresh assignments
+                      context.read<InfluencerBloc>().add(const GetMyAssignmentsRequested());
+                    }
+                  },
+                  builder: (context, state) {
+                    final loading = state is InfluencerLoaded && state.isLoading;
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: loading ? null : () {
+                          final url = urlController.text.trim();
+                          if (url.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter your content URL')),
+                            );
+                            return;
+                          }
+                          context.read<InfluencerBloc>().add(SubmitDeliverableRequested(
+                            assignmentId: assignmentId,
+                            contentUrl: url,
+                          ));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.roleInfluencer,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: loading
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text('Submit Work', style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── SHARED HELPER WIDGETS ────────────────────────────────────────────────────
+
+class _InfoChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  const _InfoChip({required this.label, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 11, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+}
+
+class _ContactChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _ContactChip({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.roleInfluencerLight,
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 11, color: AppColors.roleInfluencer),
+        const SizedBox(width: 4),
+        Text(text,
+          style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w600),
+          maxLines: 1, overflow: TextOverflow.ellipsis,
+        ),
+      ]),
     );
   }
 }

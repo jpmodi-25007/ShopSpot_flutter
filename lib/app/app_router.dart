@@ -1,6 +1,8 @@
 import '../../features/profile/presentation/pages/help_support_screen.dart';
 import '../features/influencer/domain/entities/influencer_bid_entity.dart';
 import '../../features/profile/presentation/pages/about_findivo_screen.dart';
+import '../../features/profile/presentation/pages/change_password_screen.dart';
+import '../../features/profile/presentation/pages/faq_screen.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -57,8 +59,11 @@ import '../../features/influencer/presentation/pages/influencer_profile_screen.d
 import '../../features/influencer/presentation/pages/campaign_details_screen.dart';
 import '../../features/influencer/presentation/pages/submit_bid_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_all_campaigns_screen.dart';
+import '../../features/influencer/presentation/pages/influencer_all_bids_screen.dart';
+import '../../features/influencer/presentation/pages/bid_detail_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_pending_screen.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
+import '../../features/influencer/presentation/pages/coming_soon_screen.dart';
 import 'shell_layout.dart';
 import 'retailer_shell_layout.dart';
 import 'influencer_shell_layout.dart';
@@ -128,6 +133,14 @@ final appRouter = GoRouter(
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
+      path: '/change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
+    ),
+    GoRoute(
+      path: '/faqs',
+      builder: (context, state) => const FAQScreen(),
+    ),
+    GoRoute(
       path: '/signup',
       builder: (context, state) {
         final role = state.uri.queryParameters['role'];
@@ -136,8 +149,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/product-detail/:id',
-      builder: (context, state) =>
-          ProductDetailScreen(productId: state.pathParameters['id']!),
+      builder: (context, state) {
+        final isInfluencer = state.uri.queryParameters['from'] == 'influencer';
+        return ProductDetailScreen(
+          productId: state.pathParameters['id']!,
+          isInfluencer: isInfluencer,
+        );
+      },
     ),
     GoRoute(
       path: '/events',
@@ -150,8 +168,20 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/shop-detail/:id',
-      builder: (context, state) =>
-          ShopDetailScreen(shopId: state.pathParameters['id']!),
+      builder: (context, state) {
+        final isInfluencer = state.uri.queryParameters['from'] == 'influencer';
+        return ShopDetailScreen(
+          shopId: state.pathParameters['id']!,
+          isInfluencer: isInfluencer,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/coming-soon',
+      builder: (context, state) {
+        final feature = state.uri.queryParameters['feature'] ?? 'This Feature';
+        return ComingSoonScreen(featureName: feature);
+      },
     ),
     GoRoute(
       path: '/negotiation/:id',
@@ -425,6 +455,17 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/influencer/pending',
       builder: (context, state) => const InfluencerPendingScreen(),
+    ),
+    GoRoute(
+      path: '/influencer/all-bids',
+      builder: (context, state) => const InfluencerAllBidsScreen(),
+    ),
+    GoRoute(
+      path: '/influencer/bid-detail',
+      builder: (context, state) {
+        final bid = state.extra as InfluencerBidEntity;
+        return BidDetailScreen(bid: bid);
+      },
     ),
   ],
 );

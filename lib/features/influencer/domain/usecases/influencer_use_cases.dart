@@ -46,3 +46,16 @@ class WithdrawBidUseCase {
   WithdrawBidUseCase(this.repository);
   Future<Either<Failure, void>> execute(String bidId) => repository.withdrawBid(bidId);
 }
+
+class GetMyAssignmentsUseCase {
+  final InfluencerRepository repository;
+  GetMyAssignmentsUseCase(this.repository);
+  Future<Either<Failure, List<Map<String, dynamic>>>> execute() => repository.getMyAssignments();
+}
+
+class SubmitDeliverableUseCase {
+  final InfluencerRepository repository;
+  SubmitDeliverableUseCase(this.repository);
+  Future<Either<Failure, Map<String, dynamic>>> execute(String assignmentId, String contentUrl) =>
+      repository.submitDeliverable(assignmentId, contentUrl);
+}

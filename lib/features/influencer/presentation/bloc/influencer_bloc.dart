@@ -13,6 +13,8 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
   final SubmitBidUseCase _submitBid;
   final WithdrawBidUseCase _withdrawBid;
   final GetInfluencerAnalyticsUseCase _getAnalytics;
+  final GetMyAssignmentsUseCase _getMyAssignments;
+  final SubmitDeliverableUseCase _submitDeliverable;
 
   InfluencerBloc({
     required GetInfluencerProfileUseCase getProfile,
@@ -22,6 +24,8 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     required SubmitBidUseCase submitBid,
     required WithdrawBidUseCase withdrawBid,
     required GetInfluencerAnalyticsUseCase getAnalytics,
+    required GetMyAssignmentsUseCase getMyAssignments,
+    required SubmitDeliverableUseCase submitDeliverable,
   })  : _getProfile = getProfile,
         _updateProfile = updateProfile,
         _getCampaigns = getCampaigns,
@@ -29,6 +33,8 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
         _submitBid = submitBid,
         _withdrawBid = withdrawBid,
         _getAnalytics = getAnalytics,
+        _getMyAssignments = getMyAssignments,
+        _submitDeliverable = submitDeliverable,
         super(const InfluencerInitial()) {
     on<GetInfluencerProfileRequested>(_onGetProfile);
     on<UpdateInfluencerProfileRequested>(_onUpdateProfile);
@@ -37,13 +43,15 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     on<SubmitBidRequested>(_onSubmitBid);
     on<WithdrawBidRequested>(_onWithdrawBid);
     on<GetInfluencerAnalyticsRequested>(_onGetAnalytics);
+    on<GetMyAssignmentsRequested>(_onGetMyAssignments);
+    on<SubmitDeliverableRequested>(_onSubmitDeliverable);
   }
 
   InfluencerLoaded get _current =>
       state is InfluencerLoaded ? state as InfluencerLoaded : const InfluencerLoaded();
 
   Future<void> _onGetAnalytics(GetInfluencerAnalyticsRequested event, Emitter<InfluencerState> emit) async {
-    emit(_current.copyWith(isLoading: true, failure: null));
+    emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
     final result = await _getAnalytics.execute();
     result.fold(
       (f) => emit(_current.copyWith(isLoading: false, failure: f)),
@@ -72,7 +80,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
   Future<void> _onGetCampaigns(GetEligibleCampaignsRequested event, Emitter<InfluencerState> emit) async {
     final isLoadMore = event.page > 1;
     if (!isLoadMore) {
-      emit(_current.copyWith(isLoading: true, failure: null));
+      emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
     }
     final result = await _getCampaigns.execute(page: event.page, limit: event.limit, industry: event.industry, search: event.search);
     result.fold(
@@ -103,7 +111,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
   Future<void> _onGetMyBids(GetMyBidsRequested event, Emitter<InfluencerState> emit) async {
     final isLoadMore = event.page > 1;
     if (!isLoadMore) {
-      emit(_current.copyWith(isLoading: true, failure: null));
+      emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
     }
     final result = await _getMyBids.execute(page: event.page, limit: event.limit);
     result.fold(
@@ -137,7 +145,6 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     result.fold(
       (f) => emit(_current.copyWith(isLoading: false, failure: f)),
       (bid) {
-        // Append to bids list
         final updatedBids = <InfluencerBidEntity>[...(_current.bids ?? []), bid];
         emit(_current.copyWith(isLoading: false, bids: updatedBids, isSuccess: true));
       },
@@ -150,10 +157,27 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     result.fold(
       (f) => emit(_current.copyWith(isLoading: false, failure: f)),
       (_) {
-        // Remove from bids list
         final updatedBids = _current.bids?.where((b) => b.id != event.bidId).toList() ?? [];
         emit(_current.copyWith(isLoading: false, bids: updatedBids, isSuccess: true));
       },
+    );
+  }
+
+  Future<void> _onGetMyAssignments(GetMyAssignmentsRequested event, Emitter<InfluencerState> emit) async {
+    emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
+    final result = await _getMyAssignments.execute();
+    result.fold(
+      (f) => emit(_current.copyWith(isLoading: false, failure: f)),
+      (assignments) => emit(_current.copyWith(isLoading: false, assignments: assignments)),
+    );
+  }
+
+  Future<void> _onSubmitDeliverable(SubmitDeliverableRequested event, Emitter<InfluencerState> emit) async {
+    emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
+    final result = await _submitDeliverable.execute(event.assignmentId, event.contentUrl);
+    result.fold(
+      (f) => emit(_current.copyWith(isLoading: false, failure: f)),
+      (_) => emit(_current.copyWith(isLoading: false, isSuccess: true)),
     );
   }
 }

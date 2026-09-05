@@ -11,7 +11,8 @@ class InfluencerBidEntity extends Equatable {
   final String status;
   final bool isShortlisted;
   final DateTime createdAt;
-  
+
+  // Influencer info (used in shopkeeper view)
   final String? influencerName;
   final String? influencerAvatar;
   final String? influencerInstagram;
@@ -19,6 +20,23 @@ class InfluencerBidEntity extends Equatable {
   final int? influencerFollowers;
   final double? influencerEngagement;
   final String? influencerNiche;
+
+  // Campaign info (populated from nested campaign in GET /influencer/bids)
+  final String? campaignTitle;
+  final String? campaignStatus;
+  final String? productName;
+  final String? productImageUrl;
+
+  // Shop / shopkeeper contact info
+  final String? shopName;
+  final String? shopEmail;
+  final String? shopPhone;
+  final String? shopLogoUrl;
+  final String? shopAddress;
+
+  // Assignment (created when bid accepted)
+  final String? assignmentId;
+  final String? submittedContentUrl;
 
   const InfluencerBidEntity({
     required this.id,
@@ -38,6 +56,17 @@ class InfluencerBidEntity extends Equatable {
     this.influencerFollowers,
     this.influencerEngagement,
     this.influencerNiche,
+    this.campaignTitle,
+    this.campaignStatus,
+    this.productName,
+    this.productImageUrl,
+    this.shopName,
+    this.shopEmail,
+    this.shopPhone,
+    this.shopLogoUrl,
+    this.shopAddress,
+    this.assignmentId,
+    this.submittedContentUrl,
   });
 
   @override
@@ -46,5 +75,8 @@ class InfluencerBidEntity extends Equatable {
         deliveryDate, proposal, status, isShortlisted, createdAt,
         influencerName, influencerAvatar, influencerInstagram, influencerBio,
         influencerFollowers, influencerEngagement, influencerNiche,
+        campaignTitle, campaignStatus, productName, productImageUrl,
+        shopName, shopEmail, shopPhone, shopLogoUrl, shopAddress,
+        assignmentId, submittedContentUrl,
       ];
 }

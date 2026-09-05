@@ -10,6 +10,7 @@ import '../bloc/influencer_event.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class InfluencerAllCampaignsScreen extends StatefulWidget {
   const InfluencerAllCampaignsScreen({super.key});
@@ -70,16 +71,19 @@ class _InfluencerAllCampaignsScreenState
               itemCount: campaigns.length,
               itemBuilder: (context, index) {
                 final campaign = campaigns[index];
-                return _buildPremiumCampaignCard(
-                  context,
-                  campaign: campaign,
-                  title: campaign.title,
-                  brand: campaign.shopName ?? 'Brand',
-                  matchPercent: '98%',
-                  budget:
-                      '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
-                  platforms: campaign.platforms,
-                  imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
+                return AnimatedFadeSlide(
+                  delay: Duration(milliseconds: 60 * index),
+                  child: _buildPremiumCampaignCard(
+                    context,
+                    campaign: campaign,
+                    title: campaign.title,
+                    brand: campaign.shopName ?? 'Brand',
+                    matchPercent: '98%',
+                    budget:
+                        '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
+                    platforms: campaign.platforms,
+                    imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
+                  ),
                 );
               },
             ),
@@ -117,12 +121,14 @@ class _InfluencerAllCampaignsScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: AppNetworkImage(
-                url: imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                placeholderIcon: LucideIcons.store,
+              child: LayoutBuilder(
+                builder: (context, constraints) => AppNetworkImage(
+                  url: imageUrl,
+                  width: constraints.maxWidth,
+                  fit: BoxFit.cover,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  placeholderIcon: LucideIcons.store,
+                ),
               ),
             ),
             Padding(

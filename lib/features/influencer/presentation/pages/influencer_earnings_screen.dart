@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
@@ -274,20 +275,24 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                       }
 
                       return Column(
-                        children: payouts.map((p) {
+                        children: List.generate(payouts.length, (index) {
+                          final p = payouts[index];
                           final isPaid = p['status'] == 'Paid';
                           final monthStr = p['month'] ?? '';
                           final amount = (p['amount'] as num?)?.toInt() ?? 0;
 
-                          return _PayoutCard(
-                            payout: _PayoutItem(
-                              'Payout for $monthStr',
-                              monthStr,
-                              amount,
-                              isPaid,
+                          return AnimatedFadeSlide(
+                            delay: Duration(milliseconds: 50 * index),
+                            child: _PayoutCard(
+                              payout: _PayoutItem(
+                                'Payout for $monthStr',
+                                monthStr,
+                                amount,
+                                isPaid,
+                              ),
                             ),
                           );
-                        }).toList(),
+                        }),
                       );
                     },
                   ),

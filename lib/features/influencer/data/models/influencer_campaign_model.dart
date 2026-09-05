@@ -140,7 +140,7 @@ class InfluencerBidModel {
   final String status;
   final bool isShortlisted;
   final DateTime createdAt;
-  
+
   final String? influencerName;
   final String? influencerAvatar;
   final String? influencerInstagram;
@@ -148,6 +148,23 @@ class InfluencerBidModel {
   final int? influencerFollowers;
   final double? influencerEngagement;
   final String? influencerNiche;
+
+  // Campaign info
+  final String? campaignTitle;
+  final String? campaignStatus;
+  final String? productName;
+  final String? productImageUrl;
+
+  // Shop info
+  final String? shopName;
+  final String? shopEmail;
+  final String? shopPhone;
+  final String? shopLogoUrl;
+  final String? shopAddress;
+
+  // Assignment
+  final String? assignmentId;
+  final String? submittedContentUrl;
 
   InfluencerBidModel({
     required this.id,
@@ -167,9 +184,35 @@ class InfluencerBidModel {
     this.influencerFollowers,
     this.influencerEngagement,
     this.influencerNiche,
+    this.campaignTitle,
+    this.campaignStatus,
+    this.productName,
+    this.productImageUrl,
+    this.shopName,
+    this.shopEmail,
+    this.shopPhone,
+    this.shopLogoUrl,
+    this.shopAddress,
+    this.assignmentId,
+    this.submittedContentUrl,
   });
 
   factory InfluencerBidModel.fromJson(Map<String, dynamic> json) {
+    final campaign = json['campaign'] as Map<String, dynamic>?;
+    final shop = campaign?['shop'] as Map<String, dynamic>?;
+    final product = campaign?['product'] as Map<String, dynamic>?;
+
+    String? productImage;
+    if (product != null) {
+      productImage = product['imageUrl'];
+      if (productImage == null) {
+        final media = product['mediaAssets'];
+        if (media is List && media.isNotEmpty) {
+          productImage = (media.first as Map?)?['secureUrl']?.toString();
+        }
+      }
+    }
+
     return InfluencerBidModel(
       id: json['id'],
       campaignId: json['campaignId'],
@@ -181,13 +224,31 @@ class InfluencerBidModel {
       status: json['status'] ?? 'SUBMITTED',
       isShortlisted: json['isShortlisted'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
-      influencerName: json['influencer']?['name'],
+      influencerName: json['influencer']?['displayName'] ?? json['influencer']?['name'],
       influencerAvatar: json['influencer']?['profileImage'] ?? json['influencer']?['profileImageUrl'],
       influencerInstagram: json['influencer']?['instagramHandle'],
       influencerBio: json['influencer']?['bio'],
-      influencerFollowers: json['influencer']?['followersCount'] != null ? int.tryParse(json['influencer']!['followersCount'].toString()) : null,
-      influencerEngagement: json['influencer']?['engagementRate'] != null ? double.tryParse(json['influencer']!['engagementRate'].toString()) : null,
+      influencerFollowers: json['influencer']?['followersCount'] != null
+          ? int.tryParse(json['influencer']!['followersCount'].toString())
+          : null,
+      influencerEngagement: json['influencer']?['engagementRate'] != null
+          ? double.tryParse(json['influencer']!['engagementRate'].toString())
+          : null,
       influencerNiche: json['influencer']?['niche'],
+      // Campaign fields
+      campaignTitle: campaign?['title'],
+      campaignStatus: campaign?['status'],
+      productName: product?['name'],
+      productImageUrl: productImage,
+      // Shop fields
+      shopName: shop?['name'],
+      shopEmail: shop?['email'],
+      shopPhone: shop?['phone'],
+      shopLogoUrl: shop?['logoUrl'],
+      shopAddress: shop?['address'],
+      // Assignment (passed separately when loading assignments)
+      assignmentId: json['assignmentId'],
+      submittedContentUrl: json['submittedContentUrl'],
     );
   }
 
@@ -209,5 +270,17 @@ class InfluencerBidModel {
         influencerFollowers: influencerFollowers,
         influencerEngagement: influencerEngagement,
         influencerNiche: influencerNiche,
+        campaignTitle: campaignTitle,
+        campaignStatus: campaignStatus,
+        productName: productName,
+        productImageUrl: productImageUrl,
+        shopName: shopName,
+        shopEmail: shopEmail,
+        shopPhone: shopPhone,
+        shopLogoUrl: shopLogoUrl,
+        shopAddress: shopAddress,
+        assignmentId: assignmentId,
+        submittedContentUrl: submittedContentUrl,
       );
 }
+

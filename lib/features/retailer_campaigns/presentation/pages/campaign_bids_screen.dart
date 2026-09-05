@@ -3,6 +3,7 @@ import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -10,6 +11,7 @@ import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
 import '../bloc/retailer_campaign_state.dart';
 import '../../../influencer/domain/entities/influencer_bid_entity.dart';
+
 
 class CampaignBidsScreen extends StatefulWidget {
   final String campaignId;
@@ -172,6 +174,57 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
               _buildStat('Status', bid.status, color: bid.status == 'ACCEPTED' ? AppColors.success500 : AppColors.roleRetailer),
             ],
           ),
+
+          // ── SUBMITTED CONTENT (show when influencer submitted work) ─────
+          if (bid.submittedContentUrl != null && bid.submittedContentUrl!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.success500.withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(LucideIcons.checkCircle2, size: 14, color: AppColors.success600),
+                      const SizedBox(width: 6),
+                      Text('Content Submitted', style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      final url = Uri.tryParse(bid.submittedContentUrl!);
+                      if (url != null) launchUrl(url, mode: LaunchMode.externalApplication);
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.externalLink, size: 14, color: AppColors.success600),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            bid.submittedContentUrl!,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.success600,
+                              decoration: TextDecoration.underline,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 16),
           Row(
             children: [

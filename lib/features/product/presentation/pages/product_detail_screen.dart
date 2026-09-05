@@ -25,7 +25,8 @@ import '../../../../core/widgets/app_network_image.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
-  const ProductDetailScreen({super.key, required this.productId});
+  final bool isInfluencer;
+  const ProductDetailScreen({super.key, required this.productId, this.isInfluencer = false});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -615,7 +616,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                     ),
                   ),
 
-                  // Floating Glassmorphism Bottom Bar
+                  // Floating Glassmorphism Bottom Bar — only for non-influencer users
+                  if (!widget.isInfluencer)
                   Positioned(
                     bottom: 0,
                     left: 0,

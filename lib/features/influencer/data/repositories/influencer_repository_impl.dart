@@ -101,4 +101,29 @@ class InfluencerRepositoryImpl implements InfluencerRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<Map<String, dynamic>>>> getMyAssignments() async {
+    try {
+      final data = await remoteDataSource.getMyAssignments();
+      return Right(data);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> submitDeliverable(String assignmentId, String contentUrl) async {
+    try {
+      final data = await remoteDataSource.submitDeliverable(assignmentId, contentUrl);
+      return Right(data);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
+

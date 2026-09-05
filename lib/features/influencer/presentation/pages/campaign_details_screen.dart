@@ -112,7 +112,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                             children: [
                               const Icon(LucideIcons.star, size: 12, color: AppColors.white),
                               const SizedBox(width: 6),
-                              Text('Premium Tier', style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
+                              Text(campaign?.targetCategories.isNotEmpty == true ? campaign!.targetCategories.first : 'Premium Tier', style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
                             ],
                           ),
                         ),
@@ -211,7 +211,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                               ElevatedButton(
                                 onPressed: () {
                                   if (campaign?.shopId != null) {
-                                    context.push('/shop-detail/${campaign!.shopId}');
+                                    context.push('/shop-detail/${campaign!.shopId}?from=influencer');
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(

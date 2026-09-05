@@ -13,6 +13,8 @@ abstract interface class InfluencerRemoteDataSource {
   });
   Future<void> withdrawBid(String bidId);
   Future<Map<String, dynamic>> getInfluencerAnalytics();
+  Future<List<Map<String, dynamic>>> getMyAssignments();
+  Future<Map<String, dynamic>> submitDeliverable(String assignmentId, String contentUrl);
 }
 
 class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
@@ -76,5 +78,22 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
   @override
   Future<void> withdrawBid(String bidId) async {
     await apiClient.delete('/influencer/bids/$bidId');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMyAssignments() async {
+    final response = await apiClient.get('/influencer/assignments');
+    final responseData = response.data;
+    final List<dynamic> list = responseData is List ? responseData : (responseData['data'] ?? []);
+    return list.map((j) => j as Map<String, dynamic>).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> submitDeliverable(String assignmentId, String contentUrl) async {
+    final response = await apiClient.patch(
+      '/influencer/assignments/$assignmentId/submit',
+      data: {'contentUrl': contentUrl},
+    );
+    return response.data;
   }
 }

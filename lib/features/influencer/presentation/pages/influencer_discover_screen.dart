@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -252,21 +253,26 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                         return Wrap(
                           spacing: 24,
                           runSpacing: 24,
-                          children: campaigns.map((campaign) {
-                            return SizedBox(
-                              width: isDesktop
-                                  ? (constraints.maxWidth / 2) - 12
-                                  : constraints.maxWidth,
-                              child: _buildPremiumCampaignCard(
-                                context,
-                                campaign: campaign,
-                                title: campaign.title,
-                                brand: campaign.shopName ?? 'Brand',
-                                matchPercent: '98%',
-                                budget:
-                                    '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
-                                platforms: campaign.platforms,
-                                imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
+                          children: campaigns.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final campaign = entry.value;
+                            return AnimatedFadeSlide(
+                              delay: Duration(milliseconds: 80 + idx * 80),
+                              child: SizedBox(
+                                width: isDesktop
+                                    ? (constraints.maxWidth / 2) - 12
+                                    : constraints.maxWidth,
+                                child: _buildPremiumCampaignCard(
+                                  context,
+                                  campaign: campaign,
+                                  title: campaign.title,
+                                  brand: campaign.shopName ?? 'Brand',
+                                  matchPercent: '98%',
+                                  budget:
+                                      '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}',
+                                  platforms: campaign.platforms,
+                                  imageUrl: campaign.shopCoverUrl ?? campaign.productImageUrl,
+                                ),
                               ),
                             );
                           }).toList(),
@@ -295,14 +301,33 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
                   final campaigns =
                       state is InfluencerLoaded ? state.campaigns ?? [] : [];
                   final highBudgetCampaigns =
-                      campaigns.where((c) => c.isHighBudget).toList();
+                      // Compute isHighBudget inline: budget max > 5000
+                      campaigns.where((c) => c.budgetMax > 5000).toList();
 
                   if (highBudgetCampaigns.isEmpty) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Text('No high budget opportunities at the moment.',
-                          style: AppTextStyles.body
-                              .copyWith(color: AppColors.neutral500)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.asset(
+                              'assets/images/empty_campaigns.jpg',
+                              height: 140,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No high budget opportunities at the moment.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.neutral500,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
@@ -410,12 +435,17 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
           children: [
             Stack(
               children: [
-                AppNetworkImage(
-                  url: imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholderIcon: LucideIcons.store,
+                // Use LayoutBuilder to avoid passing double.infinity as width
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return AppNetworkImage(
+                      url: imageUrl,
+                      height: 200,
+                      width: constraints.maxWidth,
+                      fit: BoxFit.cover,
+                      placeholderIcon: LucideIcons.store,
+                    );
+                  },
                 ),
                 Positioned(
                   top: 16,

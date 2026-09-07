@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/shimmer/skeletons/order_card_skeleton.dart';
 import '../../data/datasources/order_remote_data_source.dart';
 import '../bloc/retailer_order_bloc.dart';
 
@@ -167,17 +168,11 @@ class _RetailerOrdersScreenState extends State<RetailerOrdersScreen>
                 },
                 builder: (context, state) {
                   if (state is RetailerOrderLoading) {
-                    return ListView.builder(
+                    return ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: 5,
-                      itemBuilder: (_, __) => Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        height: 130,
-                        decoration: BoxDecoration(
-                          color: AppColors.neutral100,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, __) => const OrderCardSkeleton(),
                     );
                   }
 
@@ -201,32 +196,50 @@ class _RetailerOrdersScreenState extends State<RetailerOrdersScreen>
                             .toList();
 
                     if (filtered.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: AppColors.roleRetailerLight
-                                    .withValues(alpha: 0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(LucideIcons.shoppingBag,
-                                  size: 48, color: AppColors.roleRetailer),
+                      return SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(28),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.roleRetailerLight
+                                        .withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(LucideIcons.shoppingBag,
+                                      size: 52, color: AppColors.roleRetailer),
+                                ),
+                                const SizedBox(height: 24),
+                                Text('No Orders Found', style: AppTextStyles.h3),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _selectedFilter == 'All'
+                                      ? 'When customers place orders from your shop,\nthey\'ll appear here.'
+                                      : 'No ${_selectedFilter.replaceAll("_", " ")} orders.',
+                                  style: AppTextStyles.body
+                                      .copyWith(color: AppColors.neutral500),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                if (_selectedFilter != 'All')
+                                  OutlinedButton.icon(
+                                    onPressed: () => setState(() => _selectedFilter = 'All'),
+                                    icon: const Icon(LucideIcons.xCircle, size: 16),
+                                    label: const Text('Clear Filter'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.roleRetailer,
+                                      side: const BorderSide(color: AppColors.roleRetailer),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  ),
+                              ],
                             ),
-                            const SizedBox(height: 20),
-                            Text('No Orders Found', style: AppTextStyles.h3),
-                            const SizedBox(height: 8),
-                            Text(
-                              _selectedFilter == 'All'
-                                  ? 'Orders from customers will appear here.'
-                                  : 'No ${_selectedFilter.replaceAll("_", " ")} orders.',
-                              style: AppTextStyles.body
-                                  .copyWith(color: AppColors.neutral500),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     }

@@ -32,6 +32,7 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
   void initState() {
     super.initState();
     context.read<RetailerDashboardBloc>().add(const GetMyShopRequested());
+    context.read<RetailerDashboardBloc>().add(const GetShopAnalyticsRequested());
   }
 
   @override
@@ -223,19 +224,25 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                         children: [
                           _StatCard(
                               label: 'Products',
-                              value: '124',
+                              value: dashState is RetailerDashboardLoaded
+                                  ? (dashState.analytics?['totalProducts'] ?? '—').toString()
+                                  : '—',
                               icon: LucideIcons.package,
                               color: AppColors.info500),
                           const SizedBox(width: 12),
                           _StatCard(
                               label: 'Inquiries',
-                              value: '38',
+                              value: dashState is RetailerDashboardLoaded
+                                  ? (dashState.analytics?['totalInquiries'] ?? '—').toString()
+                                  : '—',
                               icon: LucideIcons.messageSquare,
                               color: AppColors.warning500),
                           const SizedBox(width: 12),
                           _StatCard(
                               label: 'Rating',
-                              value: '4.8★',
+                              value: dashState is RetailerDashboardLoaded
+                                  ? '${dashState.analytics?['avgRating'] ?? '—'}★'
+                                  : '—★',
                               icon: LucideIcons.star,
                               color: AppColors.success500),
                         ],

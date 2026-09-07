@@ -10,6 +10,7 @@ class NegotiationEntity {
   final String shopId;
   final ShopEntity? shop;
   final String customerId;
+  final String? customerName; // Returned by shopkeeper endpoint
   final double initialPrice;
   final double offeredPrice;
   final double? counterPrice;
@@ -31,6 +32,7 @@ class NegotiationEntity {
     required this.shopId,
     this.shop,
     required this.customerId,
+    this.customerName,
     required this.initialPrice,
     required this.offeredPrice,
     this.counterPrice,

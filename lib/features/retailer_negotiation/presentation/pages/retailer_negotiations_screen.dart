@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -170,14 +171,15 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                       if (_searchQuery.isNotEmpty) {
                         filteredList = filteredList.where((n) {
                           final productMatch = (n.product?.name ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
-                          return productMatch;
+                          final customerMatch = (n.customerName ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+                          return productMatch || customerMatch;
                         }).toList();
                       }
                       
                       // Tab filter
                       if (_selectedTab == 'Active') {
                         filteredList = filteredList.where((n) => 
-                          n.status.name == 'PENDING' || n.status.name == 'COUNTER_OFFER'
+                          n.status.name == 'PENDING' || n.status.name == 'COUNTERED'
                         ).toList();
                       } else if (_selectedTab == 'Accepted') {
                         filteredList = filteredList.where((n) => 
@@ -190,26 +192,69 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
                       }
 
                       if (filteredList.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(child: Text("No negotiations found.")),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40.0),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.neutral100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(LucideIcons.messageCircle, size: 40, color: AppColors.neutral400),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No ${_selectedTab.toLowerCase()} negotiations',
+                                  style: AppTextStyles.h4.copyWith(color: AppColors.neutral600),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Customer price negotiations will appear here.',
+                                  style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       }
                       return Column(
                         children: filteredList.map((n) {
+                          // Status color mapping
+                          final statusColor = {
+                            'PENDING': AppColors.warning600,
+                            'COUNTERED': AppColors.info500,
+                            'ACCEPTED': AppColors.success500,
+                            'REJECTED': AppColors.error500,
+                            'EXPIRED': AppColors.neutral500,
+                            'CANCELLED': AppColors.neutral400,
+                          }[n.status.name] ?? AppColors.info500;
+
+                          // Format timestamp as relative time
+                          final now = DateTime.now();
+                          final diff = now.difference(n.createdAt);
+                          final timeLabel = diff.inMinutes < 60
+                              ? '${diff.inMinutes}m ago'
+                              : diff.inHours < 24
+                                  ? '${diff.inHours}h ago'
+                                  : DateFormat('MMM d').format(n.createdAt);
+
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
                             child: _buildNegotiationCard(
-                              statusLabel: n.status.name,
-                              statusColor: AppColors.info500,
-                              timeLabel: 'Now',
+                              statusLabel: n.status.name.replaceAll('_', ' '),
+                              statusColor: statusColor,
+                              timeLabel: timeLabel,
                               productName: n.product?.name ?? 'Product',
-                              customerName: 'Customer', // Would come from Customer entity
+                              customerName: n.customerName ?? 'Customer',
                               offeredPrice: '₹${n.offeredPrice.toStringAsFixed(0)}',
                               askingPrice: '₹${n.initialPrice.toStringAsFixed(0)}',
                               imageUrl: n.product?.images.isNotEmpty == true ? n.product!.images.first : '',
-                              actionBtnText: 'Review Offer',
-                              actionBtnPrimary: true,
+                              actionBtnText: n.status.name == 'ACCEPTED' ? 'View Deal' : 'Review Offer',
+                              actionBtnPrimary: n.status.name != 'ACCEPTED',
                               onActionPressed: () => context.push('/retailer/negotiations/${n.id}'),
                             ),
                           );

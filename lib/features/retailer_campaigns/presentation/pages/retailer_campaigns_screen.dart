@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
 import '../bloc/retailer_campaign_state.dart';
@@ -152,80 +153,204 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
   }
 
   Widget _buildCampaignCard(BuildContext context, InfluencerCampaignEntity campaign) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.neutral300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(campaign.title, style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.roleRetailerLight, borderRadius: BorderRadius.circular(12)),
-                    child: Text('Active', style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _showEditCampaignSheet(context, campaign),
-                    child: const Icon(LucideIcons.pencil, size: 16, color: AppColors.neutral500),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => _showDeleteConfirmation(context, campaign.id),
-                    child: const Icon(LucideIcons.trash2, size: 16, color: AppColors.error500),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildCampaignStat('Platform', campaign.platforms.isNotEmpty ? campaign.platforms.first : 'Web'),
-              Container(width: 1, height: 30, color: AppColors.neutral300),
-              _buildCampaignStat('Budget', '₹${campaign.budgetMax.toStringAsFixed(0)}'),
-              Container(width: 1, height: 30, color: AppColors.neutral300),
-              _buildCampaignStat('Status', campaign.status),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Divider(height: 1),
-          ),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () async {
-                await context.push('/retailer/campaigns/${campaign.id}/bids');
-                if (mounted) _refresh();
-              },
-              child: Text('Review Bids', style: AppTextStyles.body.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+    // Status badge config
+    final statusColors = {
+      'PUBLISHED': AppColors.roleRetailer,
+      'ACTIVE': AppColors.roleRetailer,
+      'DRAFT': AppColors.neutral500,
+      'COMPLETED': AppColors.success500,
+      'CANCELLED': AppColors.error500,
+      'CREATOR_SELECTED': AppColors.info500,
+    };
+    final statusColor = statusColors[campaign.status] ?? AppColors.neutral500;
+    final statusLabel = campaign.status == 'PUBLISHED' ? 'Active' : campaign.status.replaceAll('_', ' ');
+
+    return GestureDetector(
+      onTap: () => context.push('/retailer/campaigns/${campaign.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.neutral200),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.neutral900.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          )
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title row + status + edit/delete
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    campaign.title,
+                    style: AppTextStyles.h4,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => _showEditCampaignSheet(context, campaign),
+                      child: const Icon(LucideIcons.pencil, size: 16, color: AppColors.neutral500),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => _showDeleteConfirmation(context, campaign.id),
+                      child: const Icon(LucideIcons.trash2, size: 16, color: AppColors.error500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            // Product info row
+            if (campaign.productName != null || campaign.productImageUrl != null) ...
+            [
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.neutral50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.neutral200),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: AppNetworkImage(
+                        url: campaign.productImageUrl,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                        placeholderIcon: LucideIcons.package,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Featured Product',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.neutral500),
+                          ),
+                          Text(
+                            campaign.productName ?? 'Unnamed Product',
+                            style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 14),
+            // Campaign stats row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildCampaignStat('Platform', campaign.platforms.isNotEmpty ? campaign.platforms.first : 'Web'),
+                Container(width: 1, height: 30, color: AppColors.neutral200),
+                _buildCampaignStat('Budget', '₹${campaign.budgetMax.toStringAsFixed(0)}'),
+                Container(width: 1, height: 30, color: AppColors.neutral200),
+                _buildCampaignStat('Creators', campaign.creatorCount.toString()),
+              ],
+            ),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.0),
+              child: Divider(height: 1, color: AppColors.neutral100),
+            ),
+
+            // Bottom actions
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/retailer/campaigns/${campaign.id}'),
+                    icon: const Icon(LucideIcons.eye, size: 14),
+                    label: const Text('Details'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.roleRetailer,
+                      side: BorderSide(color: AppColors.roleRetailer.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      textStyle: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await context.push('/retailer/campaigns/${campaign.id}/bids');
+                      if (mounted) _refresh();
+                    },
+                    icon: const Icon(LucideIcons.users, size: 14),
+                    label: const Text('Review Bids'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.roleRetailer,
+                      foregroundColor: AppColors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      textStyle: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCampaignStat(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: AppTextStyles.h3),
-        const SizedBox(height: 4),
-        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-      ],
+    return Flexible(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: AppTextStyles.h4,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+        ],
+      ),
     );
   }
 

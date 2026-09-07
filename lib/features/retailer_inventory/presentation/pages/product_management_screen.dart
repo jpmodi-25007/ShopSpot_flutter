@@ -56,8 +56,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           child: IconButton(
             icon: const Icon(LucideIcons.packageSearch,
                 color: AppColors.roleRetailer),
-            onPressed: () {
-              showModalBottomSheet(
+            onPressed: () async {
+              final result = await showModalBottomSheet<Map<String, String>>(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
@@ -66,6 +66,12 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   currentSort: _selectedSort,
                 ),
               );
+              if (result != null) {
+                setState(() {
+                  _selectedFilter = result['filter'] ?? 'All';
+                  _selectedSort = result['sort'] ?? 'Newest';
+                });
+              }
             },
           ),
         ),

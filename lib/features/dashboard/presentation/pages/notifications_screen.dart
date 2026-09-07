@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
@@ -102,6 +104,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             if (state.notifications.isEmpty) {
               return const Center(child: Text("No notifications."));
             }
+
+            final authState = context.read<AuthenticationBloc>().state;
+            final userRole = authState is AuthenticationLoaded ? authState.user.role : 'CUSTOMER';
+            
+            Color primaryColor = AppColors.roleCustomer;
+            Color lightColor = AppColors.roleCustomerLight;
+            
+            if (userRole == 'SHOPKEEPER') {
+              primaryColor = AppColors.roleRetailer;
+              lightColor = AppColors.roleRetailerLight;
+            } else if (userRole == 'INFLUENCER') {
+              primaryColor = AppColors.roleInfluencer;
+              lightColor = AppColors.roleInfluencerLight;
+            }
+
             return ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: state.notifications.length,
@@ -109,12 +126,51 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 final notification = state.notifications[index];
                 return _buildNotificationItem(
                   icon: LucideIcons.bell,
-                  iconColor: AppColors.primary500,
-                  iconBg: AppColors.primary50,
+                  iconColor: primaryColor,
+                  iconBg: lightColor,
                   title: notification.title,
                   message: notification.message,
                   time: '${notification.createdAt.day}/${notification.createdAt.month}',
                   isUnread: !notification.isRead,
+                  onTap: () {
+                    final type = notification.type;
+                    final data = notification.data ?? {};
+                    
+                    if (type != null) {
+                      if (type.startsWith('NEGOTIATION_')) {
+                        final id = data['negotiationId'];
+                        if (userRole == 'SHOPKEEPER') {
+                          context.push(id != null ? '/retailer/negotiations/$id' : '/retailer/negotiations');
+                        } else {
+                          context.push(id != null ? '/negotiations/$id' : '/negotiations');
+                        }
+                      } else if (type.startsWith('RESERVATION_')) {
+                        if (userRole == 'SHOPKEEPER') {
+                          context.push('/retailer/reservations'); // or wherever reservations are
+                        } else {
+                          context.push('/profile'); // or wherever reservations are for customer
+                        }
+                      } else if (type == 'NEW_ORDER' || type == 'ORDER_STATUS_CHANGED') {
+                        if (userRole == 'SHOPKEEPER') {
+                          context.push('/retailer/orders');
+                        } else {
+                          context.push('/orders');
+                        }
+                      } else if (type == 'CAMPAIGN_PUBLISHED' && userRole == 'INFLUENCER') {
+                        final id = data['campaignId'];
+                        if (id != null) {
+                          context.push('/influencer/campaigns/$id');
+                        }
+                      } else if (type.startsWith('BID_')) {
+                        final id = data['campaignId'];
+                        if (userRole == 'SHOPKEEPER') {
+                          if (id != null) context.push('/retailer/campaigns/$id/bids');
+                        } else if (userRole == 'INFLUENCER') {
+                          if (id != null) context.push('/influencer/campaigns/$id');
+                        }
+                      }
+                    }
+                  },
                 );
               },
             );
@@ -133,51 +189,55 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     required String message,
     required String time,
     required bool isUnread,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      color: isUnread ? AppColors.primary50.withValues(alpha: 0.3) : Colors.transparent,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isUnread ? AppColors.primary50 : AppColors.neutral100,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: isUnread ? AppColors.primary500 : AppColors.neutral500),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(title, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.neutral900)),
-                    Text(time, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(message, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600)),
-              ],
-            ),
-          ),
-          if (isUnread) ...[
-            const SizedBox(width: 12),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: isUnread ? iconBg.withValues(alpha: 0.3) : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Container(
-              margin: const EdgeInsets.only(top: 6),
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.primary500,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isUnread ? iconBg : AppColors.neutral100,
                 shape: BoxShape.circle,
               ),
+              child: Icon(icon, color: isUnread ? iconColor : AppColors.neutral500),
             ),
-          ]
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(title, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.neutral900)),
+                      Text(time, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(message, style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600)),
+                ],
+              ),
+            ),
+            if (isUnread) ...[
+              const SizedBox(width: 12),
+              Container(
+                margin: const EdgeInsets.only(top: 6),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: iconColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ]
+          ],
+        ),
       ),
     );
   }

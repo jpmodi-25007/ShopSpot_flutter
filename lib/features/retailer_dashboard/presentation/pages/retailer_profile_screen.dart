@@ -18,6 +18,9 @@ import '../../../../core/services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/utils/location_helper.dart';
+import '../../../shop/domain/entities/shop_entity.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 
 class RetailerProfileScreen extends StatefulWidget {
   const RetailerProfileScreen({super.key});
@@ -555,8 +558,8 @@ class _SettingsRow extends StatelessWidget {
 }
 
 class EditRetailerProfileBottomSheet extends StatefulWidget {
-  final dynamic shop;
-  const EditRetailerProfileBottomSheet({super.key, required this.shop});
+  final ShopEntity? shop;
+  const EditRetailerProfileBottomSheet({super.key, this.shop});
 
   @override
   State<EditRetailerProfileBottomSheet> createState() =>
@@ -698,8 +701,22 @@ class _EditRetailerProfileBottomSheetState
     _cityController = TextEditingController(text: widget.shop?.city ?? '');
     _addressController =
         TextEditingController(text: widget.shop?.address ?? '');
-    _phoneController = TextEditingController(text: widget.shop?.phone ?? '');
-    _emailController = TextEditingController(text: widget.shop?.email ?? '');
+    
+    // Pre-fill phone and email from AuthBloc if shop is null or doesn't have them
+    String phone = widget.shop?.phone ?? '';
+    String email = widget.shop?.email ?? '';
+    
+    if (phone.isEmpty || email.isEmpty) {
+      final authState = context.read<AuthenticationBloc>().state;
+      if (authState is AuthenticationLoaded) {
+        if (phone.isEmpty) phone = authState.user.mobile ?? '';
+        if (email.isEmpty) email = authState.user.email;
+      }
+    }
+    
+    _phoneController = TextEditingController(text: phone);
+    _emailController = TextEditingController(text: email);
+    
     _logoUrl = widget.shop?.logoUrl;
     _coverUrl = widget.shop?.coverImageUrl;
     _latitude = widget.shop?.latitude;

@@ -50,19 +50,22 @@ class AppNetworkImage extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
-    return placeholder ??
-        Container(
-          width: width,
-          height: height,
-          color: backgroundColor ?? AppColors.neutral100,
-          child: Center(
-            child: Icon(
-              placeholderIcon ?? LucideIcons.image,
-              color: AppColors.neutral400,
-              size: 24,
-            ),
-          ),
-        );
+    if (placeholder != null) return placeholder!;
+    
+    return Container(
+      width: width,
+      height: height,
+      color: backgroundColor ?? AppColors.neutral100,
+      child: Center(
+        child: Image.asset(
+          'assets/images/placeholder_image.png',
+          width: width != null ? width! * 0.5 : 48,
+          height: height != null ? height! * 0.5 : 48,
+          fit: BoxFit.contain,
+          color: AppColors.neutral300,
+        ),
+      ),
+    );
   }
 
   Widget _buildError() {

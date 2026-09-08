@@ -23,6 +23,8 @@ import '../../../../core/dependency_injection/injection.dart';
 import 'dart:ui';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -411,6 +413,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
+    final authState = context.read<AuthenticationBloc>().state;
+    final isRetailer = authState is AuthenticationLoaded && authState.user.role.toUpperCase() == 'RETAILER';
 
     return MultiBlocListener(
       listeners: [
@@ -772,21 +776,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 48,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _showAddReviewBottomSheet(product.id),
-                                      icon: const Icon(LucideIcons.penTool, size: 18),
-                                      label: const Text('Write a Review'),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: AppColors.primary500,
-                                        side: const BorderSide(color: AppColors.primary500),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  if (!isRetailer) ...[
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 48,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _showAddReviewBottomSheet(product.id),
+                                        icon: const Icon(LucideIcons.penTool, size: 18),
+                                        label: const Text('Write a Review'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.primary500,
+                                          side: const BorderSide(color: AppColors.primary500),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                             ],
                           ),
@@ -796,7 +802,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   ),
 
                   // Floating Glassmorphism Bottom Bar — only for non-influencer users
-                  if (!widget.isInfluencer)
+                  if (!widget.isInfluencer && !isRetailer)
                   Positioned(
                     bottom: 0,
                     left: 0,

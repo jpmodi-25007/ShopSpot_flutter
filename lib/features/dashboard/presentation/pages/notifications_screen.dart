@@ -144,33 +144,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       if (type.startsWith('NEGOTIATION_')) {
                         final id = data['negotiationId'];
                         if (userRole == 'SHOPKEEPER') {
-                          context.push(id != null ? '/retailer/negotiations/$id' : '/retailer/negotiations');
+                          context.go(id != null ? '/retailer/negotiations/$id' : '/retailer/negotiations');
                         } else {
-                          context.push(id != null ? '/negotiations/$id' : '/negotiations');
+                          context.go(id != null ? '/negotiations/$id' : '/negotiations');
                         }
                       } else if (type.startsWith('RESERVATION_')) {
                         if (userRole == 'SHOPKEEPER') {
-                          context.push('/retailer/reservations'); // or wherever reservations are
+                          context.go('/retailer/reservations'); // or wherever reservations are
                         } else {
-                          context.push('/profile'); // or wherever reservations are for customer
+                          context.go('/profile'); // or wherever reservations are for customer
                         }
                       } else if (type == 'NEW_ORDER' || type == 'ORDER_STATUS_CHANGED') {
                         if (userRole == 'SHOPKEEPER') {
-                          context.push('/retailer/orders');
+                          context.go('/retailer/orders');
                         } else {
-                          context.push('/orders');
+                          context.go('/orders');
                         }
                       } else if (type == 'CAMPAIGN_PUBLISHED' && userRole == 'INFLUENCER') {
                         final id = data['campaignId'];
                         if (id != null) {
-                          context.push('/influencer/campaigns/$id');
+                          context.go('/influencer/campaigns/$id');
                         }
                       } else if (type.startsWith('BID_')) {
                         final id = data['campaignId'];
                         if (userRole == 'SHOPKEEPER') {
-                          if (id != null) context.push('/retailer/campaigns/$id/bids');
+                          if (id != null) context.go('/retailer/campaigns/$id/bids');
                         } else if (userRole == 'INFLUENCER') {
-                          if (id != null) context.push('/influencer/campaigns/$id');
+                          if (id != null) context.go('/influencer/campaigns/$id');
                         }
                       }
                     }

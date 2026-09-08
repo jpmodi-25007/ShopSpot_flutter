@@ -184,7 +184,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
               Container(width: 1, height: 30, color: AppColors.neutral200),
               _buildStat('Bid Amount', '₹${bid.proposedAmount.toStringAsFixed(0)}', highlight: true),
               Container(width: 1, height: 30, color: AppColors.neutral200),
-              _buildStat('Status', bid.status, color: bid.status == 'ACCEPTED' ? AppColors.success500 : AppColors.roleRetailer),
+              _buildStat('Status', bid.status == 'ACCEPTED' ? 'APPROVED' : bid.status, color: bid.status == 'ACCEPTED' ? AppColors.success500 : AppColors.roleRetailer),
             ],
           ),
 
@@ -281,7 +281,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text(bid.status == 'ACCEPTED' ? 'Accepted' : 'Accept', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
+                  child: Text(bid.status == 'ACCEPTED' ? 'Approved' : 'Approve', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

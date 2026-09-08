@@ -205,7 +205,10 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: 3,
                                 separatorBuilder: (context, index) => const SizedBox(width: 16),
-                                itemBuilder: (context, index) => const ProductCardSkeleton(),
+                                itemBuilder: (context, index) => const SizedBox(
+                                  width: 160,
+                                  child: ProductCardSkeleton(),
+                                ),
                               ),
                             );
                           } else if (state is ProductError) {

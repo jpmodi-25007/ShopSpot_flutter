@@ -398,9 +398,6 @@ Future<void> configureDependencies() async {
       () => RetailerCampaignRepositoryImpl(remoteDataSource: getIt()));
   getIt.registerLazySingleton(() => CreateCampaignUseCase(getIt()));
   getIt.registerLazySingleton(() => GetMyCampaignsUseCase(getIt()));
-  getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
-  getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
-  getIt.registerLazySingleton(() => MarkNotificationAsReadUseCase(getIt()));
   getIt.registerLazySingleton(() => GetCampaignBidsUseCase(getIt()));
   getIt.registerLazySingleton(() => AcceptBidUseCase(getIt()));
   getIt.registerLazySingleton(() => CounterBidUseCase(getIt()));
@@ -435,6 +432,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => CloudinaryService(apiClient: getIt()));
   getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
   getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
+  getIt.registerLazySingleton(() => MarkNotificationAsReadUseCase(getIt()));
   getIt.registerFactory<NotificationBloc>(
     () => NotificationBloc(
       getMyNotifications: getIt(),

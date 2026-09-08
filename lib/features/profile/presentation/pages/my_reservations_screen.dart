@@ -21,6 +21,15 @@ class MyReservationsScreen extends StatefulWidget {
 
 class _MyReservationsScreenState extends State<MyReservationsScreen> {
   int _tabIndex = 0; // 0 for Active, 1 for Past
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,33 +41,57 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             icon: const Icon(LucideIcons.arrowLeft),
             onPressed: () => context.pop(),
           ),
-          title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
-          centerTitle: true,
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Search reservations...',
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                )
+              : Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+          centerTitle: !_isSearching,
           actions: [
-            IconButton(icon: const Icon(LucideIcons.search), onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search reservations...'), backgroundColor: AppColors.neutral700),
-              );
-            }),
+            IconButton(
+              icon: Icon(_isSearching ? LucideIcons.x : LucideIcons.search),
+              onPressed: () {
+                setState(() {
+                  if (_isSearching) {
+                    _isSearching = false;
+                    _searchQuery = '';
+                    _searchController.clear();
+                  } else {
+                    _isSearching = true;
+                  }
+                });
+              },
+            ),
           ],
         ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('My Reservations', style: AppTextStyles.h1),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Products held for you after successful negotiations.',
-                    style: AppTextStyles.body.copyWith(color: AppColors.neutral700),
-                  ),
-                ],
+            if (!_isSearching)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('My Reservations', style: AppTextStyles.h1),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Products held for you after successful negotiations.',
+                      style: AppTextStyles.body.copyWith(color: AppColors.neutral700),
+                    ),
+                  ],
+                ),
               ),
-            ),
             
             // Custom Tab Bar
             Container(
@@ -92,7 +125,15 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                     final now = DateTime.now();
                     final filtered = state.reservations.where((r) {
                       final isExpired = r.expiresAt.difference(now).isNegative;
-                      return _tabIndex == 0 ? !isExpired : isExpired;
+                      final matchesTab = _tabIndex == 0 ? !isExpired : isExpired;
+                      if (!matchesTab) return false;
+                      
+                      if (_searchQuery.isEmpty) return true;
+                      
+                      final productName = (r.productName).toLowerCase();
+                      final shopName = (r.shopName).toLowerCase();
+                      
+                      return productName.contains(_searchQuery) || shopName.contains(_searchQuery);
                     }).toList();
 
                     if (filtered.isEmpty) {
@@ -274,8 +315,74 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   }
 }
 
-class _RescheduleBottomSheet extends StatelessWidget {
+class _RescheduleBottomSheet extends StatefulWidget {
   const _RescheduleBottomSheet();
+
+  @override
+  State<_RescheduleBottomSheet> createState() => _RescheduleBottomSheetState();
+}
+
+class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary500,
+              onPrimary: AppColors.white,
+              onSurface: AppColors.neutral900,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null && mounted) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppColors.primary500,
+                onPrimary: AppColors.white,
+                onSurface: AppColors.neutral900,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (time != null && mounted) {
+        setState(() {
+          _selectedDate = date;
+          _selectedTime = time;
+        });
+      }
+    }
+  }
+
+  String get _formattedDateTime {
+    if (_selectedDate == null || _selectedTime == null) {
+      return 'Tap to select date and time';
+    }
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hour = _selectedTime!.hour == 0 ? 12 : (_selectedTime!.hour > 12 ? _selectedTime!.hour - 12 : _selectedTime!.hour);
+    final period = _selectedTime!.period == DayPeriod.am ? 'AM' : 'PM';
+    final minute = _selectedTime!.minute.toString().padLeft(2, '0');
+    return '${months[_selectedDate!.month - 1]} ${_selectedDate!.day}, $hour:$minute $period';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -302,15 +409,30 @@ class _RescheduleBottomSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-              Text('Select New Date', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+              Text('Select New Date & Time', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Tomorrow, 2:00 PM',
-                  prefixIcon: const Icon(LucideIcons.calendar, color: AppColors.neutral500),
-                  filled: true,
-                  fillColor: AppColors.neutral50,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              GestureDetector(
+                onTap: _pickDateTime,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.neutral50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.calendar, color: AppColors.neutral500),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _formattedDateTime,
+                          style: AppTextStyles.body.copyWith(
+                            color: _selectedDate == null ? AppColors.neutral500 : AppColors.neutral900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

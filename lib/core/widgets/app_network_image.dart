@@ -45,9 +45,8 @@ class AppNetworkImage extends StatelessWidget {
   });
 
   bool get _isValidUrl {
-    if (url == null || url!.isEmpty) return false;
-    final trimmed = url!.trim();
-    return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+    if (url == null || url!.trim().isEmpty) return false;
+    return true; // CloudinaryUrlBuilder will handle formatting the URL properly
   }
 
   Widget _buildPlaceholder() {

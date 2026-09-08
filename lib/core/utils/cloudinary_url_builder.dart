@@ -19,7 +19,17 @@ class CloudinaryUrlBuilder {
       secureUrl = secureUrl.replaceFirst('http://', 'https://');
     }
 
+    if (!secureUrl.startsWith('http')) {
+      // It's likely a raw Cloudinary public ID or relative path
+      if (!secureUrl.startsWith('/')) {
+        secureUrl = '${_baseUrl}image/upload/$secureUrl';
+      } else {
+        secureUrl = '${_baseUrl}image/upload$secureUrl';
+      }
+    }
+
     if (!secureUrl.contains('/upload/')) {
+      // If it's an absolute URL but missing upload pattern, try to append
       return secureUrl;
     }
 

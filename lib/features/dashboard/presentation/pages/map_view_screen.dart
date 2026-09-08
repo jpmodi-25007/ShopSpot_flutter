@@ -374,19 +374,19 @@ class _MapViewScreenState extends State<MapViewScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
                   children: [
                     Text(price,
                         style: AppTextStyles.body.copyWith(
                             color: AppColors.neutral900,
                             fontWeight: FontWeight.w800)),
-                    if (originalPrice.isNotEmpty) ...[
-                      const SizedBox(width: 6),
+                    if (originalPrice.isNotEmpty)
                       Text(originalPrice,
                           style: AppTextStyles.caption.copyWith(
                               decoration: TextDecoration.lineThrough,
                               color: AppColors.neutral400)),
-                    ]
                   ],
                 )
               ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -56,9 +57,14 @@ class SavedProductsScreen extends StatelessWidget {
               itemCount: products.length,
               itemBuilder: (context, index) {
                 final product = products[index];
-                final imageUrl = (product['images'] != null && (product['images'] as List).isNotEmpty) 
-                    ? product['images'][0] 
-                    : 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=300&auto=format&fit=crop';
+                // Try multiple possible keys based on backend payload
+                final name = product['name'] ?? product['productName'] ?? 'Product';
+                final price = product['sellingPrice'] ?? product['price'] ?? 0;
+                final category = product['category'] ?? product['shopName'] ?? '';
+                final images = product['images'] as List?;
+                final imageUrl = (images != null && images.isNotEmpty) 
+                    ? images[0] 
+                    : '';
 
                 return Container(
                   decoration: BoxDecoration(
@@ -76,21 +82,20 @@ class SavedProductsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                            image: DecorationImage(
-                              image: NetworkImage(imageUrl),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            AppNetworkImage(
+                              url: imageUrl.isNotEmpty ? imageUrl : null,
                               fit: BoxFit.cover,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                             ),
-                          ),
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                            Positioned(
+                              top: 8,
+                              right: 8,
                               child: GestureDetector(
                                 onTap: () {
-                                  context.read<SavedBloc>().add(RemoveSavedProductRequested(product['id']));
+                                  context.read<SavedBloc>().add(RemoveSavedProductRequested(product['productId'] ?? product['id'] ?? ''));
                                 },
                                 child: CircleAvatar(
                                   backgroundColor: Colors.white,
@@ -99,7 +104,7 @@ class SavedProductsScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       Padding(
@@ -107,11 +112,13 @@ class SavedProductsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(product['name'] ?? '', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            const SizedBox(height: 4),
-                            Text(product['category'] ?? '', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                            Text('$name', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (category.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text('$category', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
                             const SizedBox(height: 8),
-                            Text('₹${product['price'] ?? 0}', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary500)),
+                            Text('₹$price', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary500)),
                           ],
                         ),
                       ),

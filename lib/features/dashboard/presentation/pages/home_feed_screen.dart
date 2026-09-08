@@ -176,7 +176,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 ],
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(80),
+                preferredSize: const Size.fromHeight(85),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: GestureDetector(

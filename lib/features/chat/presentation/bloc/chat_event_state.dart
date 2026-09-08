@@ -7,6 +7,10 @@ abstract class ChatEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class LoadChatRoomsRequested extends ChatEvent {
+  const LoadChatRoomsRequested();
+}
+
 class CreateOrGetRoomRequested extends ChatEvent {
   final String targetUserId;
   final String? contextType;
@@ -14,6 +18,13 @@ class CreateOrGetRoomRequested extends ChatEvent {
   const CreateOrGetRoomRequested(this.targetUserId, {this.contextType, this.contextId});
   @override
   List<Object?> get props => [targetUserId, contextType, contextId];
+}
+
+class ConnectSocketRequested extends ChatEvent {
+  final String roomId;
+  const ConnectSocketRequested(this.roomId);
+  @override
+  List<Object?> get props => [roomId];
 }
 
 class GetMessagesRequested extends ChatEvent {
@@ -31,6 +42,13 @@ class SendMessageRequested extends ChatEvent {
   List<Object?> get props => [roomId, content];
 }
 
+class SocketMessageReceived extends ChatEvent {
+  final ChatMessageEntity message;
+  const SocketMessageReceived(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
 abstract class ChatState extends Equatable {
   const ChatState();
   @override
@@ -40,6 +58,13 @@ abstract class ChatState extends Equatable {
 class ChatInitial extends ChatState {}
 
 class ChatLoading extends ChatState {}
+
+class ChatRoomsLoaded extends ChatState {
+  final List<ChatRoomEntity> rooms;
+  const ChatRoomsLoaded(this.rooms);
+  @override
+  List<Object?> get props => [rooms];
+}
 
 class ChatRoomLoaded extends ChatState {
   final ChatRoomEntity room;

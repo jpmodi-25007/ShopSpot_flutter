@@ -11,7 +11,7 @@ import 'package:logger/logger.dart';
 
 import '../services/push_notification_service.dart';
 import '../services/cloudinary_service.dart';
-import '../../features/dashboard/domain/usecases/mark_all_as_read_usecase.dart';
+
 
 import '../../features/authentication/data/datasources/auth_remote_data_source.dart';
 import '../../features/authentication/data/repositories/auth_repository_impl.dart';
@@ -126,6 +126,7 @@ import '../../features/addresses/domain/usecases/addresses_use_cases.dart';
 import '../../features/addresses/presentation/bloc/addresses_bloc.dart';
 
 import '../../features/chat/data/datasources/chat_remote_data_source.dart';
+import '../../features/chat/data/datasources/chat_socket_service.dart';
 import '../../features/chat/data/repositories/chat_repository.dart';
 import '../../features/chat/presentation/bloc/chat_bloc.dart';
 
@@ -317,10 +318,8 @@ Future<void> configureDependencies() async {
       () => NegotiationRemoteDataSourceImpl(getIt()));
   getIt.registerLazySingleton<NegotiationRepository>(
       () => NegotiationRepositoryImpl(remoteDataSource: getIt()));
-  getIt.registerLazySingleton<ChatRepository>(
-    () => ChatRepository(remoteDataSource: getIt()),
-  );
-      
+
+
   // Customer Use Cases
   getIt.registerLazySingleton(() => StartNegotiationUseCase(getIt()));
   getIt.registerLazySingleton(() => GetMyNegotiationsUseCase(getIt()));
@@ -447,6 +446,13 @@ Future<void> configureDependencies() async {
   getIt.registerFactory<PromotionBloc>(
     () => PromotionBloc(repository: getIt()),
   );
+  // Chat Module
+  getIt.registerLazySingleton<ChatRemoteDataSource>(
+      () => ChatRemoteDataSource(apiClient: getIt()));
+  getIt.registerLazySingleton<ChatSocketService>(
+      () => ChatSocketService(secureStorage: getIt()));
+  getIt.registerLazySingleton<ChatRepository>(
+      () => ChatRepository(remoteDataSource: getIt(), socketService: getIt()));
   getIt.registerFactory<ChatBloc>(
     () => ChatBloc(repository: getIt()),
   );

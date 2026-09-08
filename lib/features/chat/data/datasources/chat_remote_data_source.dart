@@ -1,8 +1,10 @@
+import 'package:logger/logger.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/chat_entity.dart';
 
 class ChatRemoteDataSource {
   final ApiClient apiClient;
+  final Logger _logger = Logger();
 
   ChatRemoteDataSource({required this.apiClient});
 
@@ -17,20 +19,33 @@ class ChatRemoteDataSource {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return _parseRoom(response.data);
+      return _parseRoom(response.data as Map<String, dynamic>);
     } else {
       throw Exception('Failed to create/get chat room');
     }
   }
 
   Future<List<ChatRoomEntity>> getMyRooms() async {
-    final response = await apiClient.get('/chats/rooms');
+    try {
+      final response = await apiClient.get('/chats/rooms');
 
-    if (response.statusCode == 200) {
-      final List data = response.data as List? ?? [];
-      return data.map((json) => _parseRoom(json)).toList();
-    } else {
-      throw Exception('Failed to fetch chat rooms');
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data is List) {
+          return data
+              .whereType<Map<String, dynamic>>()
+              .map((json) => _parseRoom(json))
+              .toList();
+        }
+        return [];
+      } else {
+        _logger.w('[Chat] getMyRooms returned ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      // Gracefully swallow 500 or network errors — return empty list
+      _logger.e('[Chat] getMyRooms error: $e');
+      return [];
     }
   }
 
@@ -38,8 +53,14 @@ class ChatRemoteDataSource {
     final response = await apiClient.get('/chats/rooms/$roomId/messages');
 
     if (response.statusCode == 200) {
-      final List data = response.data as List? ?? [];
-      return data.map((json) => _parseMessage(json)).toList();
+      final data = response.data;
+      if (data is List) {
+        return data
+            .whereType<Map<String, dynamic>>()
+            .map((json) => _parseMessage(json))
+            .toList();
+      }
+      return [];
     } else {
       throw Exception('Failed to fetch messages');
     }
@@ -52,35 +73,53 @@ class ChatRemoteDataSource {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return _parseMessage(response.data);
+      return _parseMessage(response.data as Map<String, dynamic>);
     } else {
       throw Exception('Failed to send message');
     }
   }
 
   ChatRoomEntity _parseRoom(Map<String, dynamic> json) {
+    final rawMessages = json['messages'];
+    final List<ChatMessageEntity> messages = rawMessages is List
+        ? rawMessages.whereType<Map<String, dynamic>>().map((m) => _parseMessage(m)).toList()
+        : [];
+
+    final rawLastMsg = json['lastMessage'];
+    final ChatMessageEntity? lastMessage = rawLastMsg is Map<String, dynamic>
+        ? _parseMessage(rawLastMsg)
+        : (messages.isNotEmpty ? messages.last : null);
+
     return ChatRoomEntity(
-      id: json['id'],
-      participantA: json['participantA'],
-      participantB: json['participantB'],
-      contextType: json['contextType'],
-      contextId: json['contextId'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      userA: json['userA'] ?? {},
-      userB: json['userB'] ?? {},
-      messages: (json['messages'] as List?)?.map((m) => _parseMessage(m)).toList() ?? [],
+      id: json['id']?.toString() ?? '',
+      participantA: json['participantA']?.toString() ?? '',
+      participantB: json['participantB']?.toString() ?? '',
+      contextType: json['contextType']?.toString(),
+      contextId: json['contextId']?.toString(),
+      createdAt: _parseDate(json['createdAt']),
+      updatedAt: _parseDate(json['updatedAt']),
+      userA: json['userA'] is Map ? json['userA'] as Map<String, dynamic> : {},
+      userB: json['userB'] is Map ? json['userB'] as Map<String, dynamic> : {},
+      messages: messages,
+      lastMessage: lastMessage,
+      unreadCount: (json['unreadCount'] as int?) ?? 0,
     );
   }
 
   ChatMessageEntity _parseMessage(Map<String, dynamic> json) {
     return ChatMessageEntity(
-      id: json['id'],
-      roomId: json['roomId'],
-      senderId: json['senderId'],
-      content: json['content'],
-      isRead: json['isRead'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
+      id: json['id']?.toString() ?? '',
+      roomId: json['roomId']?.toString() ?? '',
+      senderId: json['senderId']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      isRead: json['isRead'] == true,
+      createdAt: _parseDate(json['createdAt']),
     );
   }
+
+  DateTime _parseDate(dynamic value) {
+    if (value == null) return DateTime.now();
+    return DateTime.tryParse(value.toString()) ?? DateTime.now();
+  }
 }
+

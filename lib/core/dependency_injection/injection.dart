@@ -168,9 +168,7 @@ Future<void> configureDependencies() async {
   );
 
   // Features (Auth)
-  getIt.registerLazySingleton<ChatRemoteDataSource>(
-    () => ChatRemoteDataSource(apiClient: getIt()),
-  );
+
 
   getIt.registerLazySingleton<AuthRemoteDataSource>(
       () => AuthRemoteDataSourceImpl(getIt(), secureStorage: getIt()));

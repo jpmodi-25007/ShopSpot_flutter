@@ -50,6 +50,7 @@ import '../../features/retailer_campaigns/presentation/pages/retailer_campaigns_
 import '../../features/retailer_campaigns/presentation/pages/create_campaign_screen.dart';
 import '../../features/retailer_campaigns/presentation/pages/campaign_bids_screen.dart';
 import '../../features/retailer_campaigns/presentation/pages/retailer_influencer_profile_screen.dart';
+import '../../features/retailer_campaigns/presentation/bloc/retailer_campaign_bloc.dart';
 import '../../features/order/presentation/pages/retailer_orders_screen.dart';
 import '../../features/order/presentation/bloc/retailer_order_bloc.dart';
 import '../../features/influencer/presentation/pages/influencer_discover_screen.dart';
@@ -64,6 +65,8 @@ import '../../features/influencer/presentation/pages/bid_detail_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_pending_screen.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
 import '../../features/influencer/presentation/pages/coming_soon_screen.dart';
+import '../../features/chat/presentation/pages/direct_chat_screen.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 import 'shell_layout.dart';
 import 'retailer_shell_layout.dart';
 import 'influencer_shell_layout.dart';
@@ -187,6 +190,22 @@ final appRouter = GoRouter(
       path: '/negotiation/:id',
       builder: (context, state) =>
           NegotiationChatScreen(negotiationId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/chat/:userId',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return BlocProvider(
+          create: (_) => getIt<ChatBloc>(),
+          child: DirectChatScreen(
+            targetUserId: state.pathParameters['userId']!,
+            targetUserName: extra?['targetUserName'],
+            targetUserAvatar: extra?['targetUserAvatar'],
+            contextType: extra?['contextType'],
+            contextId: extra?['contextId'],
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/reservations',
@@ -374,12 +393,23 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/retailer/campaigns/:id',
-      builder: (context, state) => RetailerCampaignDetailScreen(campaignId: state.pathParameters['id']!),
+      builder: (context, state) => BlocProvider(
+        create: (_) => getIt<RetailerCampaignBloc>(),
+        child: RetailerCampaignDetailScreen(campaignId: state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/retailer/campaigns/:id/bids',
-      builder: (context, state) =>
-          CampaignBidsScreen(campaignId: state.pathParameters['id']!),
+      builder: (context, state) {
+        final campaign = state.extra as InfluencerCampaignEntity?;
+        return BlocProvider(
+          create: (_) => getIt<RetailerCampaignBloc>(),
+          child: CampaignBidsScreen(
+            campaignId: state.pathParameters['id']!,
+            campaign: campaign,
+          ),
+        );
+      },
     ),
     GoRoute(
       path: '/retailer/influencer-profile/:id',

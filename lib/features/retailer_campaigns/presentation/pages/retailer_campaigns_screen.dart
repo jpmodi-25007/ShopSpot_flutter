@@ -313,7 +313,7 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await context.push('/retailer/campaigns/${campaign.id}/bids');
+                      await context.push('/retailer/campaigns/${campaign.id}/bids', extra: campaign);
                       if (mounted) _refresh();
                     },
                     icon: const Icon(LucideIcons.users, size: 14),

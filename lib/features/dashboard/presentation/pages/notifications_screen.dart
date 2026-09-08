@@ -133,6 +133,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   time: '${notification.createdAt.day}/${notification.createdAt.month}',
                   isUnread: !notification.isRead,
                   onTap: () {
+                    if (!notification.isRead) {
+                      context.read<NotificationBloc>().add(MarkNotificationAsReadRequested(notification.id));
+                    }
+                    
                     final type = notification.type;
                     final data = notification.data ?? {};
                     

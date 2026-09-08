@@ -62,6 +62,110 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
     }
   }
 
+  Future<void> _showAddReviewBottomSheet(String shopId) async {
+    double rating = 5.0;
+    final commentController = TextEditingController();
+    bool isSubmitting = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Write a Review', style: AppTextStyles.h3),
+                      IconButton(
+                          icon: const Icon(LucideIcons.x),
+                          onPressed: () => Navigator.pop(ctx)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('Rating', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? AppColors.secondary500 : AppColors.neutral300,
+                        ),
+                        onPressed: () {
+                          setModalState(() => rating = index + 1.0);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Comment (optional)',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting ? null : () async {
+                        setModalState(() => isSubmitting = true);
+                        try {
+                          await getIt<ApiClient>().post('/reviews', data: {
+                            'shopId': shopId,
+                            'rating': rating.toInt(),
+                            'comment': commentController.text,
+                          });
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            _fetchReviews();
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Failed to add review'), backgroundColor: AppColors.error500));
+                          }
+                        } finally {
+                          if (ctx.mounted) setModalState(() => isSubmitting = false);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary500,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Submit Review', style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _fetchReviews() async {
     try {
       final apiClient = getIt<ApiClient>();
@@ -621,6 +725,21 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
               ],
             )
           ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: () => _showAddReviewBottomSheet(widget.shopId),
+            icon: const Icon(LucideIcons.penTool, size: 18),
+            label: const Text('Write a Review'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary500,
+              side: const BorderSide(color: AppColors.primary500),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
         ),
         const SizedBox(height: 24),
         if (_reviews.isEmpty)

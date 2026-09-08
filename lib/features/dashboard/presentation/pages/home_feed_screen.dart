@@ -29,6 +29,7 @@ import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
 import '../../../saved/presentation/bloc/saved_state.dart';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/utils/cloudinary_url_builder.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -286,10 +287,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           offset: const Offset(0, 4),
                                         )
                                       ],
-                                      image: DecorationImage(
-                                        image: NetworkImage(banner.imageUrl),
-                                        fit: BoxFit.cover,
-                                      ),
+                                        image: DecorationImage(
+                                          image: NetworkImage(CloudinaryUrlBuilder.buildUrl(secureUrl: banner.imageUrl)),
+                                          fit: BoxFit.cover,
+                                        ),
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
@@ -463,7 +464,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                     color: AppColors.neutral200,
                                     image: event.imageUrl != null && event.imageUrl!.isNotEmpty
                                         ? DecorationImage(
-                                            image: NetworkImage(event.imageUrl!),
+                                            image: NetworkImage(CloudinaryUrlBuilder.buildUrl(secureUrl: event.imageUrl!)),
                                             fit: BoxFit.cover,
                                           )
                                         : null,

@@ -17,4 +17,9 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<void> markAllAsRead() async {
     await remoteDataSource.markAllAsRead();
   }
+
+  @override
+  Future<void> markAsRead(String id) async {
+    await remoteDataSource.markAsRead(id);
+  }
 }

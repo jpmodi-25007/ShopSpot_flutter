@@ -17,6 +17,7 @@ import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/utils/location_helper.dart';
 
 class RetailerProfileScreen extends StatefulWidget {
   const RetailerProfileScreen({super.key});
@@ -330,6 +331,20 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
 
                       const SizedBox(height: 16),
 
+                      // Management Section
+                      _SectionCard(
+                        title: 'Shop Management',
+                        icon: LucideIcons.briefcase,
+                        children: [
+                          _SettingsRow(
+                              LucideIcons.calendarCheck,
+                              'Shop Reservations',
+                              () => context.push('/reservations')),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
                       // Account Settings
                       _SectionCard(
                         title: 'Account Settings',
@@ -609,6 +624,31 @@ class _EditRetailerProfileBottomSheetState
     }
   }
 
+  bool _isFetchingLocation = false;
+  Future<void> _useCurrentLocation() async {
+    setState(() => _isFetchingLocation = true);
+    try {
+      final pos = await LocationHelper.getCurrentLocation();
+      if (pos != null) {
+        final address = await LocationHelper.getAddressFromCoordinates(pos.latitude, pos.longitude);
+        setState(() {
+          _latitude = pos.latitude;
+          _longitude = pos.longitude;
+          if (address != null) {
+            _addressController.text = address;
+            // Best effort city extraction from address string
+            final parts = address.split(',');
+            if (parts.length >= 2) {
+              _cityController.text = parts[parts.length - 2].trim();
+            }
+          }
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingLocation = false);
+    }
+  }
+
   Future<void> _pickAndUploadImage({required bool isLogo}) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
@@ -860,6 +900,21 @@ class _EditRetailerProfileBottomSheetState
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _isFetchingLocation ? null : _useCurrentLocation,
+                      icon: _isFetchingLocation
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(LucideIcons.navigation, size: 16),
+                      label: Text(_isFetchingLocation ? 'Locating...' : 'Use Current Location'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(

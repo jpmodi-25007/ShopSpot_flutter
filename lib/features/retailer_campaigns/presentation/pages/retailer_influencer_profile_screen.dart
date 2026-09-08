@@ -195,14 +195,12 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
             Expanded(
               child: OutlinedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Messaging feature coming soon!'),
-                      backgroundColor: AppColors.roleRetailer,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
+                  context.push('/chat/${bid?.influencerId}', extra: {
+                    'targetUserName': bid?.influencerName ?? 'Influencer',
+                    'targetUserAvatar': bid?.influencerAvatar,
+                    'contextType': 'CAMPAIGN',
+                    'contextId': bid?.campaignId,
+                  });
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

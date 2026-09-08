@@ -284,15 +284,24 @@ class _SearchScreenState extends State<SearchScreen>
             ),
             itemCount: _categories.length,
             itemBuilder: (context, index) {
+              final category = _categories[index];
               return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
+                tween: Tween(begin: 0.0, end: 1.0),
                 duration: Duration(milliseconds: 300 + (index * 60)),
                 curve: Curves.easeOut,
                 builder: (context, val, child) => Transform.translate(
                   offset: Offset(0, 20 * (1 - val)),
                   child: Opacity(opacity: val, child: child),
                 ),
-                child: _CategoryTile(category: _categories[index]),
+                child: _CategoryTile(
+                  category: category,
+                  onTap: () {
+                    _controller.text = category.name;
+                    setState(() => _hasQuery = true);
+                    context.read<SearchBloc>().add(PerformSearchRequested(category.name));
+                    _addToRecentSearches(category.name);
+                  },
+                ),
               );
             },
           ),
@@ -414,7 +423,8 @@ class _SearchCategory {
 
 class _CategoryTile extends StatefulWidget {
   final _SearchCategory category;
-  const _CategoryTile({required this.category});
+  final VoidCallback? onTap;
+  const _CategoryTile({required this.category, this.onTap});
   @override
   State<_CategoryTile> createState() => _CategoryTileState();
 }
@@ -425,7 +435,10 @@ class _CategoryTileState extends State<_CategoryTile> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        if (widget.onTap != null) widget.onTap!();
+      },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.93 : 1.0,

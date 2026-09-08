@@ -11,11 +11,13 @@ import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
 import '../bloc/retailer_campaign_state.dart';
 import '../../../influencer/domain/entities/influencer_bid_entity.dart';
+import '../../../influencer/domain/entities/influencer_campaign_entity.dart';
 
 
 class CampaignBidsScreen extends StatefulWidget {
   final String campaignId;
-  const CampaignBidsScreen({super.key, required this.campaignId});
+  final InfluencerCampaignEntity? campaign;
+  const CampaignBidsScreen({super.key, required this.campaignId, this.campaign});
 
   @override
   State<CampaignBidsScreen> createState() => _CampaignBidsScreenState();
@@ -54,9 +56,20 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
           padding: const EdgeInsets.all(16),
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           children: [
-          Text('Summer Local Treats', style: AppTextStyles.h2),
+          Text(widget.campaign?.title ?? 'Campaign Bids', style: AppTextStyles.h2),
           const SizedBox(height: 4),
-          Text('12 Active Bids • 3 Shortlisted', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500)),
+          
+          BlocBuilder<RetailerCampaignBloc, RetailerCampaignState>(
+            builder: (context, state) {
+              int active = 0;
+              int short = 0;
+              if (state is RetailerCampaignBidsLoaded && state.campaignId == widget.campaignId) {
+                active = state.bids.length;
+                short = state.bids.where((b) => b.isShortlisted).length;
+              }
+              return Text('$active Active Bids • $short Shortlisted', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500));
+            },
+          ),
           const SizedBox(height: 24),
           
           BlocConsumer<RetailerCampaignBloc, RetailerCampaignState>(
@@ -231,7 +244,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () async {
-                    await context.push('/retailer/influencer-profile/${bid.influencerId}');
+                    await context.push('/retailer/influencer-profile/${bid.influencerId}', extra: bid);
                     if (mounted) _refresh();
                   },
                   style: OutlinedButton.styleFrom(

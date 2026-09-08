@@ -11,7 +11,15 @@ class CloudinaryUrlBuilder {
     bool qAuto = true,
     bool fAuto = true,
   }) {
-    if (secureUrl.isEmpty || !secureUrl.contains('/upload/')) {
+    if (secureUrl.isEmpty) {
+      return secureUrl;
+    }
+
+    if (secureUrl.startsWith('http://')) {
+      secureUrl = secureUrl.replaceFirst('http://', 'https://');
+    }
+
+    if (!secureUrl.contains('/upload/')) {
       return secureUrl;
     }
 

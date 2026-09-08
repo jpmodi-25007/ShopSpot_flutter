@@ -14,3 +14,11 @@ class GetMyNotificationsRequested extends NotificationEvent {
 class MarkAllAsReadRequested extends NotificationEvent {
   const MarkAllAsReadRequested();
 }
+
+class MarkNotificationAsReadRequested extends NotificationEvent {
+  final String notificationId;
+  const MarkNotificationAsReadRequested(this.notificationId);
+
+  @override
+  List<Object?> get props => [notificationId];
+}

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -98,18 +99,35 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       );
                     }).toSet();
       
-                    return GoogleMap(
-                      onMapCreated: (controller) => _mapController = controller,
-                      initialCameraPosition: CameraPosition(
-                        target: _initialTarget,
-                        zoom: 14.0,
-                      ),
-                      markers: markers,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                    );
+                    return kIsWeb
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(LucideIcons.map, size: 48, color: AppColors.neutral300),
+                              const SizedBox(height: 16),
+                              Text('Interactive maps are optimized for our mobile app.', style: AppTextStyles.body.copyWith(color: AppColors.neutral600), textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: () => context.go('/search'),
+                                icon: const Icon(LucideIcons.search, size: 16),
+                                label: const Text('Search Boutiques Instead'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GoogleMap(
+                          onMapCreated: (controller) => _mapController = controller,
+                          initialCameraPosition: CameraPosition(
+                            target: _initialTarget,
+                            zoom: 14.0,
+                          ),
+                          markers: markers,
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          zoomControlsEnabled: false,
+                          mapToolbarEnabled: false,
+                        );
                   },
                 ),
                 Positioned(

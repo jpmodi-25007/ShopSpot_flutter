@@ -106,6 +106,8 @@ import '../../features/dashboard/data/datasources/notification_remote_data_sourc
 import '../../features/dashboard/data/repositories/notification_repository_impl.dart';
 import '../../features/dashboard/domain/repositories/notification_repository.dart';
 import '../../features/dashboard/domain/usecases/get_my_notifications_usecase.dart';
+import '../../features/dashboard/domain/usecases/mark_all_as_read_usecase.dart';
+import '../../features/dashboard/domain/usecases/mark_notification_as_read_usecase.dart';
 import '../../features/dashboard/presentation/bloc/notification_bloc.dart';
 import '../../features/dashboard/data/repositories/promotion_repository_impl.dart';
 import '../../features/dashboard/domain/repositories/promotion_repository.dart';
@@ -122,6 +124,10 @@ import '../../features/addresses/data/repositories/addresses_repository_impl.dar
 import '../../features/addresses/domain/repositories/addresses_repository.dart';
 import '../../features/addresses/domain/usecases/addresses_use_cases.dart';
 import '../../features/addresses/presentation/bloc/addresses_bloc.dart';
+
+import '../../features/chat/data/datasources/chat_remote_data_source.dart';
+import '../../features/chat/data/repositories/chat_repository.dart';
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 
 final getIt = GetIt.instance;
 
@@ -161,6 +167,10 @@ Future<void> configureDependencies() async {
   );
 
   // Features (Auth)
+  getIt.registerLazySingleton<ChatRemoteDataSource>(
+    () => ChatRemoteDataSource(apiClient: getIt()),
+  );
+
   getIt.registerLazySingleton<AuthRemoteDataSource>(
       () => AuthRemoteDataSourceImpl(getIt(), secureStorage: getIt()));
   getIt.registerLazySingleton<AuthRepository>(
@@ -307,6 +317,9 @@ Future<void> configureDependencies() async {
       () => NegotiationRemoteDataSourceImpl(getIt()));
   getIt.registerLazySingleton<NegotiationRepository>(
       () => NegotiationRepositoryImpl(remoteDataSource: getIt()));
+  getIt.registerLazySingleton<ChatRepository>(
+    () => ChatRepository(remoteDataSource: getIt()),
+  );
       
   // Customer Use Cases
   getIt.registerLazySingleton(() => StartNegotiationUseCase(getIt()));
@@ -385,6 +398,9 @@ Future<void> configureDependencies() async {
       () => RetailerCampaignRepositoryImpl(remoteDataSource: getIt()));
   getIt.registerLazySingleton(() => CreateCampaignUseCase(getIt()));
   getIt.registerLazySingleton(() => GetMyCampaignsUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
+  getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
+  getIt.registerLazySingleton(() => MarkNotificationAsReadUseCase(getIt()));
   getIt.registerLazySingleton(() => GetCampaignBidsUseCase(getIt()));
   getIt.registerLazySingleton(() => AcceptBidUseCase(getIt()));
   getIt.registerLazySingleton(() => CounterBidUseCase(getIt()));
@@ -419,15 +435,23 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => CloudinaryService(apiClient: getIt()));
   getIt.registerLazySingleton(() => GetMyNotificationsUseCase(getIt()));
   getIt.registerLazySingleton(() => MarkAllAsReadUseCase(getIt()));
-  getIt.registerFactory(() => NotificationBloc(
-    getMyNotifications: getIt(),
-    markAllAsRead: getIt(),
-  ));
+  getIt.registerFactory<NotificationBloc>(
+    () => NotificationBloc(
+      getMyNotifications: getIt(),
+      markAllAsRead: getIt(),
+      markNotificationAsRead: getIt(),
+    ),
+  );
 
   // Promotions Module
   getIt.registerLazySingleton<PromotionRepository>(
       () => PromotionRepositoryImpl(apiClient: getIt()));
-  getIt.registerFactory(() => PromotionBloc(repository: getIt()));
+  getIt.registerFactory<PromotionBloc>(
+    () => PromotionBloc(repository: getIt()),
+  );
+  getIt.registerFactory<ChatBloc>(
+    () => ChatBloc(repository: getIt()),
+  );
 
   // Events
   getIt.registerLazySingleton<EventRemoteDataSource>(() => EventRemoteDataSourceImpl(dio: getIt()));

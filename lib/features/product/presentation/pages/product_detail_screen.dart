@@ -22,6 +22,7 @@ import '../../../negotiation/presentation/bloc/negotiation_state.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import 'dart:ui';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/network/api_client.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -242,6 +243,169 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+  }
+
+  Future<void> _showAddReviewBottomSheet(String productId) async {
+    double rating = 5.0;
+    final commentController = TextEditingController();
+    bool isSubmitting = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Write a Review', style: AppTextStyles.h3),
+                      IconButton(
+                          icon: const Icon(LucideIcons.x),
+                          onPressed: () => Navigator.pop(ctx)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('Rating', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: index < rating ? AppColors.secondary500 : AppColors.neutral300,
+                        ),
+                        onPressed: () {
+                          setModalState(() => rating = index + 1.0);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Comment (optional)',
+                      filled: true,
+                      fillColor: AppColors.neutral50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting ? null : () async {
+                        setModalState(() => isSubmitting = true);
+                        try {
+                          await getIt<ApiClient>().post('/reviews', data: {
+                            'productId': productId,
+                            'rating': rating.toInt(),
+                            'comment': commentController.text,
+                          });
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review added successfully'), backgroundColor: AppColors.success500));
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Failed to add review'), backgroundColor: AppColors.error500));
+                          }
+                        } finally {
+                          if (ctx.mounted) setModalState(() => isSubmitting = false);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary500,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Submit Review', style: AppTextStyles.body.copyWith(color: AppColors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _reserveItem(String productId, double sellingPrice) async {
+    if (GuestHelper.checkGuestAndPrompt(context)) return;
+
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Reservation'),
+        content: const Text('Are you sure you want to reserve this item? The shopkeeper will be notified.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary500),
+            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await getIt<ApiClient>().post('/reservations', data: {
+        'productId': productId,
+        'reservedPrice': sellingPrice,
+        'quantity': 1,
+      });
+
+      if (mounted) {
+        Navigator.pop(context); // pop loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🛒 Item reserved successfully!'),
+            backgroundColor: AppColors.success500,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // pop loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to reserve item'),
+            backgroundColor: AppColors.error500,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -598,17 +762,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                       Padding(
                                         padding:
                                             const EdgeInsets.only(bottom: 16.0),
-                                        child: Text(
-                                          product.description!,
-                                          style: AppTextStyles.body.copyWith(
-                                              color: AppColors.neutral600,
-                                              height: 1.6),
+                                          child: Text(
+                                            product.description!,
+                                            style: AppTextStyles.body.copyWith(
+                                                color: AppColors.neutral600,
+                                                height: 1.6),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 16),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _showAddReviewBottomSheet(product.id),
+                                      icon: const Icon(LucideIcons.penTool, size: 18),
+                                      label: const Text('Write a Review'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.primary500,
+                                        side: const BorderSide(color: AppColors.primary500),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                             ],
                           ),
                         ),
@@ -660,27 +839,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                       : 'Out of Stock',
                                   variant: AppButtonVariant.primary,
                                   onPressed: product.stockQuantity > 0
-                                      ? () {
-                                          if (GuestHelper.checkGuestAndPrompt(
-                                              context)) {
-                                            return;
-                                          }
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: const Text(
-                                                  '🛒 Item reserved!'),
-                                              backgroundColor:
-                                                  AppColors.primary500,
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10)),
-                                            ),
-                                          );
-                                        }
+                                      ? () => _reserveItem(product.id, double.tryParse(product.sellingPrice.toString()) ?? 0)
                                       : null,
                                 ),
                               ),

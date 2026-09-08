@@ -9,6 +9,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/network/api_client.dart';
 import '../bloc/retailer_dashboard_bloc.dart';
 import '../bloc/retailer_dashboard_event.dart';
 import '../bloc/retailer_dashboard_state.dart';
@@ -263,6 +264,8 @@ class RetailerDashboardScreen extends StatelessWidget {
 
                     // Action Items
                     Text('Needs Attention', style: AppTextStyles.h3),
+                    const SizedBox(height: 16),
+                    const _RecentReservationsSection(),
                     const SizedBox(height: 16),
                     BlocBuilder<RetailerNegotiationBloc,
                         RetailerNegotiationState>(
@@ -911,6 +914,110 @@ class RetailerDashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RecentReservationsSection extends StatefulWidget {
+  const _RecentReservationsSection();
+
+  @override
+  State<_RecentReservationsSection> createState() => _RecentReservationsSectionState();
+}
+
+class _RecentReservationsSectionState extends State<_RecentReservationsSection> {
+  List<dynamic> _reservations = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReservations();
+  }
+
+  Future<void> _fetchReservations() async {
+    try {
+      final response = await getIt<ApiClient>().get('/shopkeeper/reservations?limit=5');
+      if (mounted) {
+        setState(() {
+          _reservations = response.data['data'] ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateStatus(String id, String action) async {
+    try {
+      await getIt<ApiClient>().post('/shopkeeper/reservations/$id/$action');
+      _fetchReservations();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Reservation ${action == 'complete' ? 'confirmed' : 'cancelled'}'), backgroundColor: AppColors.success500));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update reservation'), backgroundColor: AppColors.error500));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    final pending = _reservations.where((r) => r['status'] == 'ACTIVE').toList();
+    if (pending.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Pending Reservations', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        ...pending.map((res) {
+          final product = res['product'];
+          final customer = res['customer'];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.neutral200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(LucideIcons.shoppingCart, color: AppColors.roleRetailer, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(product?['name'] ?? 'Product', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600))),
+                    Text('₹${res['reservedPrice']}', style: AppTextStyles.h4.copyWith(color: AppColors.roleRetailer)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Customer: ${customer?['name'] ?? 'Guest'}', style: AppTextStyles.bodySmall),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _updateStatus(res['id'], 'cancel'),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.success500),
+                        onPressed: () => _updateStatus(res['id'], 'complete'),
+                        child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ],
     );
   }
 }

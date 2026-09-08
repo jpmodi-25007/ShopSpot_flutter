@@ -4,6 +4,7 @@ import '../models/notification_model.dart';
 abstract class NotificationRemoteDataSource {
   Future<List<NotificationModel>> getMyNotifications();
   Future<void> markAllAsRead();
+  Future<void> markAsRead(String id);
 }
 
 class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
@@ -22,5 +23,10 @@ class NotificationRemoteDataSourceImpl implements NotificationRemoteDataSource {
   @override
   Future<void> markAllAsRead() async {
     await apiClient.post('/notifications/read-all');
+  }
+
+  @override
+  Future<void> markAsRead(String id) async {
+    await apiClient.post('/notifications/$id/read');
   }
 }

@@ -14,7 +14,7 @@ class InfluencerCardSkeleton extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade200),
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image Stack Area
@@ -22,7 +22,7 @@ class InfluencerCardSkeleton extends StatelessWidget {
               height: 200,
               child: Stack(
                 children: [
-                  const ShimmerImage(width: double.infinity, height: 200),
+                  ShimmerImage(width: double.infinity, height: 200),
                   Positioned(
                     top: 16,
                     right: 16,
@@ -39,32 +39,32 @@ class InfluencerCardSkeleton extends StatelessWidget {
             
             // Details Area
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const ShimmerText(width: 200, height: 24),
-                  const SizedBox(height: 16),
+                  ShimmerText(width: 200, height: 24),
+                  SizedBox(height: 16),
                   Row(
-                    children: const [
+                    children: [
                       ShimmerBox(width: 80, height: 26, borderRadius: 8),
                       SizedBox(width: 8),
                       ShimmerBox(width: 80, height: 26, borderRadius: 8),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           ShimmerText(width: 80, height: 12),
                           SizedBox(height: 4),
                           ShimmerText(width: 120, height: 20),
                         ],
                       ),
-                      const ShimmerButton(width: 130, height: 48, borderRadius: 12),
+                      ShimmerButton(width: 130, height: 48, borderRadius: 12),
                     ],
                   ),
                 ],

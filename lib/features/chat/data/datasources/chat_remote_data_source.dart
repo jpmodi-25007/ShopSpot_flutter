@@ -66,19 +66,6 @@ class ChatRemoteDataSource {
     }
   }
 
-  Future<ChatMessageEntity> sendMessage(String roomId, String content) async {
-    final response = await apiClient.post(
-      '/chats/rooms/$roomId/messages',
-      data: {'content': content},
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return _parseMessage(response.data as Map<String, dynamic>);
-    } else {
-      throw Exception('Failed to send message');
-    }
-  }
-
   ChatRoomEntity _parseRoom(Map<String, dynamic> json) {
     final rawMessages = json['messages'];
     final List<ChatMessageEntity> messages = rawMessages is List

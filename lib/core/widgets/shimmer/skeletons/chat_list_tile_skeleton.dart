@@ -6,28 +6,28 @@ class ChatListTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppShimmer(
+    return const AppShimmer(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            const ShimmerCircle(radius: 26),
-            const SizedBox(width: 12),
+            ShimmerCircle(radius: 26),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       ShimmerText(width: 120, height: 16),
                       ShimmerText(width: 40, height: 12),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  const ShimmerText(width: 180, height: 14),
-                  const SizedBox(height: 8),
-                  const ShimmerBox(width: 80, height: 20, borderRadius: 6),
+                  SizedBox(height: 6),
+                  ShimmerText(width: 180, height: 14),
+                  SizedBox(height: 8),
+                  ShimmerBox(width: 80, height: 20, borderRadius: 6),
                 ],
               ),
             ),

@@ -160,7 +160,7 @@ class _ComingSoonScreenState extends State<ComingSoonScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  Wrap(
+                  const Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 10,
                     runSpacing: 10,

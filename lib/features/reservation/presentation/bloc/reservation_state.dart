@@ -30,3 +30,11 @@ class ReservationError extends ReservationState {
   @override
   List<Object?> get props => [failure];
 }
+
+class ReservationActionSuccess extends ReservationState {
+  final String message;
+  const ReservationActionSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

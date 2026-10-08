@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -200,7 +199,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                                     .copyWith(color: AppColors.neutral400)),
                             const SizedBox(height: 20),
                             if (isLoadingAnalytics)
-                              AppShimmer(
+                              const AppShimmer(
                                 child: ShimmerBox(
                                   height: 120,
                                   width: double.infinity,
@@ -253,8 +252,8 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                   BlocBuilder<InfluencerBloc, InfluencerState>(
                     builder: (context, state) {
                       if (state is InfluencerLoaded && state.isLoading) {
-                        return Column(
-                          children: const [
+                        return const Column(
+                          children: [
                             PayoutCardSkeleton(),
                             PayoutCardSkeleton(),
                             PayoutCardSkeleton(),

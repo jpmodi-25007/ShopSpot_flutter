@@ -41,7 +41,7 @@ class RetailerDashboardScreen extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) =>
-              getIt<RetailerDashboardBloc>()..add(GetShopAnalyticsRequested()),
+              getIt<RetailerDashboardBloc>()..add(const GetShopAnalyticsRequested()),
         ),
         BlocProvider(
           create: (context) => getIt<RetailerNegotiationBloc>()
@@ -126,7 +126,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                 }
               }
 
-              String _formatTrend(int t) => t >= 0 ? '+$t%' : '$t%';
+              String formatTrend(int t) => t >= 0 ? '+$t%' : '$t%';
 
               final NumberFormat compactFormat = NumberFormat.compact();
 
@@ -176,7 +176,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                               : _buildPremiumStatCard(
                                   compactFormat.format(views),
                                   'Total Views',
-                                  _formatTrend(viewsTrend),
+                                  formatTrend(viewsTrend),
                                   viewsTrend >= 0),
                         ),
                         const SizedBox(width: 16),
@@ -186,7 +186,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                               : _buildPremiumStatCard(
                                   compactFormat.format(inquiries),
                                   'Active Orders',
-                                  _formatTrend(ordersTrend),
+                                  formatTrend(ordersTrend),
                                   ordersTrend >= 0),
                         ),
                       ],
@@ -849,7 +849,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: AppColors.neutral50,
                     borderRadius: BorderRadius.circular(12)),
-                child: Icon(LucideIcons.megaphone,
+                child: const Icon(LucideIcons.megaphone,
                     color: AppColors.roleRetailer, size: 24),
               ),
               const SizedBox(width: 16),
@@ -1016,7 +1016,7 @@ class _RecentReservationsSectionState extends State<_RecentReservationsSection> 
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

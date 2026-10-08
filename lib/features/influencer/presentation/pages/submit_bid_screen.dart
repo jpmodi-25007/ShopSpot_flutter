@@ -71,7 +71,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.success50,
                   shape: BoxShape.circle,
                 ),

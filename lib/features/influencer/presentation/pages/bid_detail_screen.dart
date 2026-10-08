@@ -21,7 +21,7 @@ class BidDetailScreen extends StatefulWidget {
 
 class _BidDetailScreenState extends State<BidDetailScreen> {
   final _contentUrlController = TextEditingController();
-  bool _isSubmitting = false;
+  final bool _isSubmitting = false;
   String? _assignmentId;
 
   @override
@@ -260,7 +260,7 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
               elevation: 0,
               leading: Container(
                 margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.neutral100, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: AppColors.neutral100, shape: BoxShape.circle),
                 child: IconButton(
                   icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900, size: 20),
                   onPressed: () => context.pop(),

@@ -15,14 +15,14 @@ class PayoutCardSkeleton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200),
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const ShimmerBox(width: 40, height: 40, borderRadius: 10),
-            const SizedBox(width: 12),
+            ShimmerBox(width: 40, height: 40, borderRadius: 10),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   ShimmerText(width: 120, height: 14),
                   SizedBox(height: 6),
                   ShimmerText(width: 80, height: 12),
@@ -31,7 +31,7 @@ class PayoutCardSkeleton extends StatelessWidget {
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: const [
+              children: [
                 ShimmerText(width: 60, height: 16),
                 SizedBox(height: 6),
                 ShimmerBox(width: 50, height: 20, borderRadius: 4),

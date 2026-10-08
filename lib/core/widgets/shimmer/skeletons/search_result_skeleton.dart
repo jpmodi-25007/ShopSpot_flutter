@@ -14,16 +14,16 @@ class SearchResultSkeleton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const ShimmerBox(width: 100, height: 100, borderRadius: 20),
-            const SizedBox(width: 16),
+            ShimmerBox(width: 100, height: 100, borderRadius: 20),
+            SizedBox(width: 16),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     ShimmerText(width: 120, height: 18),
                     SizedBox(height: 8),
                     ShimmerText(width: 80, height: 14),
@@ -33,7 +33,7 @@ class SearchResultSkeleton extends StatelessWidget {
                 ),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(right: 16),
               child: ShimmerBox(width: 24, height: 24, borderRadius: 12),
             ),

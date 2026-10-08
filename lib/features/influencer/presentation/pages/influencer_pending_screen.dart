@@ -220,14 +220,14 @@ class _InfluencerPendingScreenState extends State<InfluencerPendingScreen>
                           const SizedBox(height: 40),
 
                           if (!isRejected)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 32),
                               child: Row(
                                 children: [
                                   Expanded(child: _InfoCard(icon: LucideIcons.userCheck, label: 'Profile Submitted', done: true)),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 12),
                                   Expanded(child: _InfoCard(icon: LucideIcons.searchCheck, label: 'Admin Review', done: false)),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 12),
                                   Expanded(child: _InfoCard(icon: LucideIcons.rocket, label: 'Go Live!', done: false)),
                                 ],
                               ),

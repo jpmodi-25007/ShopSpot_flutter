@@ -9,6 +9,7 @@ import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
@@ -70,8 +71,10 @@ class _EventsListScreenState extends State<EventsListScreen> {
               itemBuilder: (context, index) {
                 final event = state.events[index];
                 final dateFormat = DateFormat('MMM d, yyyy');
-                return GestureDetector(
-                  onTap: () => context.push('/events/${event.id}'),
+                return AnimatedFadeSlide(
+                  delay: Duration(milliseconds: 50 * index),
+                  child: GestureDetector(
+                    onTap: () => context.push('/events/${event.id}'),
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -128,6 +131,7 @@ class _EventsListScreenState extends State<EventsListScreen> {
                       ],
                     ),
                   ),
+                ),
                 );
               },
             );

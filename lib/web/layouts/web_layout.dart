@@ -40,7 +40,7 @@ class WebLayout extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.neutral900,
             ),
             child: Row(
@@ -61,11 +61,11 @@ class WebLayout extends StatelessWidget {
               ],
             ),
           ),
-          _DrawerItem(title: 'Features', route: '/features', icon: LucideIcons.star),
-          _DrawerItem(title: 'How It Works', route: '/how-it-works', icon: LucideIcons.helpCircle),
-          _DrawerItem(title: 'About', route: '/about', icon: LucideIcons.info),
-          _DrawerItem(title: 'FAQ', route: '/faq', icon: LucideIcons.messageCircle),
-          _DrawerItem(title: 'Contact', route: '/contact', icon: LucideIcons.mail),
+          const _DrawerItem(title: 'Features', route: '/features', icon: LucideIcons.star),
+          const _DrawerItem(title: 'How It Works', route: '/how-it-works', icon: LucideIcons.helpCircle),
+          const _DrawerItem(title: 'About', route: '/about', icon: LucideIcons.info),
+          const _DrawerItem(title: 'FAQ', route: '/faq', icon: LucideIcons.messageCircle),
+          const _DrawerItem(title: 'Contact', route: '/contact', icon: LucideIcons.mail),
           const Divider(),
           Padding(
             padding: const EdgeInsets.all(16.0),

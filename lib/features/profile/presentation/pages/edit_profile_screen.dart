@@ -9,6 +9,7 @@ import '../../../../core/utils/validation_utils.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
 import '../../../authentication/presentation/bloc/authentication_event.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -22,6 +23,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _phoneController;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       initialName = authState.user.name;
       initialEmail = authState.user.email;
       initialPhone = authState.user.mobile ?? '';
+      _avatarUrl = authState.user.avatarUrl;
     }
 
     _nameController = TextEditingController(text: initialName);
@@ -72,10 +75,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    image: const DecorationImage(
-                      image: NetworkImage('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop'),
-                      fit: BoxFit.cover,
-                    ),
+                    color: AppColors.neutral100,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.1),
@@ -84,6 +84,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       )
                     ],
                   ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                      ? AppNetworkImage(
+                          url: _avatarUrl!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        )
+                      : const Icon(LucideIcons.user, size: 40, color: AppColors.primary500),
                 ),
                 Positioned(
                   bottom: 0,

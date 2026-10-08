@@ -22,8 +22,6 @@ import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
 import '../../../../core/utils/guest_helper.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
-import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
-import '../../../../core/widgets/shimmer/skeletons/event_card_skeleton.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
@@ -120,7 +118,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.roleCustomerLight,
                       shape: BoxShape.circle,
                     ),
@@ -246,11 +244,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   BlocBuilder<PromotionBloc, PromotionState>(
                     builder: (context, state) {
                       if (state is PromotionLoading) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
                           child: SizedBox(
                             height: 160,
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: 24.0),
                               child: AppShimmer(child: ShimmerBox(width: double.infinity, height: 160, borderRadius: 16)),
                             ),

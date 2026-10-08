@@ -13,6 +13,8 @@ import '../bloc/retailer_inventory_bloc.dart';
 import '../bloc/retailer_inventory_event.dart';
 import '../bloc/retailer_inventory_state.dart';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
@@ -392,8 +394,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         setState(() {
                           _selectedFilter = 'Low Stock';
                         });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Filtered by Low Stock! Scroll down to view.'), behavior: SnackBarBehavior.floating),
+                        // Scroll down to the All Products section
+                        Scrollable.ensureVisible(
+                          context,
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOut,
                         );
                       },
                       child: Text('View All',
@@ -550,26 +555,31 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       }
                         
                       if (filteredProducts.isEmpty) {
-                        return const Center(child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24.0),
-                          child: Text('No products found matching your filters.'),
-                        ));
+                        return const EmptyStateWidget(
+                          icon: LucideIcons.packageSearch,
+                          message: 'No products found matching your filters.',
+                        );
                       }
                       return Column(
-                        children: filteredProducts.map((product) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: _buildPremiumProductListItem(
-                              context,
-                              product,
-                              product.id,
-                              product.name,
-                              product.categoryId ?? 'Uncategorized',
-                              '₹${product.sellingPrice}',
-                              product.stockQuantity,
-                              product.images.isNotEmpty
-                                  ? product.images.first
-                                  : '',
+                        children: filteredProducts.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final product = entry.value;
+                          return AnimatedFadeSlide(
+                            delay: Duration(milliseconds: 50 * index),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: _buildPremiumProductListItem(
+                                context,
+                                product,
+                                product.id,
+                                product.name,
+                                product.categoryId ?? 'Uncategorized',
+                                '₹${product.sellingPrice}',
+                                product.stockQuantity,
+                                product.images.isNotEmpty
+                                    ? product.images.first
+                                    : '',
+                              ),
                             ),
                           );
                         }).toList(),

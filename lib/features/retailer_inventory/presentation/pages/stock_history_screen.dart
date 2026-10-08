@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
@@ -127,7 +128,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                             builder: (context, child) {
                               return Theme(
                                 data: Theme.of(context).copyWith(
-                                  colorScheme: ColorScheme.light(
+                                  colorScheme: const ColorScheme.light(
                                     primary: AppColors.roleRetailer,
                                     onPrimary: Colors.white,
                                     onSurface: AppColors.neutral900,
@@ -215,18 +216,37 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                         width: double.infinity,
                         child: TextButton.icon(
                           onPressed: () async {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Preparing export...'), backgroundColor: AppColors.neutral700),
-                            );
-                            await Future.delayed(const Duration(seconds: 1));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Export saved to documents!'), backgroundColor: AppColors.success500),
+                            try {
+                              // Build CSV from current filtered history
+                              final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                              final buffer = StringBuffer();
+                              buffer.writeln('Date,Product Name,SKU,Reason,Qty Change');
+                              for (final item in history) {
+                                final product = item['product'] ?? {};
+                                final dt = DateTime.parse(item['createdAt']);
+                                final dateFormatted = DateFormat('yyyy-MM-dd HH:mm').format(dt);
+                                final productName = '"${(product['name'] ?? 'Unknown').replaceAll('"', '""')}"';
+                                final sku = product['sku'] ?? 'N/A';
+                                final reason = item['reason'] ?? 'Unknown';
+                                final qty = item['quantity'] ?? 0;
+                                buffer.writeln('$dateFormatted,$productName,$sku,$reason,$qty');
+                              }
+                              await SharePlus.instance.share(
+                                ShareParams(
+                                  text: 'Stock History Export — $dateStr\n\n${buffer.toString()}',
+                                  subject: 'Stock History $dateStr',
+                                ),
                               );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Export failed. Please try again.'), backgroundColor: AppColors.error500),
+                                );
+                              }
                             }
                           },
                           icon: const Icon(LucideIcons.download, size: 16, color: AppColors.roleRetailer),
-                          label: Text('Export', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+                          label: Text('Export CSV', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
                           style: TextButton.styleFrom(
                             backgroundColor: AppColors.roleRetailerLight.withValues(alpha: 0.5),
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -276,14 +296,14 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
           // Pagination Footer
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.white,
-              border: const Border(top: BorderSide(color: AppColors.neutral200)),
+              border: Border(top: BorderSide(color: AppColors.neutral200)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Showing 1 to 3 of 124 entries', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                Text('Showing ${history.length} record${history.length == 1 ? '' : 's'}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
                 Row(
                   children: [
                     Container(

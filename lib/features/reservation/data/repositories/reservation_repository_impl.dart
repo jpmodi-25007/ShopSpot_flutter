@@ -24,4 +24,34 @@ class ReservationRepositoryImpl implements ReservationRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> cancelReservation(String reservationId) async {
+    try {
+      await remoteDataSource.cancelReservation(reservationId);
+      return const Right(null);
+    } catch (e) {
+      if (e is DioException) {
+        return Left(ServerFailure(
+          e.response?.data?['message'] ?? e.message ?? 'Failed to cancel reservation'
+        ));
+      }
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> rescheduleReservation(String reservationId, DateTime newDateTime) async {
+    try {
+      await remoteDataSource.rescheduleReservation(reservationId, newDateTime);
+      return const Right(null);
+    } catch (e) {
+      if (e is DioException) {
+        return Left(ServerFailure(
+          e.response?.data?['message'] ?? e.message ?? 'Failed to reschedule reservation'
+        ));
+      }
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

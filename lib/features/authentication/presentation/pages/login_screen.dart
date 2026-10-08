@@ -312,10 +312,10 @@ class _LoginScreenState extends State<LoginScreen>
                         height: 1.6),
                   ),
                   const SizedBox(height: 32),
-                  Wrap(
+                  const Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: const [
+                    children: [
                       _TrustChip(
                           icon: LucideIcons.shieldCheck,
                           label: 'Secure Payments'),

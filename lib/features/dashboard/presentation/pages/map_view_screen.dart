@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../../../core/theme/app_colors.dart';
@@ -18,7 +17,6 @@ import '../../../product/presentation/bloc/product_state.dart';
 import '../../../../core/widgets/shimmer/skeletons/product_card_skeleton.dart';
 import '../../../../core/widgets/shimmer/skeletons/shop_card_skeleton.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/app_network_image.dart';
 
 class MapViewScreen extends StatefulWidget {

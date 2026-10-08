@@ -12,11 +12,11 @@ class ProductCardSkeleton extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image area
-            const SizedBox(
+            SizedBox(
               height: 140,
               child: ShimmerImage(
                 width: double.infinity,
@@ -26,22 +26,22 @@ class ProductCardSkeleton extends StatelessWidget {
             
             // Content area
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  const ShimmerText(width: double.infinity, height: 14),
-                  const SizedBox(height: 6),
+                  ShimmerText(width: double.infinity, height: 14),
+                  SizedBox(height: 6),
                   
                   // Shop and Location
-                  const ShimmerText(width: 80, height: 10),
-                  const SizedBox(height: 10),
+                  ShimmerText(width: 80, height: 10),
+                  SizedBox(height: 10),
                   
                   // Price and rating row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       ShimmerText(width: 60, height: 16),
                       ShimmerBox(width: 32, height: 20, borderRadius: 8),
                     ],

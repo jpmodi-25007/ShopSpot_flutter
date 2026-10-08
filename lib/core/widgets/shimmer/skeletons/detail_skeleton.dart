@@ -6,12 +6,12 @@ class DetailSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppShimmer(
+    return const AppShimmer(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             ShimmerBox(width: double.infinity, height: 250, borderRadius: 16),
             SizedBox(height: 24),
             ShimmerBox(width: 200, height: 24, borderRadius: 4),

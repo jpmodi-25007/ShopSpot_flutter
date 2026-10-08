@@ -69,7 +69,7 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
               final isMe = index % 2 == 0;
               return Align(
                 alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                child: ShimmerBox(
+                child: const ShimmerBox(
                   width: 200, 
                   height: 60, 
                   borderRadius: 16,
@@ -219,11 +219,11 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                                showDialog(
                                  context: context,
                                  builder: (ctx) {
-                                   final _priceController = TextEditingController(text: (negotiation.counterPrice ?? negotiation.offeredPrice).toStringAsFixed(0));
+                                   final priceController = TextEditingController(text: (negotiation.counterPrice ?? negotiation.offeredPrice).toStringAsFixed(0));
                                    return AlertDialog(
                                      title: const Text('Counter Offer'),
                                      content: TextField(
-                                       controller: _priceController,
+                                       controller: priceController,
                                        keyboardType: TextInputType.number,
                                        decoration: const InputDecoration(
                                          labelText: 'Counter Price (₹)',
@@ -234,7 +234,7 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                                        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                                        ElevatedButton(
                                          onPressed: () {
-                                           final price = double.tryParse(_priceController.text);
+                                           final price = double.tryParse(priceController.text);
                                            if (price != null) {
                                              context.read<NegotiationBloc>().add(CounterOfferRequested(id: negotiation.id, counterPrice: price));
                                              Navigator.pop(ctx);
@@ -407,7 +407,7 @@ class _OfferBubble extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.tag, size: 16, color: AppColors.primary500),
+              const Icon(LucideIcons.tag, size: 16, color: AppColors.primary500),
               const SizedBox(width: 8),
               Text(status, style: AppTextStyles.caption.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
             ],

@@ -97,7 +97,7 @@ class SavedProductsScreen extends StatelessWidget {
                                 onTap: () {
                                   context.read<SavedBloc>().add(RemoveSavedProductRequested(product['productId'] ?? product['id'] ?? ''));
                                 },
-                                child: CircleAvatar(
+                                child: const CircleAvatar(
                                   backgroundColor: Colors.white,
                                   radius: 16,
                                   child: Icon(Icons.favorite, color: AppColors.error500, size: 20),

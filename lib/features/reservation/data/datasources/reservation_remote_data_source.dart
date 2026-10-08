@@ -3,6 +3,8 @@ import '../models/reservation_model.dart';
 
 abstract class ReservationRemoteDataSource {
   Future<List<ReservationModel>> getMyReservations();
+  Future<void> cancelReservation(String reservationId);
+  Future<void> rescheduleReservation(String reservationId, DateTime newDateTime);
 }
 
 class ReservationRemoteDataSourceImpl implements ReservationRemoteDataSource {
@@ -20,4 +22,17 @@ class ReservationRemoteDataSourceImpl implements ReservationRemoteDataSource {
         .map((json) => ReservationModel.fromJson(json))
         .toList();
   }
+
+  @override
+  Future<void> cancelReservation(String reservationId) async {
+    await apiClient.delete('/reservations/$reservationId');
+  }
+
+  @override
+  Future<void> rescheduleReservation(String reservationId, DateTime newDateTime) async {
+    await apiClient.patch('/reservations/$reservationId/reschedule', data: {
+      'newDateTime': newDateTime.toIso8601String(),
+    });
+  }
 }
+

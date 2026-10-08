@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/retailer_inventory_bloc.dart';
@@ -8,6 +10,42 @@ import '../bloc/retailer_inventory_state.dart';
 
 class RetailerInventoryReportScreen extends StatelessWidget {
   const RetailerInventoryReportScreen({super.key});
+
+  /// Generates a CSV string from the current products and triggers a share sheet.
+  Future<void> _downloadReport(BuildContext context, List<dynamic> products) async {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final buffer = StringBuffer();
+      buffer.writeln('Product Name,SKU,Category,MRP,Selling Price,Stock Qty,Stock Value,Status');
+      for (final p in products) {
+        final stockValue = (p.sellingPrice * p.stockQuantity).toStringAsFixed(2);
+        final status = p.stockQuantity <= 0
+            ? 'Out of Stock'
+            : p.stockQuantity < 10
+                ? 'Low Stock'
+                : 'In Stock';
+        final name = '"${p.name.replaceAll('"', '""')}"';
+        final sku = '"${(p.sku ?? 'N/A').replaceAll('"', '""')}"';
+        final cat = '"${(p.categoryId ?? 'Uncategorized').replaceAll('"', '""')}"';
+        buffer.writeln('$name,$sku,$cat,${p.mrp},${p.sellingPrice},${p.stockQuantity},$stockValue,$status');
+      }
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'Inventory Report — $dateStr\n\n${buffer.toString()}',
+          subject: 'Inventory Report $dateStr',
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to export report. Please try again.'),
+            backgroundColor: AppColors.error500,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +99,11 @@ class RetailerInventoryReportScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Downloading Report as PDF...')),
-                      );
-                    },
+                    onPressed: products.isEmpty
+                        ? null
+                        : () => _downloadReport(context, products),
                     icon: const Icon(LucideIcons.download),
-                    label: const Text('Download Full Report'),
+                    label: const Text('Download Full Report (CSV)'),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.roleRetailer),
                       foregroundColor: AppColors.roleRetailer,

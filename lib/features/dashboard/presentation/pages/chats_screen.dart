@@ -80,8 +80,8 @@ class _ChatsScreenState extends State<ChatsScreen> with TickerProviderStateMixin
         controller: _tabController,
         children: [
           _DirectChatsTab(),
-          _NegotiationsTab(showCompleted: false),
-          _NegotiationsTab(showCompleted: true),
+          const _NegotiationsTab(showCompleted: false),
+          const _NegotiationsTab(showCompleted: true),
         ],
       ),
     );
@@ -472,9 +472,9 @@ class _NewChatBottomSheet extends StatelessWidget {
               const SizedBox(height: 16),
               Text('Role-based chats are started from:', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.neutral500)),
               const SizedBox(height: 12),
-              _RoleTip(color: AppColors.roleRetailer, icon: LucideIcons.store, label: 'Retailer', description: 'Shop detail page → "Chat" button'),
-              _RoleTip(color: AppColors.roleInfluencer, icon: LucideIcons.star, label: 'Influencer', description: 'Campaign detail page → "Message Retailer"'),
-              _RoleTip(color: AppColors.roleCustomer, icon: LucideIcons.user, label: 'Customer', description: 'Shop detail page → "Message Shop"'),
+              const _RoleTip(color: AppColors.roleRetailer, icon: LucideIcons.store, label: 'Retailer', description: 'Shop detail page → "Chat" button'),
+              const _RoleTip(color: AppColors.roleInfluencer, icon: LucideIcons.star, label: 'Influencer', description: 'Campaign detail page → "Message Retailer"'),
+              const _RoleTip(color: AppColors.roleCustomer, icon: LucideIcons.user, label: 'Customer', description: 'Shop detail page → "Message Shop"'),
               const SizedBox(height: 16),
             ],
           ),

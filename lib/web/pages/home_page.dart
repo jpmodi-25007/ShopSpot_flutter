@@ -132,28 +132,28 @@ class _StatsBanner extends StatelessWidget {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     final stats = [
-      _StatItem(
+      const _StatItem(
         icon: LucideIcons.users,
         value: '10,000+',
         label: 'Active Users',
         color: AppColors.roleCustomer,
         bg: AppColors.roleCustomerLight,
       ),
-      _StatItem(
+      const _StatItem(
         icon: LucideIcons.store,
         value: '500+',
         label: 'Local Retailers',
         color: AppColors.roleRetailer,
         bg: AppColors.roleRetailerLight,
       ),
-      _StatItem(
+      const _StatItem(
         icon: LucideIcons.trendingUp,
         value: '1,200+',
         label: 'Influencer Campaigns',
         color: AppColors.roleInfluencer,
         bg: AppColors.roleInfluencerLight,
       ),
-      _StatItem(
+      const _StatItem(
         icon: LucideIcons.mapPin,
         value: '25+',
         label: 'Cities Live',
@@ -163,7 +163,7 @@ class _StatsBanner extends StatelessWidget {
     ];
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.neutral900, AppColors.neutral800],
           begin: Alignment.topLeft,

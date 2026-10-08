@@ -469,11 +469,11 @@ class _WebFAQPageState extends State<WebFAQPage> with TickerProviderStateMixin {
       children: [
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppColors.neutral50,
             shape: BoxShape.circle,
           ),
-          child: Icon(LucideIcons.mail,
+          child: const Icon(LucideIcons.mail,
               color: AppColors.neutral900, size: 28),
         ),
         const SizedBox(height: 20),

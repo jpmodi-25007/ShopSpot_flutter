@@ -7,7 +7,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
-import '../../../authentication/presentation/bloc/authentication_event.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -104,7 +103,7 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           child: user?.avatarUrl == null 
                             ? Container(
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: AppColors.primary100,
                                 ),
@@ -248,7 +247,7 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 width: 120,
                 height: 120,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.primary50,
                   shape: BoxShape.circle,
                 ),
@@ -353,7 +352,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.neutral50,
                 shape: BoxShape.circle,
               ),

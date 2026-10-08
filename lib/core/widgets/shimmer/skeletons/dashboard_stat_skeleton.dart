@@ -14,19 +14,19 @@ class DashboardStatSkeleton extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 ShimmerBox(width: 60, height: 24, borderRadius: 8),
               ],
             ),
-            const SizedBox(height: 16),
-            const ShimmerText(width: 100, height: 32),
-            const SizedBox(height: 4),
-            const ShimmerText(width: 80, height: 12),
+            SizedBox(height: 16),
+            ShimmerText(width: 100, height: 32),
+            SizedBox(height: 4),
+            ShimmerText(width: 80, height: 12),
           ],
         ),
       ),

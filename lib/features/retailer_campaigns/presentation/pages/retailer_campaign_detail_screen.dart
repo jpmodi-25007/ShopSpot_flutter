@@ -60,7 +60,7 @@ class _RetailerCampaignDetailScreenState extends State<RetailerCampaignDetailScr
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
-                        campaign.status ?? 'DRAFT',
+                        campaign.status,
                         style: AppTextStyles.caption.copyWith(
                           color: isPublished ? AppColors.success600 : AppColors.neutral600,
                           fontWeight: FontWeight.w700,
@@ -69,12 +69,12 @@ class _RetailerCampaignDetailScreenState extends State<RetailerCampaignDetailScr
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      campaign.title ?? 'Untitled Campaign',
+                      campaign.title,
                       style: AppTextStyles.h2,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      campaign.description ?? 'No description provided.',
+                      campaign.description,
                       style: AppTextStyles.body.copyWith(color: AppColors.neutral600),
                     ),
                     const SizedBox(height: 24),

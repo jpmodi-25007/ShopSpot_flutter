@@ -13,29 +13,29 @@ class OrderCardSkeleton extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top row: Order Number and Status Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 ShimmerText(width: 120, height: 16),
                 ShimmerBox(width: 80, height: 26, borderRadius: 20),
               ],
             ),
             
-            const Divider(height: 24, color: Colors.transparent),
+            Divider(height: 24, color: Colors.transparent),
             
             // Middle row: Item image and details
             Row(
               children: [
-                const ShimmerImage(width: 60, height: 60, borderRadius: 8),
-                const SizedBox(width: 16),
+                ShimmerImage(width: 60, height: 60, borderRadius: 8),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: double.infinity, height: 16),
                       SizedBox(height: 6),
                       ShimmerText(width: 120, height: 12),
@@ -45,12 +45,12 @@ class OrderCardSkeleton extends StatelessWidget {
               ],
             ),
             
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             
             // Bottom row: Total amount
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 ShimmerText(width: 80, height: 14),
                 ShimmerText(width: 60, height: 16),
               ],

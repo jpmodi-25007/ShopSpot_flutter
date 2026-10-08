@@ -334,8 +334,8 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                     final bids =
                         state is InfluencerLoaded ? state.bids ?? [] : [];
                     if (state is InfluencerLoaded && state.isLoading && bids.isEmpty) {
-                      return Column(
-                        children: const [
+                      return const Column(
+                        children: [
                           BidCardSkeleton(),
                           SizedBox(height: 16),
                           BidCardSkeleton(),
@@ -733,7 +733,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                       Container(
                         width: 36, height: 36,
                         margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.roleInfluencerLight,
                         ),
@@ -800,7 +800,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      submittedContentUrl!,
+                      submittedContentUrl,
                       style: AppTextStyles.caption.copyWith(color: AppColors.success600),
                       maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),

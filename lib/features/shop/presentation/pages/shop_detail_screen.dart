@@ -17,6 +17,7 @@ import '../bloc/shop_event.dart';
 import '../bloc/shop_state.dart';
 import '../../../product/domain/entities/product_entity.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class ShopDetailScreen extends StatefulWidget {
   final String shopId;
@@ -246,7 +247,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           if (shop != null) {
                             try {
                               final name = shop.name.isNotEmpty ? shop.name : 'Shop Name';
-                              await Share.share('Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                              await SharePlus.instance.share(
+                                ShareParams(text: 'Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}'),
+                              );
                             } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share functionality unavailable. Try restarting the app.')));
@@ -311,7 +314,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                     children: [
                                       Row(
                                         children: [
-                                          Expanded(child: Text(shop?.name != null && shop!.name.isNotEmpty ? shop!.name : 'Shop Name', style: AppTextStyles.h2.copyWith(fontSize: 20), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                                          Text(shop?.name != null && shop!.name.isNotEmpty ? shop.name : 'Shop Name', style: AppTextStyles.h2.copyWith(fontSize: 20), maxLines: 3, overflow: TextOverflow.ellipsis),
                                           const SizedBox(width: 4),
                                           if (shop?.isKycVerified == true)
                                             const Icon(LucideIcons.shieldCheck, size: 20, color: AppColors.primary500),
@@ -346,13 +349,12 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Phone number not available')));
                             }
                           }),
-                          _buildActionItem(context, LucideIcons.messageCircle, 'Message', onTap: () async {
-                            if (shop?.whatsapp != null || shop?.phone != null) {
-                              final number = shop?.whatsapp ?? shop!.phone;
-                              final uri = Uri.parse('sms:$number');
-                              if (await canLaunchUrl(uri)) await launchUrl(uri);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Contact number not available')));
+                          _buildActionItem(context, LucideIcons.messageCircle, 'Message', onTap: () {
+                            if (shop != null) {
+                              context.push('/chat/${shop.ownerId}', extra: {
+                                'targetUserName': shop.name,
+                                'targetUserAvatar': shop.logoUrl,
+                              });
                             }
                           }),
                           _buildActionItem(context, LucideIcons.cornerUpRight, 'Directions', onTap: () async {
@@ -368,7 +370,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                             if (shop != null) {
                               try {
                                 final name = shop.name.isNotEmpty ? shop.name : 'Shop Name';
-                                await Share.share('Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}');
+                                await SharePlus.instance.share(
+                                  ShareParams(text: 'Check out $name on Findivo!\n${ApiConstants.webBaseUrl}/shop-detail/${shop.id}'),
+                                );
                               } catch (e) {
                                 // Fallback if Share plugin is missing on this platform (e.g., dev environment)
                                 if (context.mounted) {
@@ -462,9 +466,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
   Widget _buildActionItem(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
     final color = widget.isInfluencer ? AppColors.roleInfluencer : AppColors.primary500;
     return InkWell(
-      onTap: onTap ?? () {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label action tapped')));
-      },
+      onTap: onTap,
       borderRadius: BorderRadius.circular(24),
       child: Column(
         children: [
@@ -550,13 +552,16 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final p = filteredProducts[index];
-                      return _buildProductCard(
-                        p.id,
-                        p.name, 
-                        '₹${p.sellingPrice}', 
-                        p.images.isNotEmpty ? p.images.first : 'https://placehold.co/400x400.png', 
-                        p.stockQuantity > 0 ? AppBadgeType.inStock : AppBadgeType.lowStock, 
-                        p.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'
+                      return AnimatedFadeSlide(
+                        delay: Duration(milliseconds: 50 * index),
+                        child: _buildProductCard(
+                          p.id,
+                          p.name, 
+                          '₹${p.sellingPrice}', 
+                          p.images.isNotEmpty ? p.images.first : 'https://placehold.co/400x400.png', 
+                          p.stockQuantity > 0 ? AppBadgeType.inStock : AppBadgeType.lowStock, 
+                          p.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'
+                        ),
                       );
                     },
                     childCount: filteredProducts.length,
@@ -623,7 +628,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                       Text(price, style: AppTextStyles.h4.copyWith(color: AppColors.primary500)),
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: AppColors.primary100, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(color: AppColors.primary100, shape: BoxShape.circle),
                         child: const Icon(LucideIcons.plus, size: 16, color: AppColors.primary500),
                       )
                     ],

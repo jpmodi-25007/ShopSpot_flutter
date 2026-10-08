@@ -8,7 +8,6 @@ import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_state.dart';
 import '../bloc/influencer_event.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
-import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
 

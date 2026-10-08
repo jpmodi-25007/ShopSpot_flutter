@@ -13,14 +13,14 @@ class AddressCardSkeleton extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  children: const [
+                  children: [
                     ShimmerCircle(radius: 10),
                     SizedBox(width: 8),
                     ShimmerText(width: 80, height: 16),
@@ -28,15 +28,15 @@ class AddressCardSkeleton extends StatelessWidget {
                     ShimmerBox(width: 60, height: 24, borderRadius: 4),
                   ],
                 ),
-                const ShimmerCircle(radius: 10),
+                ShimmerCircle(radius: 10),
               ],
             ),
-            const SizedBox(height: 16),
-            const ShimmerText(width: double.infinity, height: 14),
-            const SizedBox(height: 8),
-            const ShimmerText(width: 200, height: 14),
-            const SizedBox(height: 8),
-            const ShimmerText(width: 150, height: 14),
+            SizedBox(height: 16),
+            ShimmerText(width: double.infinity, height: 14),
+            SizedBox(height: 8),
+            ShimmerText(width: 200, height: 14),
+            SizedBox(height: 8),
+            ShimmerText(width: 150, height: 14),
           ],
         ),
       ),

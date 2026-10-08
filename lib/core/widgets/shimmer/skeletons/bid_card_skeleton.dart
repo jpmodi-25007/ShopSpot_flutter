@@ -17,22 +17,22 @@ class BidCardSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerImage(width: 48, height: 48, borderRadius: 24),
-                const SizedBox(width: 12),
+                ShimmerImage(width: 48, height: 48, borderRadius: 24),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: 100, height: 16),
                       SizedBox(height: 4),
                       ShimmerText(width: 80, height: 12),
                     ],
                   ),
                 ),
-                const ShimmerBox(width: 80, height: 24, borderRadius: 12),
+                ShimmerBox(width: 80, height: 24, borderRadius: 12),
               ],
             ),
             const SizedBox(height: 16),
@@ -49,8 +49,8 @@ class BidCardSkeleton extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Expanded(child: ShimmerButton(height: 48, borderRadius: 8)),
                 SizedBox(width: 12),
                 Expanded(child: ShimmerButton(height: 48, borderRadius: 8)),
@@ -63,8 +63,8 @@ class BidCardSkeleton extends StatelessWidget {
   }
 
   Widget _buildStatSkeleton() {
-    return Column(
-      children: const [
+    return const Column(
+      children: [
         ShimmerText(width: 60, height: 16),
         SizedBox(height: 4),
         ShimmerText(width: 40, height: 12),

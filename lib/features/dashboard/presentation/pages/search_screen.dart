@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -32,14 +33,14 @@ class _SearchScreenState extends State<SearchScreen>
   List<String> _recentSearches = [];
 
   final List<_SearchCategory> _categories = [
-    _SearchCategory('Fashion', LucideIcons.shirt),
-    _SearchCategory('Jewelry', LucideIcons.gem),
-    _SearchCategory('Beauty', LucideIcons.sparkles),
-    _SearchCategory('Home', LucideIcons.home),
-    _SearchCategory('Art', LucideIcons.palette),
-    _SearchCategory('Electronics', LucideIcons.monitor),
-    _SearchCategory('Food', LucideIcons.coffee),
-    _SearchCategory('Sports', LucideIcons.activity),
+    const _SearchCategory('Fashion', LucideIcons.shirt),
+    const _SearchCategory('Jewelry', LucideIcons.gem),
+    const _SearchCategory('Beauty', LucideIcons.sparkles),
+    const _SearchCategory('Home', LucideIcons.home),
+    const _SearchCategory('Art', LucideIcons.palette),
+    const _SearchCategory('Electronics', LucideIcons.monitor),
+    const _SearchCategory('Food', LucideIcons.coffee),
+    const _SearchCategory('Sports', LucideIcons.activity),
   ];
 
   @override
@@ -378,32 +379,38 @@ class _SearchScreenState extends State<SearchScreen>
               if (results.shops.isNotEmpty) ...[
                 Text('Boutiques', style: AppTextStyles.h4),
                 const SizedBox(height: 12),
-                ...results.shops.map((shop) => _SearchResultCard(
-                      name: shop.name,
-                      subtitle: '${shop.city}',
-                      rating: shop.rating,
-                      imageUrl: shop.logoUrl ?? '',
-                      onTap: () async {
-                        await context.push('/shop-detail/${shop.id}');
-                        if (mounted) _refresh();
-                      },
+                ...results.shops.asMap().entries.map((entry) => AnimatedFadeSlide(
+                      delay: Duration(milliseconds: 50 * entry.key),
+                      child: _SearchResultCard(
+                        name: entry.value.name,
+                        subtitle: '${entry.value.city}',
+                        rating: entry.value.rating,
+                        imageUrl: entry.value.logoUrl ?? '',
+                        onTap: () async {
+                          await context.push('/shop-detail/${entry.value.id}');
+                          if (mounted) _refresh();
+                        },
+                      ),
                     )),
                 const SizedBox(height: 24),
               ],
               if (results.products.isNotEmpty) ...[
                 Text('Products', style: AppTextStyles.h4),
                 const SizedBox(height: 12),
-                ...results.products.map((product) => _SearchResultCard(
-                      name: product.name,
-                      subtitle: '₹${product.sellingPrice}',
-                      rating: 0.0,
-                      imageUrl: product.images.isNotEmpty
-                          ? product.images.first
-                          : '',
-                      onTap: () async {
-                        await context.push('/product-detail/${product.id}');
-                        if (mounted) _refresh();
-                      },
+                ...results.products.asMap().entries.map((entry) => AnimatedFadeSlide(
+                      delay: Duration(milliseconds: 50 * entry.key),
+                      child: _SearchResultCard(
+                        name: entry.value.name,
+                        subtitle: '₹${entry.value.sellingPrice}',
+                        rating: 0.0,
+                        imageUrl: entry.value.images.isNotEmpty
+                            ? entry.value.images.first
+                            : '',
+                        onTap: () async {
+                          await context.push('/product-detail/${entry.value.id}');
+                          if (mounted) _refresh();
+                        },
+                      ),
                     )),
               ],
             ],

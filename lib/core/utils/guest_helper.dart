@@ -49,7 +49,7 @@ class GuestHelper {
               Container(
                 width: 80,
                 height: 80,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.roleCustomerLight,
                   shape: BoxShape.circle,
                 ),

@@ -42,7 +42,7 @@ class _ShellLayoutState extends State<ShellLayout> {
         }
 
         final now = DateTime.now();
-        final maxDuration = const Duration(seconds: 2);
+        const maxDuration = Duration(seconds: 2);
         final isWarning = _lastPressedAt == null || now.difference(_lastPressedAt!) > maxDuration;
 
         if (isWarning) {

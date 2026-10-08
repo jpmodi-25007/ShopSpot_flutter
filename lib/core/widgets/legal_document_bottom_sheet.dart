@@ -100,7 +100,7 @@ class _LegalDocumentBottomSheetState extends State<LegalDocumentBottomSheet> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error.isNotEmpty
-                    ? Center(child: Text(_error, style: TextStyle(color: Colors.red)))
+                    ? Center(child: Text(_error, style: const TextStyle(color: Colors.red)))
                     : Markdown(
                         data: _content,
                         styleSheet: MarkdownStyleSheet(

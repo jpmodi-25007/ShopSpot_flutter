@@ -132,16 +132,30 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
         setState(() => _isUploading = false);
       }
       
-      context.read<EventBloc>().add(
-        CreateEventRequested(
-          title: _titleController.text,
-          description: _descriptionController.text,
-          location: _locationController.text,
-          startDate: _startDate!,
-          endDate: _endDate!,
-          imageUrl: imageUrl, // null is valid — no image selected
-        ),
-      );
+      if (widget.eventToEdit != null) {
+        context.read<EventBloc>().add(
+          UpdateEventRequested(
+            id: widget.eventToEdit!.id,
+            title: _titleController.text,
+            description: _descriptionController.text,
+            location: _locationController.text,
+            startDate: _startDate!,
+            endDate: _endDate!,
+            imageUrl: imageUrl ?? widget.eventToEdit!.imageUrl,
+          ),
+        );
+      } else {
+        context.read<EventBloc>().add(
+          CreateEventRequested(
+            title: _titleController.text,
+            description: _descriptionController.text,
+            location: _locationController.text,
+            startDate: _startDate!,
+            endDate: _endDate!,
+            imageUrl: imageUrl,
+          ),
+        );
+      }
     }
   }
 
@@ -156,7 +170,7 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
           icon: const Icon(LucideIcons.arrowLeft, color: AppColors.neutral900),
           onPressed: () => context.pop(),
         ),
-        title: Text('Create Shop Event', style: AppTextStyles.h3),
+        title: Text(widget.eventToEdit != null ? 'Edit Shop Event' : 'Create Shop Event', style: AppTextStyles.h3),
         centerTitle: true,
       ),
       body: BlocListener<EventBloc, EventState>(
@@ -392,7 +406,7 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
         children: [
           Row(
             children: [
-              Icon(LucideIcons.calendar, size: 14, color: AppColors.neutral500),
+              const Icon(LucideIcons.calendar, size: 14, color: AppColors.neutral500),
               const SizedBox(width: 6),
               Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w600)),
             ],

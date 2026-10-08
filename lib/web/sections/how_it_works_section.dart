@@ -74,7 +74,7 @@ class _HowItWorksSectionState extends State<HowItWorksSection>
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.neutral50,
         border: Border.symmetric(
           horizontal:

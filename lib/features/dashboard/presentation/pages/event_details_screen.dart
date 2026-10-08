@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../bloc/event_bloc.dart';
@@ -25,6 +27,39 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   void initState() {
     super.initState();
     context.read<EventBloc>().add(GetEventDetailRequested(widget.eventId));
+  }
+
+  /// Opens the native calendar app with pre-filled event details.
+  Future<void> _addToCalendar({required String title, required DateTime start, required DateTime end, String? location, String? description}) async {
+    // Google Calendar URL works on both web and Android as a universal fallback
+    final startStr = DateFormat("yyyyMMdd'T'HHmmss'Z'").format(start.toUtc());
+    final endStr = DateFormat("yyyyMMdd'T'HHmmss'Z'").format(end.toUtc());
+    final gcalUrl = Uri.parse(
+      'https://www.google.com/calendar/render?action=TEMPLATE'
+      '&text=${Uri.encodeComponent(title)}'
+      '&dates=$startStr/$endStr'
+      '${location != null ? '&location=${Uri.encodeComponent(location)}' : ''}'
+      '${description != null ? '&details=${Uri.encodeComponent(description)}' : ''}',
+    );
+
+    if (await canLaunchUrl(gcalUrl)) {
+      await launchUrl(gcalUrl, mode: LaunchMode.externalApplication);
+    } else {
+      // Final fallback: copy event info to clipboard
+      if (mounted) {
+        final dateFormat = DateFormat('MMM d, yyyy h:mm a');
+        final eventText = '$title\n${dateFormat.format(start)} – ${dateFormat.format(end)}${location != null ? '\n$location' : ''}';
+        await Clipboard.setData(ClipboardData(text: eventText));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Event details copied to clipboard. Paste into your calendar.'),
+              backgroundColor: AppColors.neutral700,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -144,11 +179,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Added to your calendar!'), backgroundColor: AppColors.primary500),
-                              );
-                            },
+                            onPressed: () => _addToCalendar(
+                              title: event.title,
+                              start: event.startDate,
+                              end: event.endDate,
+                              location: event.location,
+                              description: event.description,
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary500,
                               padding: const EdgeInsets.symmetric(vertical: 16),

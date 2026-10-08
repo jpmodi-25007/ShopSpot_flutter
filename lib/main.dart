@@ -40,7 +40,7 @@ void main() async {
     const isProduction = bool.fromEnvironment('dart.vm.product');
     await dotenv.load(fileName: isProduction ? ".env.production" : ".env");
   } catch (e) {
-    print('Failed to load .env file: $e');
+    debugPrint('Failed to load .env file: $e');
   }
 
   try {
@@ -48,7 +48,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    print('Firebase initialization failed: $e');
+    debugPrint('Firebase initialization failed: $e');
   }
   await configureDependencies();
   runApp(const FindivoApp());
@@ -90,7 +90,9 @@ class FindivoApp extends StatelessWidget {
               if (payload != null) {
                 // Ensure we give the router a tiny delay to finish its own redirect
                 Future.delayed(const Duration(milliseconds: 300), () {
-                  NotificationRouter.handleNotificationTap(payload, context);
+                  if (context.mounted) {
+                    NotificationRouter.handleNotificationTap(payload, context);
+                  }
                 });
               }
             }

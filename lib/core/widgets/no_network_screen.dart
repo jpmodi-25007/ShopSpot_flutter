@@ -28,7 +28,7 @@ class NoNetworkScreen extends StatelessWidget {
                   child: Container(
                     width: 120,
                     height: 120,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primary100,
                       shape: BoxShape.circle,
                     ),

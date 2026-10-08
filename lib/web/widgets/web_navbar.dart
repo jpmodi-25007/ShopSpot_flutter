@@ -54,7 +54,7 @@ class WebNavbar extends StatelessWidget implements PreferredSizeWidget {
 
               // Navigation Links (Desktop)
               if (!isMobile) ...[
-                Row(
+                const Row(
                   children: [
                     _NavLink(title: 'Features', route: '/features'),
                     _NavLink(title: 'How It Works', route: '/how-it-works'),

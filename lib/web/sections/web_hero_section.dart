@@ -143,7 +143,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Badge
-        _AnimatedBadge(
+        const _AnimatedBadge(
           icon: Icons.bolt,
           text: 'Shop Local · Sell More · Earn Together',
         ),
@@ -219,7 +219,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
             top: 0,
             bottom: 0,
             width: isMobile ? 160 : 260,
-            child: _PhotoCard(
+            child: const _PhotoCard(
               imagePath: 'assets/images/intro2.jpg',
               borderRadius: 20,
               shadowIntensity: 0.08,
@@ -231,7 +231,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
             right: isMobile ? 60 : 90,
             top: isMobile ? 40 : 50,
             bottom: isMobile ? 40 : 50,
-            child: _PhotoCard(
+            child: const _PhotoCard(
               imagePath: 'assets/images/intro1.jpg',
               borderRadius: 24,
               shadowIntensity: 0.18,
@@ -243,7 +243,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
           Positioned(
             left: 0,
             top: isMobile ? 16 : 24,
-            child: _FloatingBadge(
+            child: const _FloatingBadge(
               icon: LucideIcons.shoppingBag,
               label: '10k+ Shoppers',
               color: AppColors.roleCustomer,
@@ -253,7 +253,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
           Positioned(
             right: 0,
             bottom: isMobile ? 16 : 28,
-            child: _FloatingBadge(
+            child: const _FloatingBadge(
               icon: LucideIcons.store,
               label: '500+ Retailers',
               color: AppColors.roleRetailer,
@@ -267,7 +267,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
   // ─── Role cards ────────────────────────────────────────────────────────────
   Widget _buildRoleCards(BuildContext context, bool isMobile) {
     final roles = [
-      _RoleCardData(
+      const _RoleCardData(
         icon: LucideIcons.shoppingBag,
         title: 'Shoppers',
         subtitle: 'Discover & buy unique products from local boutiques near you.',
@@ -276,7 +276,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
         ctaLabel: 'Start Shopping',
         route: '/signup?role=CUSTOMER',
       ),
-      _RoleCardData(
+      const _RoleCardData(
         icon: LucideIcons.store,
         title: 'Retailers',
         subtitle: 'List products, manage inventory, and run influencer campaigns.',
@@ -285,7 +285,7 @@ class _WebHeroSectionState extends State<WebHeroSection>
         ctaLabel: 'Open Your Store',
         route: '/signup?role=SHOPKEEPER',
       ),
-      _RoleCardData(
+      const _RoleCardData(
         icon: LucideIcons.trendingUp,
         title: 'Influencers',
         subtitle: 'Partner with local brands and monetize your authentic reach.',

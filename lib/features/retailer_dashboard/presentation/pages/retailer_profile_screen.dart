@@ -8,7 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/local_storage.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../bloc/retailer_dashboard_bloc.dart';
 import '../bloc/retailer_dashboard_event.dart';
@@ -16,7 +15,6 @@ import '../bloc/retailer_dashboard_state.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/utils/location_helper.dart';
 import '../../../shop/domain/entities/shop_entity.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
@@ -658,8 +656,11 @@ class _EditRetailerProfileBottomSheetState
 
     if (mounted) {
       setState(() {
-        if (isLogo) _isUploadingLogo = true;
-        else _isUploadingCover = true;
+        if (isLogo) {
+          _isUploadingLogo = true;
+        } else {
+          _isUploadingCover = true;
+        }
       });
     }
 
@@ -670,8 +671,11 @@ class _EditRetailerProfileBottomSheetState
       );
       if (mounted) {
         setState(() {
-          if (isLogo) _logoUrl = result.secureUrl;
-          else _coverUrl = result.secureUrl;
+          if (isLogo) {
+            _logoUrl = result.secureUrl;
+          } else {
+            _coverUrl = result.secureUrl;
+          }
         });
       }
     } catch (e) {
@@ -685,8 +689,11 @@ class _EditRetailerProfileBottomSheetState
     } finally {
       if (mounted) {
         setState(() {
-          if (isLogo) _isUploadingLogo = false;
-          else _isUploadingCover = false;
+          if (isLogo) {
+            _isUploadingLogo = false;
+          } else {
+            _isUploadingCover = false;
+          }
         });
       }
     }
@@ -888,8 +895,9 @@ class _EditRetailerProfileBottomSheetState
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) return 'Required';
-                          if (_latitude == null || _longitude == null)
+                          if (_latitude == null || _longitude == null) {
                             return 'Please select a valid address from the dropdown';
+                          }
                           return null;
                         },
                       );

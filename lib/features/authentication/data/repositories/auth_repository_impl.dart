@@ -58,13 +58,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final token = await secureStorage.read('accessToken');
       if (token == null || token.isEmpty) {
-        return Left(ServerFailure('No token found'));
+        return const Left(ServerFailure('No token found'));
       }
       final user = await remoteDataSource.getMe();
       return Right(user.toEntity());
     } on UnauthorizedException {
       await secureStorage.clear();
-      return Left(ServerFailure('Session expired'));
+      return const Left(ServerFailure('Session expired'));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

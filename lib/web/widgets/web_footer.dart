@@ -91,33 +91,33 @@ class WebFooter extends StatelessWidget {
                 ),
 
                 // Links Columns
-                _FooterColumn(
+                const _FooterColumn(
                   title: 'Platform',
-                  links: const [
+                  links: [
                     {'title': 'Features', 'route': '/features'},
                     {'title': 'How It Works', 'route': '/how-it-works'},
                     {'title': 'Pricing', 'route': '/pricing'},
                   ],
                 ),
-                _FooterColumn(
+                const _FooterColumn(
                   title: 'Company',
-                  links: const [
+                  links: [
                     {'title': 'About Us', 'route': '/about'},
                     {'title': 'Contact', 'route': '/contact'},
                     {'title': 'Careers', 'route': '/careers'},
                   ],
                 ),
-                _FooterColumn(
+                const _FooterColumn(
                   title: 'Resources',
-                  links: const [
+                  links: [
                     {'title': 'Help Center', 'route': '/faq'},
                     {'title': 'Blog', 'route': '/blog'},
                     {'title': 'Community', 'route': '/community'},
                   ],
                 ),
-                _FooterColumn(
+                const _FooterColumn(
                   title: 'Legal',
-                  links: const [
+                  links: [
                     {'title': 'Privacy Policy', 'route': '/privacy'},
                     {'title': 'Terms of Service', 'route': '/terms'},
                   ],
@@ -127,7 +127,7 @@ class WebFooter extends StatelessWidget {
             const SizedBox(height: 64),
             Container(
               padding: const EdgeInsets.only(top: 24),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.neutral800)),
               ),
               child: Row(

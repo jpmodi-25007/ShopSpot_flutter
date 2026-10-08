@@ -467,7 +467,7 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                 if (!_formKey.currentState!.validate()) return;
 
                                 String? imageUrl;
-                                if (_isSpecificProduct && _selectedProductId != null) {
+                                if (_isSpecificProduct) {
                                   final inventoryState = context.read<RetailerInventoryBloc>().state;
                                   if (inventoryState is RetailerInventoryLoaded) {
                                     try {

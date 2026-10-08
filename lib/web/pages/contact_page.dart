@@ -162,7 +162,7 @@ class _WebContactPageState extends State<WebContactPage> {
           _buildInputLabel('Name'),
           TextFormField(
             decoration: const InputDecoration(
-              hintText: 'John Doe',
+              hintText: 'Enter your full name',
               border: OutlineInputBorder(),
             ),
             validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
@@ -171,7 +171,7 @@ class _WebContactPageState extends State<WebContactPage> {
           _buildInputLabel('Email'),
           TextFormField(
             decoration: const InputDecoration(
-              hintText: 'john@example.com',
+              hintText: 'Enter your email address',
               border: OutlineInputBorder(),
             ),
             validator: (value) {

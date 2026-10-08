@@ -12,7 +12,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
-import '../bloc/retailer_inventory_bloc.dart';
 import '../../../product/domain/entities/product_entity.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -86,8 +85,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  Future<void> _publishProduct() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _publishProduct({bool isDraft = false}) async {
+    if (!_formKey.currentState!.validate() && !isDraft) return;
     
     // Check selling price <= mrp
     final mrp = double.tryParse(_mrpController.text);
@@ -143,6 +142,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'stockQuantity': int.tryParse(_stockController.text) ?? 0,
         'description': _descController.text.isNotEmpty ? _descController.text : null,
         'mediaAssets': [...existingMedia, ...newMedia],
+        'status': isDraft ? 'DRAFT' : 'ACTIVE',
       };
       
       final ApiClient apiClient = getIt<ApiClient>();
@@ -155,7 +155,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Product added successfully with \${uploadResults.length} images!'),
+            content: Text(isDraft ? 'Product saved as draft!' : 'Product added successfully with ${uploadResults.length} images!'),
             backgroundColor: AppColors.success500,
             behavior: SnackBarBehavior.floating,
           ),
@@ -186,16 +186,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => context.pop(),
         ),
-        title: Text('Add Product', style: AppTextStyles.h3),
+        title: Text(widget.product != null ? 'Edit Product' : 'Add Product', style: AppTextStyles.h3),
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Saved as draft')),
-              );
-            },
-            child: Text('Draft', style: AppTextStyles.body.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+            onPressed: _isUploading ? null : () => _publishProduct(isDraft: true),
+            child: Text(_isUploading ? 'Saving...' : 'Draft', style: AppTextStyles.body.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
           ),
         ],
       ),

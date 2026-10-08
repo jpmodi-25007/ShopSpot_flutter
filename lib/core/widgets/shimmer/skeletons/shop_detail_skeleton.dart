@@ -13,7 +13,7 @@ class ShopDetailSkeleton extends StatelessWidget {
         child: Column(
           children: [
             // Banner Shimmer
-            AppShimmer(child: const ShimmerBox(width: double.infinity, height: 200, borderRadius: 0)),
+            const AppShimmer(child: ShimmerBox(width: double.infinity, height: 200, borderRadius: 0)),
             
             // Logo and Title Shimmer
             Padding(
@@ -29,18 +29,18 @@ class ShopDetailSkeleton extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white, width: 4),
                     ),
-                    child: AppShimmer(child: const ShimmerBox(width: 80, height: 80, borderRadius: 12)),
+                    child: const AppShimmer(child: ShimmerBox(width: 80, height: 80, borderRadius: 12)),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
+                  const Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
+                      padding: EdgeInsets.only(top: 8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppShimmer(child: const ShimmerText(width: 200, height: 24)),
-                          const SizedBox(height: 8),
-                          AppShimmer(child: const ShimmerText(width: 150, height: 16)),
+                          AppShimmer(child: ShimmerText(width: 200, height: 24)),
+                          SizedBox(height: 8),
+                          AppShimmer(child: ShimmerText(width: 150, height: 16)),
                         ],
                       ),
                     ),
@@ -55,11 +55,11 @@ class ShopDetailSkeleton extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(4, (index) => Column(
+                children: List.generate(4, (index) => const Column(
                   children: [
-                    AppShimmer(child: const ShimmerCircle(radius: 24)),
-                    const SizedBox(height: 8),
-                    AppShimmer(child: const ShimmerText(width: 40, height: 12)),
+                    AppShimmer(child: ShimmerCircle(radius: 24)),
+                    SizedBox(height: 8),
+                    AppShimmer(child: ShimmerText(width: 40, height: 12)),
                   ],
                 )),
               ),
@@ -76,17 +76,17 @@ class ShopDetailSkeleton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppShimmer(child: const ShimmerText(width: double.infinity, height: 16)),
-                    const SizedBox(height: 8),
-                    AppShimmer(child: const ShimmerText(width: 200, height: 16)),
-                    const Padding(
+                    AppShimmer(child: ShimmerText(width: double.infinity, height: 16)),
+                    SizedBox(height: 8),
+                    AppShimmer(child: ShimmerText(width: 200, height: 16)),
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 12.0),
                       child: Divider(),
                     ),
-                    AppShimmer(child: const ShimmerText(width: 150, height: 16)),
+                    AppShimmer(child: ShimmerText(width: 150, height: 16)),
                   ],
                 ),
               ),
@@ -94,15 +94,15 @@ class ShopDetailSkeleton extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Tabs Shimmer
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  AppShimmer(child: const ShimmerText(width: 60, height: 16)),
-                  AppShimmer(child: const ShimmerText(width: 60, height: 16)),
-                  AppShimmer(child: const ShimmerText(width: 60, height: 16)),
-                  AppShimmer(child: const ShimmerText(width: 60, height: 16)),
+                  AppShimmer(child: ShimmerText(width: 60, height: 16)),
+                  AppShimmer(child: ShimmerText(width: 60, height: 16)),
+                  AppShimmer(child: ShimmerText(width: 60, height: 16)),
+                  AppShimmer(child: ShimmerText(width: 60, height: 16)),
                 ],
               ),
             ),

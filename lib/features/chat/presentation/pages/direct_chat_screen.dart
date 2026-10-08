@@ -143,7 +143,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
               Container(
                 width: 42,
                 height: 42,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [AppColors.primary300, AppColors.primary500],
@@ -313,7 +313,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [AppColors.primary100, AppColors.primary200],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -345,12 +345,12 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
-          Expanded(child: Divider(color: AppColors.neutral200)),
+          const Expanded(child: Divider(color: AppColors.neutral200)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral400)),
           ),
-          Expanded(child: Divider(color: AppColors.neutral200)),
+          const Expanded(child: Divider(color: AppColors.neutral200)),
         ],
       ),
     );
@@ -380,7 +380,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
                   width: 30,
                   height: 30,
                   margin: const EdgeInsets.only(right: 8, bottom: 2),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.primary100,
                   ),
@@ -396,7 +396,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 gradient: isMe
-                    ? LinearGradient(
+                    ? const LinearGradient(
                         colors: [AppColors.primary500, AppColors.primary600],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -504,7 +504,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
                   height: 44,
                   decoration: BoxDecoration(
                     gradient: _hasText
-                        ? LinearGradient(
+                        ? const LinearGradient(
                             colors: [AppColors.primary400, AppColors.primary600],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,

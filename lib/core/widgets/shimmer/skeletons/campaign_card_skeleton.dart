@@ -17,9 +17,9 @@ class CampaignCardSkeleton extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 ShimmerText(width: 150, height: 18),
                 ShimmerBox(width: 60, height: 24, borderRadius: 12),
               ],
@@ -49,8 +49,8 @@ class CampaignCardSkeleton extends StatelessWidget {
   }
 
   Widget _buildStatSkeleton() {
-    return Column(
-      children: const [
+    return const Column(
+      children: [
         ShimmerText(width: 50, height: 20),
         SizedBox(height: 4),
         ShimmerText(width: 40, height: 12),

@@ -146,7 +146,7 @@ Future<void> configureDependencies() async {
     final dio = Dio(BaseOptions(
       baseUrl: ApiConstants.baseUrl,
       connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 60),
     ));
     dio.interceptors.add(AuthInterceptor(getIt(), dio));
     dio.interceptors.add(LogInterceptor(
@@ -221,7 +221,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<ReservationRepository>(
       () => ReservationRepositoryImpl(remoteDataSource: getIt()));
   getIt.registerLazySingleton(() => GetMyReservationsUseCase(getIt()));
-  getIt.registerFactory(() => ReservationBloc(getMyReservationsUseCase: getIt()));
+  getIt.registerFactory(() => ReservationBloc(getMyReservationsUseCase: getIt(), repository: getIt()));
 
   // Features (Retailer Inventory)
   getIt.registerLazySingleton<RetailerInventoryRemoteDataSource>(

@@ -10,8 +10,8 @@ class StockHistoryItemSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               ShimmerCircle(radius: 7),
               SizedBox(width: 6),
               ShimmerText(width: 120, height: 12),
@@ -25,16 +25,16 @@ class StockHistoryItemSkeleton extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Column(
+            child: const Column(
               children: [
                 Row(
                   children: [
-                    const ShimmerBox(width: 40, height: 40, borderRadius: 8),
-                    const SizedBox(width: 12),
+                    ShimmerBox(width: 40, height: 40, borderRadius: 8),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           ShimmerText(width: 150, height: 14),
                           SizedBox(height: 4),
                           ShimmerText(width: 100, height: 12),
@@ -43,26 +43,26 @@ class StockHistoryItemSkeleton extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     ShimmerText(width: 40, height: 12),
                     ShimmerText(width: 60, height: 14),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     ShimmerText(width: 50, height: 12),
                     ShimmerBox(width: 80, height: 20, borderRadius: 12),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     ShimmerText(width: 40, height: 12),
                     ShimmerCircle(radius: 8),
                   ],

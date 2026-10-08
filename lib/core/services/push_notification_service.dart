@@ -7,7 +7,6 @@ import 'dart:io' show Platform;
 import '../network/api_constants.dart';
 import 'notification_payload.dart';
 import 'pending_notification_service.dart';
-import 'notification_router.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {

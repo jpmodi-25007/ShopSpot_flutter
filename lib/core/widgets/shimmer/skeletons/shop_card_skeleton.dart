@@ -14,11 +14,11 @@ class ShopCardSkeleton extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Column(
+        child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Image
-            const ShimmerImage(
+            ShimmerImage(
               width: double.infinity,
               height: 140,
               borderRadius: 20, // Approximates the top radius
@@ -26,20 +26,20 @@ class ShopCardSkeleton extends StatelessWidget {
             
             // Bottom Info
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         ShimmerText(width: 140, height: 16),
                         SizedBox(height: 8),
                         ShimmerText(width: 100, height: 12),
                       ],
                     ),
                   ),
-                  const ShimmerBox(width: 50, height: 26, borderRadius: 8),
+                  ShimmerBox(width: 50, height: 26, borderRadius: 8),
                 ],
               ),
             )

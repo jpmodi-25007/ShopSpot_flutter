@@ -92,7 +92,7 @@ class SavedShopsScreen extends StatelessWidget {
                                   onTap: () {
                                     context.read<SavedBloc>().add(RemoveSavedShopRequested(shop['id']));
                                   },
-                                  child: Icon(Icons.favorite, color: AppColors.error500, size: 20),
+                                  child: const Icon(Icons.favorite, color: AppColors.error500, size: 20),
                                 ),
                               ],
                             ),

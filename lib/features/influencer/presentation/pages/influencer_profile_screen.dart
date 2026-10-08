@@ -1064,12 +1064,15 @@ class _LinkedSocialAccountsBottomSheetState
 
   void _save() {
     final data = <String, dynamic>{};
-    if (_instagramController.text.isNotEmpty)
+    if (_instagramController.text.isNotEmpty) {
       data['instagramUrl'] = _instagramController.text;
-    if (_facebookController.text.isNotEmpty)
+    }
+    if (_facebookController.text.isNotEmpty) {
       data['facebookUrl'] = _facebookController.text;
-    if (_youtubeController.text.isNotEmpty)
+    }
+    if (_youtubeController.text.isNotEmpty) {
       data['youtubeUrl'] = _youtubeController.text;
+    }
 
     context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
   }
@@ -1218,7 +1221,7 @@ class PrivacyAndSecurityBottomSheet extends StatelessWidget {
                     .copyWith(color: AppColors.neutral500)),
             trailing: Switch(
               value: false,
-              activeColor: AppColors.roleInfluencer,
+              activeThumbColor: AppColors.roleInfluencer,
               onChanged: (val) {},
             ),
           ),

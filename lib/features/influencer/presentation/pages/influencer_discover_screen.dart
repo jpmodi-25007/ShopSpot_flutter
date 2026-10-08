@@ -195,11 +195,11 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
               BlocBuilder<InfluencerBloc, InfluencerState>(
                 builder: (context, state) {
                   if (state is InfluencerLoaded && state.isLoading) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 24.0, vertical: 24.0),
                       child: Column(
-                        children: const [
+                        children: [
                           CampaignCardSkeleton(),
                           SizedBox(height: 24),
                           CampaignCardSkeleton(),

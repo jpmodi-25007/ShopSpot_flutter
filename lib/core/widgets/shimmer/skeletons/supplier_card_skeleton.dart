@@ -18,15 +18,15 @@ class SupplierCardSkeleton extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
+            const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerBox(width: 48, height: 48, borderRadius: 8),
-                const SizedBox(width: 16),
+                ShimmerBox(width: 48, height: 48, borderRadius: 8),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: 120, height: 24),
                       SizedBox(height: 4),
                       ShimmerText(width: 80, height: 12),
@@ -35,7 +35,7 @@ class SupplierCardSkeleton extends StatelessWidget {
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  children: const [
+                  children: [
                     ShimmerBox(width: 40, height: 20, borderRadius: 4),
                     SizedBox(height: 4),
                     ShimmerText(width: 60, height: 12),
@@ -46,12 +46,12 @@ class SupplierCardSkeleton extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Metrics
-            Row(
+            const Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: 80, height: 12),
                       SizedBox(height: 4),
                       ShimmerText(width: 60, height: 16),
@@ -61,7 +61,7 @@ class SupplierCardSkeleton extends StatelessWidget {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: 80, height: 12),
                       SizedBox(height: 4),
                       ShimmerText(width: 60, height: 16),
@@ -73,8 +73,8 @@ class SupplierCardSkeleton extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Contact Info
-            Row(
-              children: const [
+            const Row(
+              children: [
                 ShimmerBox(width: 100, height: 14, borderRadius: 4),
                 SizedBox(width: 16),
                 ShimmerBox(width: 100, height: 14, borderRadius: 4),
@@ -89,20 +89,20 @@ class SupplierCardSkeleton extends StatelessWidget {
             const SizedBox(height: 12),
             
             // Order items
-            Row(
+            const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       ShimmerText(width: 80, height: 14),
                       SizedBox(height: 4),
                       ShimmerText(width: 120, height: 12),
                     ],
                   ),
                 ),
-                const ShimmerBox(width: 60, height: 22, borderRadius: 12),
+                ShimmerBox(width: 60, height: 22, borderRadius: 12),
               ],
             ),
           ],

@@ -107,7 +107,7 @@ class ManageAddressesScreen extends StatelessWidget {
                               if (value == 'delete') {
                                 context.read<AddressesBloc>().add(DeleteAddressRequested(addressIdStr));
                               } else if (value == 'set_default') {
-                                context.read<AddressesBloc>().add(UpdateAddressRequested(addressIdStr, {'isDefault': true}));
+                                context.read<AddressesBloc>().add(UpdateAddressRequested(addressIdStr, const {'isDefault': true}));
                               }
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[

@@ -175,19 +175,19 @@ class _WebFeaturesPageState extends State<WebFeaturesPage>
   Widget _buildRoleComparisonStrip(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
     final roles = [
-      _RoleChip(
+      const _RoleChip(
         icon: LucideIcons.shoppingBag,
         label: 'Shoppers',
         color: AppColors.roleCustomer,
         bg: AppColors.roleCustomerLight,
       ),
-      _RoleChip(
+      const _RoleChip(
         icon: LucideIcons.store,
         label: 'Retailers',
         color: AppColors.success600,
         bg: AppColors.success100,
       ),
-      _RoleChip(
+      const _RoleChip(
         icon: LucideIcons.trendingUp,
         label: 'Influencers',
         color: AppColors.secondary500,

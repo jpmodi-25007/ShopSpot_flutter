@@ -14,9 +14,9 @@ class EventCardSkeleton extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Stack(
+        child: const Stack(
           children: [
-            const Positioned.fill(
+            Positioned.fill(
               child: ShimmerImage(
                 width: double.infinity,
                 height: double.infinity,
@@ -30,7 +30,7 @@ class EventCardSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   ShimmerText(width: 200, height: 20),
                   SizedBox(height: 8),
                   ShimmerText(width: 150, height: 12),

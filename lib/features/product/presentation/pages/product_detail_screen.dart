@@ -734,7 +734,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                       ),
                                       Container(
                                         padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
+                                        decoration: const BoxDecoration(
                                             color: AppColors.neutral50,
                                             shape: BoxShape.circle),
                                         child: const Icon(
@@ -773,6 +773,55 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                                 height: 1.6),
                                           ),
                                         ),
+                                        if (product.sku != null || product.barcode != null || product.tags.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(bottom: 16.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Divider(),
+                                                const SizedBox(height: 12),
+                                                Text('Additional Information', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                                                const SizedBox(height: 8),
+                                                if (product.sku != null && product.sku!.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(bottom: 4),
+                                                    child: Row(
+                                                      children: [
+                                                        Text('SKU: ', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                                                        Text(product.sku!, style: AppTextStyles.caption),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                if (product.barcode != null && product.barcode!.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(bottom: 4),
+                                                    child: Row(
+                                                      children: [
+                                                        Text('Barcode: ', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
+                                                        Text(product.barcode!, style: AppTextStyles.caption),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                if (product.tags.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 8),
+                                                    child: Wrap(
+                                                      spacing: 8,
+                                                      runSpacing: 8,
+                                                      children: product.tags.map((tag) => Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                        decoration: BoxDecoration(
+                                                          color: AppColors.neutral100,
+                                                          borderRadius: BorderRadius.circular(100),
+                                                        ),
+                                                        child: Text(tag, style: AppTextStyles.caption),
+                                                      )).toList(),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),

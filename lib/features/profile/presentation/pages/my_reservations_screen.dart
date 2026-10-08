@@ -11,6 +11,7 @@ import '../../../reservation/presentation/bloc/reservation_bloc.dart';
 import '../../../reservation/presentation/bloc/reservation_event.dart';
 import '../../../reservation/presentation/bloc/reservation_state.dart';
 import '../../../reservation/domain/entities/reservation_entity.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -35,7 +36,19 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => getIt<ReservationBloc>()..add(FetchMyReservations()),
-      child: Scaffold(
+      child: BlocListener<ReservationBloc, ReservationState>(
+        listener: (context, state) {
+          if (state is ReservationActionSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.success500),
+            );
+          } else if (state is ReservationError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.failure.message), backgroundColor: AppColors.error500),
+            );
+          }
+        },
+        child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(LucideIcons.arrowLeft),
@@ -151,7 +164,10 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                         itemCount: filtered.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
-                          return _buildReservationCard(context, filtered[index]);
+                          return AnimatedFadeSlide(
+                            delay: Duration(milliseconds: 50 * index),
+                            child: _buildReservationCard(context, filtered[index]),
+                          );
                         },
                       ),
                     );
@@ -162,6 +178,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             )
           ],
         ),
+      ),
       ),
     );
   }
@@ -287,11 +304,15 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                       minimumSize: Size.zero,
                     ),
                     onPressed: () {
+                      final bloc = context.read<ReservationBloc>();
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (ctx) => const _RescheduleBottomSheet(),
+                        builder: (ctx) => _RescheduleBottomSheet(
+                          reservationId: reservation.id,
+                          bloc: bloc,
+                        ),
                       );
                     },
                     icon: const Icon(LucideIcons.qrCode, size: 16),
@@ -316,7 +337,10 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 }
 
 class _RescheduleBottomSheet extends StatefulWidget {
-  const _RescheduleBottomSheet();
+  final String reservationId;
+  final ReservationBloc bloc;
+
+  const _RescheduleBottomSheet({required this.reservationId, required this.bloc});
 
   @override
   State<_RescheduleBottomSheet> createState() => _RescheduleBottomSheetState();
@@ -444,8 +468,24 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
+                  if (_selectedDate == null || _selectedTime == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a date and time first.')),
+                    );
+                    return;
+                  }
+                  final newDateTime = DateTime(
+                    _selectedDate!.year,
+                    _selectedDate!.month,
+                    _selectedDate!.day,
+                    _selectedTime!.hour,
+                    _selectedTime!.minute,
+                  );
+                  widget.bloc.add(RescheduleReservation(
+                    reservationId: widget.reservationId,
+                    newDateTime: newDateTime,
+                  ));
                   context.pop();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reservation rescheduled!'), backgroundColor: AppColors.success500));
                 },
                 child: const Text('Confirm Reschedule', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
@@ -456,8 +496,8 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
                   minimumSize: const Size.fromHeight(50),
                 ),
                 onPressed: () {
+                  widget.bloc.add(CancelReservation(widget.reservationId));
                   context.pop();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reservation cancelled.'), backgroundColor: AppColors.neutral700));
                 },
                 child: const Text('Cancel Reservation', style: TextStyle(fontWeight: FontWeight.w600)),
               ),

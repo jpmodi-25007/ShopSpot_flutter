@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
@@ -25,7 +24,7 @@ class EmptyStateWidget extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.neutral100,
                 shape: BoxShape.circle,
               ),

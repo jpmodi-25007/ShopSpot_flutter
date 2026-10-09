@@ -62,6 +62,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                     child: IconButton(
                       icon: const Icon(LucideIcons.share, color: AppColors.neutral900),
                       onPressed: () {
+                        // ignore: deprecated_member_use
                         Share.share('Check out this campaign on Findivo!');
                       },
                     ),

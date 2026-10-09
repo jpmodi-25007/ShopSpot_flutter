@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
@@ -321,10 +322,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             'rating': rating.toInt(),
                             'comment': commentController.text,
                           });
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review added successfully'), backgroundColor: AppColors.success500));
-                          }
+                          if (!ctx.mounted || !mounted) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review added successfully'), backgroundColor: AppColors.success500));
                         } catch (e) {
                           if (ctx.mounted) {
                             ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Failed to add review'), backgroundColor: AppColors.error500));
@@ -386,27 +386,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         'quantity': 1,
       });
 
-      if (mounted) {
-        Navigator.pop(context); // pop loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🛒 Item reserved successfully!'),
-            backgroundColor: AppColors.success500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (!context.mounted) return;
+      Navigator.pop(context); // pop loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🛒 Item reserved successfully!'),
+          backgroundColor: AppColors.success500,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // pop loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to reserve item'),
-            backgroundColor: AppColors.error500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (!context.mounted) return;
+      Navigator.pop(context); // pop loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to reserve item'),
+          backgroundColor: AppColors.error500,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -509,6 +507,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       size: 20, color: AppColors.neutral900),
                 ),
                 onPressed: () {
+                  // ignore: deprecated_member_use
                   Share.share(
                       'Check out this product on Findivo!\n${ApiConstants.webBaseUrl}/product-detail/${widget.productId}');
                 },

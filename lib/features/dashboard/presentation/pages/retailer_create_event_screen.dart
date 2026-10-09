@@ -125,13 +125,16 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
           );
           imageUrl = result.secureUrl;
         } catch (e) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
           setState(() => _isUploading = false);
           return;
         }
+        if (!mounted) return;
         setState(() => _isUploading = false);
       }
       
+      if (!mounted) return;
       if (widget.eventToEdit != null) {
         context.read<EventBloc>().add(
           UpdateEventRequested(

@@ -356,7 +356,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                     BlocBuilder<RetailerCampaignBloc, RetailerCampaignState>(
                       builder: (context, campState) {
                         final campaigns = campState is RetailerCampaignLoaded
-                            ? campState.campaigns ?? []
+                            ? campState.campaigns
                             : [];
                         if (campaigns.isEmpty) {
                           return GestureDetector(

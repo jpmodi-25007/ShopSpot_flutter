@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/chat_repository.dart';
-import '../../../../core/error/failure.dart';
 import 'chat_event_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {

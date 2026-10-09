@@ -21,7 +21,6 @@ class BidDetailScreen extends StatefulWidget {
 
 class _BidDetailScreenState extends State<BidDetailScreen> {
   final _contentUrlController = TextEditingController();
-  final bool _isSubmitting = false;
   String? _assignmentId;
 
   @override
@@ -37,15 +36,7 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
     super.dispose();
   }
 
-  String get _statusColor {
-    switch (widget.bid.status) {
-      case 'ACCEPTED': return 'accepted';
-      case 'REJECTED': return 'rejected';
-      case 'SHORTLISTED': return 'shortlisted';
-      case 'COUNTERED': return 'countered';
-      default: return 'pending';
-    }
-  }
+
 
   Color get _statusBgColor {
     switch (widget.bid.status) {

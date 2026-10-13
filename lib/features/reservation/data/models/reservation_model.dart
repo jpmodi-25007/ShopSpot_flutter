@@ -19,9 +19,30 @@ class ReservationModel extends ReservationEntity {
       id: json['id'] as String? ?? '',
       productId: json['productId'] as String? ?? '',
       productName: json['product']?['name'] as String? ?? 'Unknown Product',
-      productImage: (json['product']?['images'] != null && (json['product']['images'] as List).isNotEmpty)
-          ? json['product']['images'][0] as String
-          : '',
+      productImage: (() {
+        final product = json['product'] as Map<String, dynamic>?;
+        if (product == null) return '';
+        final mediaAssets = product['mediaAssets'] as List?;
+        if (mediaAssets != null && mediaAssets.isNotEmpty) {
+          final first = mediaAssets[0];
+          if (first is Map) {
+            return (first['secureUrl'] ?? first['url'] ?? '').toString();
+          }
+          if (first is String) return first;
+        }
+        final images = product['images'] as List?;
+        if (images != null && images.isNotEmpty) {
+          final first = images[0];
+          if (first is Map) {
+            return (first['secureUrl'] ?? first['url'] ?? '').toString();
+          }
+          if (first is String) return first;
+        }
+        if (product['imageUrl'] != null) {
+          return product['imageUrl'].toString();
+        }
+        return '';
+      })(),
       shopName: json['shop']?['name'] as String? ?? 'Unknown Shop',
       reservedPrice: _parseDouble(json['reservedPrice']),
       quantity: json['quantity'] as int? ?? 1,
@@ -29,7 +50,7 @@ class ReservationModel extends ReservationEntity {
       expiresAt: json['expiresAt'] != null
           ? DateTime.tryParse(json['expiresAt']) ?? DateTime.now()
           : DateTime.now(),
-      qrCode: json['qrCode'] as String? ?? '',
+      qrCode: (json['qrToken'] as String?) ?? (json['qrCode'] as String?) ?? '',
     );
   }
 

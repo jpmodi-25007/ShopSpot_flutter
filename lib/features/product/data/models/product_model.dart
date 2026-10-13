@@ -84,12 +84,18 @@ class ProductModel extends ProductEntity {
   static List<String> _parseImages(Map<String, dynamic> json) {
     if (json['mediaAssets'] != null && json['mediaAssets'] is List) {
       return (json['mediaAssets'] as List)
-          .map((e) => (e['secureUrl'] ?? '').toString())
+          .map((e) => (e is Map ? (e['secureUrl'] ?? e['url'] ?? '') : e).toString())
           .where((url) => url.isNotEmpty)
           .toList();
     }
     if (json['images'] != null && json['images'] is List) {
-      return (json['images'] as List).map((e) => e.toString()).toList();
+      return (json['images'] as List)
+          .map((e) => (e is Map ? (e['secureUrl'] ?? e['url'] ?? '') : e).toString())
+          .where((url) => url.isNotEmpty)
+          .toList();
+    }
+    if (json['imageUrl'] != null && json['imageUrl'].toString().isNotEmpty) {
+      return [json['imageUrl'].toString()];
     }
     return [];
   }

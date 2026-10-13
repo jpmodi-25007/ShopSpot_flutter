@@ -351,6 +351,12 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           }),
                           _buildActionItem(context, LucideIcons.messageCircle, 'Message', onTap: () {
                             if (shop != null) {
+                              if (shop.ownerId.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Shop chat is temporarily unavailable')),
+                                );
+                                return;
+                              }
                               context.push('/chat/${shop.ownerId}', extra: {
                                 'targetUserName': shop.name,
                                 'targetUserAvatar': shop.logoUrl,

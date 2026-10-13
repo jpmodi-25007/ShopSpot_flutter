@@ -25,7 +25,7 @@ class ReservationRemoteDataSourceImpl implements ReservationRemoteDataSource {
 
   @override
   Future<void> cancelReservation(String reservationId) async {
-    await apiClient.delete('/reservations/$reservationId');
+    await apiClient.post('/reservations/$reservationId/cancel');
   }
 
   @override

@@ -38,21 +38,6 @@ class _RetailerNegotiationsScreenState extends State<RetailerNegotiationsScreen>
         ),
         title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.search), 
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Search negotiations feature coming soon!'),
-                  backgroundColor: AppColors.roleRetailer,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            }
-          ),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

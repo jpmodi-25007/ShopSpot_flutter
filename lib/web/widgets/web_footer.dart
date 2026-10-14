@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'responsive_container.dart';
@@ -54,35 +55,17 @@ class WebFooter extends StatelessWidget {
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          _SocialIcon(icon: LucideIcons.messageCircle, onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Feature coming soon!'),
-                              backgroundColor: AppColors.primary500,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
+                          _SocialIcon(icon: LucideIcons.messageCircle, onPressed: () async {
+                          final uri = Uri.parse('https://wa.me/message/findivo');
+                          if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
                         }),
-                          _SocialIcon(icon: LucideIcons.camera, onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Feature coming soon!'),
-                              backgroundColor: AppColors.primary500,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
+                          _SocialIcon(icon: LucideIcons.camera, onPressed: () async {
+                          final uri = Uri.parse('https://www.instagram.com/findivoapp');
+                          if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
                         }),
-                          _SocialIcon(icon: LucideIcons.briefcase, onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Feature coming soon!'),
-                              backgroundColor: AppColors.primary500,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
+                          _SocialIcon(icon: LucideIcons.briefcase, onPressed: () async {
+                          final uri = Uri.parse('https://www.linkedin.com/company/findivo');
+                          if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
                         }),
                         ],
                       ),

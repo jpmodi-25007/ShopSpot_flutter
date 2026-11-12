@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -392,14 +393,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 distanceText = '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
                               }
 
-                              return _buildPremiumShopCard(
+                              return AnimatedFadeSlide(
+                                key: ValueKey('home-shop-${shop.id}'),
+                                delay: staggerDelay(index),
+                                child: PressableScale(child: _buildPremiumShopCard(
                                   context,
                                   shop.id,
                                   shop.name,
                                   shop.city ?? 'Local',
                                   distanceText,
                                   shop.rating.toString(),
-                                  shop.logoUrl ?? '');
+                                  shop.logoUrl ?? '')),
+                              );
                             },
                           ),
                         );
@@ -452,7 +457,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             itemCount: state.events.take(5).length,
                             itemBuilder: (context, index) {
                               final event = state.events[index];
-                              return GestureDetector(
+                              return AnimatedFadeSlide(
+                                key: ValueKey('home-event-${event.id}'),
+                                delay: staggerDelay(index),
+                                child: PressableScale(child: GestureDetector(
                                 onTap: () => context.push('/events/${event.id}'),
                                 child: Container(
                                   width: 300,
@@ -489,6 +497,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                     ),
                                   ),
                                 ),
+                              )),
                               );
                             },
                           ),
@@ -773,7 +782,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       String imageUrl,
       AppBadgeType? badgeType,
       String badgeText) {
-    return GestureDetector(
+    return PressableScale(child: GestureDetector(
       onTap: () async {
         await context.push('/product-detail/$productId');
         if (mounted) _refresh();
@@ -797,11 +806,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  AppNetworkImage(
+                  Hero(
+                    tag: 'product-image-$productId',
+                    child: AppNetworkImage(
                     url: imageUrl.isNotEmpty ? imageUrl : null,
                     fit: BoxFit.cover,
                     width: double.infinity,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
                   ),
                   if (badgeType != null)
                     Positioned(
@@ -892,6 +904,6 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }

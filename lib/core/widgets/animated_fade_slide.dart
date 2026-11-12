@@ -118,3 +118,50 @@ class _PulsingDotState extends State<PulsingDot>
     );
   }
 }
+
+/// Gives any tappable child a subtle "press" feedback (scales down slightly
+/// while a finger is on it). It only listens to raw pointer events, so it never
+/// steals taps from the child's own gesture handlers.
+class PressableScale extends StatefulWidget {
+  final Widget child;
+  final double pressedScale;
+  final Duration duration;
+
+  const PressableScale({
+    super.key,
+    required this.child,
+    this.pressedScale = 0.97,
+    this.duration = const Duration(milliseconds: 120),
+  });
+
+  @override
+  State<PressableScale> createState() => _PressableScaleState();
+}
+
+class _PressableScaleState extends State<PressableScale> {
+  bool _pressed = false;
+
+  void _set(bool value) {
+    if (_pressed != value && mounted) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (_) => _set(true),
+      onPointerUp: (_) => _set(false),
+      onPointerCancel: (_) => _set(false),
+      child: AnimatedScale(
+        scale: _pressed ? widget.pressedScale : 1.0,
+        duration: widget.duration,
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Staggered delay helper for list/grid entrance animations (capped so long
+/// lists don't wait seconds for the last item).
+Duration staggerDelay(int index, {int stepMs = 60, int maxSteps = 8}) =>
+    Duration(milliseconds: stepMs * (index < maxSteps ? index : maxSteps));

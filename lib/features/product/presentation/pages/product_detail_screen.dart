@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -573,18 +574,28 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                           child: PageView.builder(
                             itemCount: images.isEmpty ? 1 : images.length,
                             itemBuilder: (context, index) {
-                              return AppNetworkImage(
+                              final image = AppNetworkImage(
                                 url: images.isEmpty ? null : images[index],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 placeholderIcon: LucideIcons.package,
                               );
+                              // Shared-element transition from the listing card
+                              // (same tag as the home feed product card).
+                              return index == 0
+                                  ? Hero(
+                                      tag: 'product-image-${product.id}',
+                                      child: image,
+                                    )
+                                  : image;
                             },
                           ),
                         ),
 
                         // Product Info Section
-                        Padding(
+                        AnimatedFadeSlide(
+                          delay: const Duration(milliseconds: 120),
+                          child: Padding(
                           padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -844,6 +855,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 ],
                             ],
                           ),
+                        ),
                         ),
                       ],
                     ),

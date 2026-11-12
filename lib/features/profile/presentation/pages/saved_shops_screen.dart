@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -15,7 +17,8 @@ class SavedShopsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => getIt<SavedBloc>()..add(const GetSavedShopsRequested()),
+      create: (context) =>
+          getIt<SavedBloc>()..add(const GetSavedShopsRequested()),
       child: Scaffold(
         backgroundColor: AppColors.neutral50,
         appBar: AppBar(
@@ -30,14 +33,18 @@ class SavedShopsScreen extends StatelessWidget {
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: 6,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) => const ProductListItemSkeleton(),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 16),
+                itemBuilder: (context, index) =>
+                    const ProductListItemSkeleton(),
               );
             }
             final shops = state is SavedLoaded ? state.savedShops ?? [] : [];
             if (shops.isEmpty) {
               return Center(
-                child: Text('No saved shops yet', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)),
+                child: Text('No saved shops yet',
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.neutral500)),
               );
             }
 
@@ -47,69 +54,102 @@ class SavedShopsScreen extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final shop = shops[index];
-                final imageUrl = (shop['logo'] != null && shop['logo'].isNotEmpty)
+                final imageUrl = (shop['logo'] != null &&
+                        shop['logo'].isNotEmpty)
                     ? shop['logo']
                     : 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200&auto=format&fit=crop';
                 final rating = shop['rating'] ?? 5.0;
                 final totalReviews = shop['totalReviews'] ?? 0;
 
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
+                final shopId = '${shop['id'] ?? ''}';
+
+                return AnimatedFadeSlide(
+                  key: ValueKey('saved-shop-$shopId'),
+                  delay: staggerDelay(index),
+                  child: PressableScale(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: shopId.isEmpty
+                          ? null
+                          : () => context.push('/shop-detail/$shopId'),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          image: DecorationImage(
-                            image: NetworkImage(imageUrl),
-                            fit: BoxFit.cover,
-                          ),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(child: Text(shop['name'] ?? '', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                GestureDetector(
-                                  onTap: () {
-                                    context.read<SavedBloc>().add(RemoveSavedShopRequested(shop['id']));
-                                  },
-                                  child: const Icon(Icons.favorite, color: AppColors.error500, size: 20),
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                image: DecorationImage(
+                                  image: NetworkImage(imageUrl),
+                                  fit: BoxFit.cover,
                                 ),
-                              ],
+                              ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(shop['category'] ?? '', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(LucideIcons.star, color: AppColors.warning500, size: 16),
-                                const SizedBox(width: 4),
-                                Text('$rating ($totalReviews reviews)', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
-                              ],
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                          child: Text(shop['name'] ?? '',
+                                              style: AppTextStyles.body
+                                                  .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis)),
+                                      GestureDetector(
+                                        onTap: () {
+                                          context.read<SavedBloc>().add(
+                                              RemoveSavedShopRequested(
+                                                  shop['id']));
+                                        },
+                                        child: const Icon(Icons.favorite,
+                                            color: AppColors.error500,
+                                            size: 20),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(shop['category'] ?? '',
+                                      style: AppTextStyles.caption.copyWith(
+                                          color: AppColors.neutral500)),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      const Icon(LucideIcons.star,
+                                          color: AppColors.warning500,
+                                          size: 16),
+                                      const SizedBox(width: 4),
+                                      Text('$rating ($totalReviews reviews)',
+                                          style: AppTextStyles.caption.copyWith(
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 );
               },

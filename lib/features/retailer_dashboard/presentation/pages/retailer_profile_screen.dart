@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../../../core/widgets/logout_dialog.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -583,7 +584,13 @@ class _EditRetailerProfileBottomSheetState
 
   double? _latitude;
   double? _longitude;
-  static const String _placesApiKey = "AIzaSyDf6rMHr8A9ZPYYoszRwB8arfjLbrxnQnk";
+  // Prefer a key supplied at build time (--dart-define=GOOGLE_PLACES_API_KEY=...)
+  // or via .env; the literal fallback keeps existing builds working.
+  static String get _placesApiKey {
+    const fromDefine = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
+    if (fromDefine.isNotEmpty) return fromDefine;
+    return dotenv.env['GOOGLE_PLACES_API_KEY'] ?? "AIzaSyDf6rMHr8A9ZPYYoszRwB8arfjLbrxnQnk";
+  }
 
   Future<List<Map<String, dynamic>>> _getSuggestions(String query) async {
     if (query.isEmpty) return [];

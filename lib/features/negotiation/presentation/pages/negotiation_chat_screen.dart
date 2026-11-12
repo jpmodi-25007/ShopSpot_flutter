@@ -180,8 +180,21 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
                   ),
                 ),
 
-                // Actions if pending/countered
-                if (negotiation.status != NegotiationStatus.ACCEPTED && negotiation.status != NegotiationStatus.REJECTED)
+                // Waiting note while the retailer has not responded yet
+                if (negotiation.status == NegotiationStatus.PENDING)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    color: AppColors.white,
+                    child: Text(
+                      'Waiting for the retailer to respond to your offer.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+                    ),
+                  ),
+
+                // Actions once the retailer has countered
+                if (negotiation.status == NegotiationStatus.COUNTERED)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

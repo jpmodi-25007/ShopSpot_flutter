@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:logger/logger.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import '../../../../core/network/api_constants.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../domain/entities/chat_entity.dart';
 
@@ -29,7 +30,7 @@ class ChatSocketService {
     final token = await _secureStorage.read('accessToken');
 
     _socket = io.io(
-      'https://findivo-backend.onrender.com',
+      ApiConstants.socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .setQuery({'token': token ?? ''})

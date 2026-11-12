@@ -7,6 +7,12 @@ class ApiConstants {
     return dotenv.env['BASE_URL'] ?? 'https://findivo-backend.onrender.com/api/v1';
   }
 
+  /// Origin (scheme + host + port) of the backend, used for the Socket.IO connection.
+  static String get socketUrl {
+    final uri = Uri.parse(baseUrl);
+    return uri.replace(path: '', query: '', fragment: '').toString();
+  }
+
   static String get webBaseUrl {
     const dartDefine = String.fromEnvironment('WEB_BASE_URL');
     if (dartDefine.isNotEmpty) return dartDefine;
@@ -22,6 +28,7 @@ class ApiConstants {
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
   static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   // Orders endpoints
   static const String orders = '/orders';

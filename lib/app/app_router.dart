@@ -14,6 +14,7 @@ import '../../features/authentication/presentation/pages/intro_screen.dart';
 import '../../features/authentication/presentation/pages/login_screen.dart';
 import '../../features/authentication/presentation/pages/signup_screen.dart';
 import '../../features/authentication/presentation/pages/forgot_password_screen.dart';
+import '../../features/authentication/presentation/pages/reset_password_screen.dart';
 import '../../features/dashboard/presentation/pages/home_feed_screen.dart';
 import '../../features/dashboard/presentation/pages/map_view_screen.dart';
 import '../../features/dashboard/presentation/pages/search_screen.dart';
@@ -134,6 +135,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) =>
+          ResetPasswordScreen(emailOrPhone: (state.extra as String?) ?? ''),
     ),
     GoRoute(
       path: '/change-password',

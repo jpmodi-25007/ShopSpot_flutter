@@ -236,6 +236,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                             child: Text('Back to Login', style: AppTextStyles.button.copyWith(color: AppColors.white)),
                           ),
                           const SizedBox(height: 16),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.neutral900,
+                              minimumSize: const Size.fromHeight(56),
+                              side: const BorderSide(color: AppColors.neutral300),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            onPressed: () => context.push(
+                              '/reset-password',
+                              extra: _emailController.text.trim(),
+                            ),
+                            child: Text('Enter Reset Code', style: AppTextStyles.button.copyWith(color: AppColors.neutral900)),
+                          ),
+                          const SizedBox(height: 16),
                           TextButton(
                             onPressed: () {
                               setState(() => _isSubmitted = false);

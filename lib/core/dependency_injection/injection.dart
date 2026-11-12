@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import '../network/api_client.dart';
@@ -149,14 +150,17 @@ Future<void> configureDependencies() async {
       receiveTimeout: const Duration(seconds: 60),
     ));
     dio.interceptors.add(AuthInterceptor(getIt(), dio));
-    dio.interceptors.add(LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
-    ));
+    // Debug builds only, and never log headers (they carry the bearer token).
+    if (kDebugMode) {
+      dio.interceptors.add(LogInterceptor(
+        request: true,
+        requestHeader: false,
+        requestBody: true,
+        responseHeader: false,
+        responseBody: true,
+        error: true,
+      ));
+    }
     return dio;
   });
   getIt.registerLazySingleton<ApiClient>(() => DioApiClient(getIt()));

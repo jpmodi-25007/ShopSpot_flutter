@@ -3,6 +3,7 @@ import '../../../../core/widgets/shimmer/shimmer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -13,6 +14,14 @@ import '../../../saved/presentation/bloc/saved_state.dart';
 
 class SavedShopsScreen extends StatelessWidget {
   const SavedShopsScreen({super.key});
+
+  String? _shopImageUrl(Map shop) {
+    for (final key in ['logoUrl', 'logo', 'coverImageUrl', 'imageUrl']) {
+      final value = shop[key];
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +51,17 @@ class SavedShopsScreen extends StatelessWidget {
             final shops = state is SavedLoaded ? state.savedShops ?? [] : [];
             if (shops.isEmpty) {
               return Center(
-                child: Text('No saved shops yet',
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.neutral500)),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(LucideIcons.store, size: 40, color: AppColors.neutral300),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No saved shops yet',
+                      style: AppTextStyles.body.copyWith(color: AppColors.neutral500),
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -54,14 +71,13 @@ class SavedShopsScreen extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final shop = shops[index];
-                final imageUrl = (shop['logo'] != null &&
-                        shop['logo'].isNotEmpty)
-                    ? shop['logo']
-                    : 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200&auto=format&fit=crop';
+                final imageUrl = _shopImageUrl(Map<String, dynamic>.from(shop as Map));
                 final rating = shop['rating'] ?? 5.0;
-                final totalReviews = shop['totalReviews'] ?? 0;
-
+                final totalReviews = shop['totalReviews'] ?? shop['reviewCount'] ?? 0;
                 final shopId = '${shop['id'] ?? ''}';
+                final category = shop['category'] is Map
+                    ? (shop['category']['name'] ?? '')
+                    : (shop['category'] ?? shop['city'] ?? '');
 
                 return AnimatedFadeSlide(
                   key: ValueKey('saved-shop-$shopId'),
@@ -87,16 +103,12 @@ class SavedShopsScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Container(
+                            AppNetworkImage(
+                              url: imageUrl,
                               width: 80,
                               height: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(
-                                  image: NetworkImage(imageUrl),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              placeholderIcon: LucideIcons.store,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -128,7 +140,7 @@ class SavedShopsScreen extends StatelessWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(shop['category'] ?? '',
+                                  Text('$category',
                                       style: AppTextStyles.caption.copyWith(
                                           color: AppColors.neutral500)),
                                   const SizedBox(height: 8),

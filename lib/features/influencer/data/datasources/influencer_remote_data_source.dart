@@ -12,6 +12,7 @@ abstract interface class InfluencerRemoteDataSource {
     required Map<String, dynamic> data,
   });
   Future<void> withdrawBid(String bidId);
+  Future<void> respondToCounter(String bidId, {required bool accept});
   Future<Map<String, dynamic>> getInfluencerAnalytics();
   Future<List<Map<String, dynamic>>> getMyAssignments();
   Future<Map<String, dynamic>> submitDeliverable(String assignmentId, String contentUrl);
@@ -78,6 +79,13 @@ class InfluencerRemoteDataSourceImpl implements InfluencerRemoteDataSource {
   @override
   Future<void> withdrawBid(String bidId) async {
     await apiClient.delete('/influencer/bids/$bidId');
+  }
+
+  @override
+  Future<void> respondToCounter(String bidId, {required bool accept}) async {
+    await apiClient.post(
+      '/influencer/bids/$bidId/${accept ? 'accept-counter' : 'reject-counter'}',
+    );
   }
 
   @override

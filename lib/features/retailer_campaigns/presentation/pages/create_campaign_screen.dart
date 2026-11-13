@@ -466,13 +466,13 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                             : () {
                                 if (!_formKey.currentState!.validate()) return;
 
-                                String? imageUrl;
+                                String? categoryName;
                                 if (_isSpecificProduct) {
                                   final inventoryState = context.read<RetailerInventoryBloc>().state;
                                   if (inventoryState is RetailerInventoryLoaded) {
                                     try {
                                       final product = inventoryState.products.firstWhere((p) => p.id == _selectedProductId);
-                                      if (product.images.isNotEmpty) imageUrl = product.images.first;
+                                      categoryName = product.categoryName;
                                     } catch (_) {}
                                   }
                                 }
@@ -487,7 +487,9 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                   budgetMin: 0,
                                   budgetMax: double.tryParse(_budgetController.text) ?? 0,
                                   productId: _isSpecificProduct ? _selectedProductId : null,
-                                  imageUrl: imageUrl,
+                                  targetCategories: categoryName == null || categoryName.isEmpty
+                                      ? const []
+                                      : [categoryName],
                                   applicationDeadline: _applicationDeadline,
                                   publishByDate: _publishByDate,
                                 );

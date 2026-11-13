@@ -13,6 +13,7 @@ import '../bloc/event_state.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final String eventId;
@@ -23,10 +24,24 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
+  late final EventBloc _eventsBloc;
+
   @override
   void initState() {
     super.initState();
-    context.read<EventBloc>().add(GetEventDetailRequested(widget.eventId));
+    _eventsBloc = context.read<EventBloc>();
+    _eventsBloc.add(GetEventDetailRequested(widget.eventId));
+  }
+
+  @override
+  void dispose() {
+    _eventsBloc.add(const RestoreEventsCatalog());
+    super.dispose();
+  }
+
+  void _goBack() {
+    _eventsBloc.add(const RestoreEventsCatalog());
+    context.pop();
   }
 
   /// Opens the native calendar app with pre-filled event details.
@@ -80,7 +95,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   pinned: true,
                   leading: IconButton(
                     icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
-                    onPressed: () => context.pop(),
+                    onPressed: _goBack,
                   ),
                   actions: [
                     BlocBuilder<AuthenticationBloc, AuthenticationState>(
@@ -128,18 +143,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     background: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
-                          Image.network(
-                            event.imageUrl!,
-                            fit: BoxFit.cover,
-                          )
-                        else
-                          Container(
-                            color: AppColors.neutral200,
-                            child: const Center(
-                              child: Icon(LucideIcons.image, size: 64, color: AppColors.neutral400),
-                            ),
-                          ),
+                        AppNetworkImage(
+                          url: event.imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          placeholderIcon: LucideIcons.image,
+                          backgroundColor: AppColors.neutral200,
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -208,7 +219,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   Text('Error loading event', style: AppTextStyles.h4),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: () => context.pop(),
+                    onPressed: _goBack,
                     child: const Text('Go Back'),
                   ),
                 ],

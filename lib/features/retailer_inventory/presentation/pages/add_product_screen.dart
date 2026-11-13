@@ -13,6 +13,10 @@ import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../product/domain/entities/product_entity.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/retailer_inventory_bloc.dart';
+import '../bloc/retailer_inventory_event.dart';
 
 class AddProductScreen extends StatefulWidget {
   final ProductEntity? product;
@@ -38,6 +42,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isUploading = false;
   final CloudinaryService _cloudinary = getIt<CloudinaryService>();
   List<String> _existingImages = [];
+  String? _selectedCategoryId;
+  String _categoryQuery = '';
+  List<Map<String, String>> _categories = [];
 
   @override
   void initState() {
@@ -46,13 +53,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
       final p = widget.product!;
       _nameController.text = p.name;
       _brandController.text = p.brand ?? '';
-      _categoryController.text = p.categoryId ?? '';
+      _selectedCategoryId = p.categoryId;
       _mrpController.text = p.mrp.toString();
       _priceController.text = p.sellingPrice.toString();
       _stockController.text = p.stockQuantity.toString();
       _descController.text = p.description ?? '';
       _existingImages = List.from(p.images);
     }
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final response = await getIt<ApiClient>().get('/categories');
+      final raw = response.data;
+      final list = raw is List ? raw : <dynamic>[];
+      if (!mounted) return;
+      setState(() {
+        _categories = list.whereType<Map>().map((item) {
+          return {
+            'id': item['id']?.toString() ?? '',
+            'name': item['name']?.toString() ?? '',
+          };
+        }).where((c) => c['id']!.isNotEmpty && c['name']!.isNotEmpty).toList();
+      });
+    } catch (_) {}
   }
 
   @override
@@ -108,41 +133,33 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _isUploading = true);
 
     try {
-      final List<CloudinaryUploadResult> uploadResults = [];
-      
-      // Upload sequentially for stability (can be parallelized)
-      for (var img in _selectedImages) {
+      final List<Map<String, dynamic>> newMedia = [];
+      for (final img in _selectedImages) {
         final result = await _cloudinary.uploadImage(
           imageFile: img,
-          folder: 'products/temp',
+          folder: 'products',
         );
-        uploadResults.add(result);
+        newMedia.add({
+          'publicId': result.publicId,
+          'secureUrl': result.secureUrl,
+          'width': result.width,
+          'height': result.height,
+          'format': result.format,
+          'bytes': result.bytes,
+          'resourceType': result.resourceType,
+        });
       }
 
-      final existingMedia = _existingImages.map((url) => {
-        'publicId': 'existing',
-        'secureUrl': url,
-      }).toList();
-
-      final newMedia = uploadResults.map((r) => {
-        'publicId': r.publicId,
-        'secureUrl': r.secureUrl,
-        'width': r.width,
-        'height': r.height,
-        'format': r.format,
-        'bytes': r.bytes,
-        'resourceType': r.resourceType,
-      }).toList();
-
-      final payload = {
-        'name': _nameController.text,
-        'brand': _brandController.text.isNotEmpty ? _brandController.text : null,
+      final payload = <String, dynamic>{
+        'name': _nameController.text.trim(),
+        'brand': _brandController.text.trim().isNotEmpty ? _brandController.text.trim() : null,
+        'categoryId': _selectedCategoryId,
         'mrp': mrp ?? 0,
         'sellingPrice': sp ?? 0,
-        'stockQuantity': int.tryParse(_stockController.text) ?? 0,
-        'description': _descController.text.isNotEmpty ? _descController.text : null,
-        'mediaAssets': [...existingMedia, ...newMedia],
-        'status': isDraft ? 'DRAFT' : 'ACTIVE',
+        'stockQuantity': _trackInventory ? (int.tryParse(_stockController.text) ?? 0) : 0,
+        'description': _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
+        if (widget.product != null) 'retainMediaUrls': _existingImages,
+        if (newMedia.isNotEmpty) 'mediaAssets': newMedia,
       };
       
       final ApiClient apiClient = getIt<ApiClient>();
@@ -155,18 +172,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isDraft ? 'Product saved as draft!' : 'Product added successfully with ${uploadResults.length} images!'),
+            content: Text(widget.product != null ? 'Product updated' : 'Product added'),
             backgroundColor: AppColors.success500,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        context.pop();
+        context.read<RetailerInventoryBloc>().add(const GetMyProductsRequested());
+        context.pop(true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to upload images. Please try again.'),
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
             backgroundColor: AppColors.error500,
           ),
         );
@@ -258,19 +276,28 @@ class _AddProductScreenState extends State<AddProductScreen> {
             AppTextField(
               controller: _categoryController,
               label: 'Category',
-              hintText: 'Search categories...',
+              hintText: _categories.isEmpty ? 'Loading categories...' : 'Search categories',
               prefixIcon: const Icon(LucideIcons.search, size: 20),
+              onChanged: (value) => setState(() => _categoryQuery = value.trim()),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildCategoryBreadcrumb('Electronics > TV & Video'),
-                _buildCategoryBreadcrumb('Mobiles'),
-                _buildCategoryBreadcrumb('Computers'),
-              ],
-            ),
+            if (_categories.isEmpty)
+              Text('No categories available', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500))
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories
+                    .where((c) => _categoryQuery.isEmpty || c['name']!.toLowerCase().contains(_categoryQuery.toLowerCase()))
+                    .map((c) => _buildCategoryBreadcrumb(c['name']!, selected: c['id'] == _selectedCategoryId, onTap: () {
+                          setState(() {
+                            _selectedCategoryId = c['id'];
+                            _categoryQuery = '';
+                            _categoryController.clear();
+                          });
+                        }))
+                    .toList(),
+              ),
             const SizedBox(height: 24),
 
             Row(
@@ -347,20 +374,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Product Description', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.success500.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(LucideIcons.sparkles, size: 12, color: AppColors.success500),
-                      const SizedBox(width: 4),
-                      Text('AI Suggest', style: AppTextStyles.caption.copyWith(color: AppColors.success500, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -409,13 +422,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
       decoration: BoxDecoration(
         color: AppColors.neutral200,
         borderRadius: BorderRadius.circular(12),
-        image: DecorationImage(
-          image: NetworkImage(url),
-          fit: BoxFit.cover,
-        ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Stack(
+        fit: StackFit.expand,
         children: [
+          AppNetworkImage(
+            url: url,
+            width: 80,
+            height: 80,
+            placeholderIcon: LucideIcons.image,
+          ),
           Positioned(
             top: 4,
             right: 4,
@@ -473,21 +490,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  Widget _buildCategoryBreadcrumb(String label) {
+  Widget _buildCategoryBreadcrumb(String label, {bool selected = false, VoidCallback? onTap}) {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _categoryController.text = label;
-        });
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppColors.neutral100,
+          color: selected ? AppColors.roleRetailer.withValues(alpha: 0.12) : AppColors.neutral100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.neutral300),
+          border: Border.all(color: selected ? AppColors.roleRetailer : AppColors.neutral300),
         ),
-        child: Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.neutral700)),
+        child: Text(label, style: AppTextStyles.caption.copyWith(color: selected ? AppColors.roleRetailer : AppColors.neutral700, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
       ),
     );
   }

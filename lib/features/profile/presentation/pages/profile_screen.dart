@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
 
@@ -91,25 +92,16 @@ class ProfileScreen extends StatelessWidget {
                                 offset: const Offset(0, 8),
                               ),
                             ],
-                            image: user?.avatarUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(user!.avatarUrl!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : const DecorationImage(
-                                    image: AssetImage('assets/images/placeholder_avatar.png'), // Fallback if no network image
-                                    fit: BoxFit.cover,
-                                  ),
                           ),
-                          child: user?.avatarUrl == null 
-                            ? Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.primary100,
-                                ),
-                                child: const Icon(LucideIcons.user, size: 40, color: AppColors.primary500),
-                              )
-                            : null,
+                          clipBehavior: Clip.antiAlias,
+                          child: AppNetworkImage(
+                            url: user?.avatarUrl,
+                            width: 88,
+                            height: 88,
+                            fit: BoxFit.cover,
+                            placeholderIcon: LucideIcons.user,
+                            backgroundColor: AppColors.primary100,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(user?.name ?? 'Loading...', style: AppTextStyles.h3.copyWith(color: AppColors.white)),

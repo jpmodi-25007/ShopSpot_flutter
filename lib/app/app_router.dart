@@ -207,6 +207,7 @@ final appRouter = GoRouter(
             targetUserId: state.pathParameters['userId']!,
             targetUserName: extra?['targetUserName'],
             targetUserAvatar: extra?['targetUserAvatar'],
+            targetUserPhone: extra?['targetUserPhone']?.toString(),
             contextType: extra?['contextType'],
             contextId: extra?['contextId'],
           ),

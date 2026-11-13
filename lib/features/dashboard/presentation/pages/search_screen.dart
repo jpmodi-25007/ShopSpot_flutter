@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
+import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/network/api_client.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -31,17 +33,9 @@ class _SearchScreenState extends State<SearchScreen>
   static const String _recentSearchesKey = 'recent_searches_key';
 
   List<String> _recentSearches = [];
-
-  final List<_SearchCategory> _categories = [
-    const _SearchCategory('Fashion', LucideIcons.shirt),
-    const _SearchCategory('Jewelry', LucideIcons.gem),
-    const _SearchCategory('Beauty', LucideIcons.sparkles),
-    const _SearchCategory('Home', LucideIcons.home),
-    const _SearchCategory('Art', LucideIcons.palette),
-    const _SearchCategory('Electronics', LucideIcons.monitor),
-    const _SearchCategory('Food', LucideIcons.coffee),
-    const _SearchCategory('Sports', LucideIcons.activity),
-  ];
+  List<_SearchCategory> _categories = [];
+  List<String> _trending = [];
+  bool _loadingDiscover = true;
 
   @override
   void initState() {
@@ -62,6 +56,60 @@ class _SearchScreenState extends State<SearchScreen>
           .add(PerformSearchRequested(widget.initialQuery!));
     }
     _loadRecentSearches();
+    _loadDiscover();
+  }
+
+  IconData _iconForCategory(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('fashion')) return LucideIcons.shirt;
+    if (n.contains('jewel')) return LucideIcons.gem;
+    if (n.contains('beauty') || n.contains('health')) return LucideIcons.sparkles;
+    if (n.contains('home') || n.contains('garden')) return LucideIcons.home;
+    if (n.contains('food') || n.contains('beverage')) return LucideIcons.coffee;
+    if (n.contains('electron')) return LucideIcons.monitor;
+    if (n.contains('sport')) return LucideIcons.activity;
+    if (n.contains('art')) return LucideIcons.palette;
+    return LucideIcons.tag;
+  }
+
+  Future<void> _loadDiscover() async {
+    try {
+      final api = getIt<ApiClient>();
+      final categoriesRes = await api.get('/categories');
+      final trendingRes = await api.get('/products/trending', queryParameters: {'limit': 8});
+      final rawCategories = categoriesRes.data;
+      final categoryList = rawCategories is List ? rawCategories : <dynamic>[];
+      final rawTrending = trendingRes.data;
+      final trendingList = rawTrending is List
+          ? rawTrending
+          : (rawTrending is Map ? (rawTrending['data'] ?? []) : <dynamic>[]);
+      if (!mounted) return;
+      setState(() {
+        _categories = categoryList.whereType<Map>().map((item) {
+          final name = item['name']?.toString() ?? '';
+          return _SearchCategory(name, _iconForCategory(name));
+        }).where((c) => c.name.isNotEmpty).toList();
+        _trending = (trendingList as List)
+            .whereType<Map>()
+            .map((item) => item['name']?.toString() ?? '')
+            .where((name) => name.isNotEmpty)
+            .take(8)
+            .toList();
+        _loadingDiscover = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingDiscover = false);
+    }
+  }
+
+  void _runSearch(String query) {
+    final trimmed = query.trim();
+    if (trimmed.length < 2) return;
+    _controller.text = trimmed;
+    _controller.selection = TextSelection.collapsed(offset: trimmed.length);
+    setState(() => _hasQuery = true);
+    context.read<SearchBloc>().add(PerformSearchRequested(trimmed));
+    _addToRecentSearches(trimmed);
   }
 
   Future<void> _loadRecentSearches() async {
@@ -176,15 +224,17 @@ class _SearchScreenState extends State<SearchScreen>
                       autofocus: false,
                       style: AppTextStyles.body
                           .copyWith(fontWeight: FontWeight.w600),
+                      onSubmitted: _runSearch,
                       onChanged: (val) {
-                        setState(() => _hasQuery = val.isNotEmpty);
+                        setState(() => _hasQuery = val.trim().isNotEmpty);
                         if (_debounce?.isActive ?? false) _debounce!.cancel();
-                        _debounce =
-                            Timer(const Duration(milliseconds: 400), () {
-                          context
-                              .read<SearchBloc>()
-                              .add(PerformSearchRequested(val));
-                          _addToRecentSearches(val);
+                        _debounce = Timer(const Duration(milliseconds: 400), () {
+                          final trimmed = val.trim();
+                          if (trimmed.length < 2) {
+                            context.read<SearchBloc>().add(const PerformSearchRequested(''));
+                            return;
+                          }
+                          context.read<SearchBloc>().add(PerformSearchRequested(trimmed));
                         });
                       },
                       decoration: InputDecoration(
@@ -270,10 +320,18 @@ class _SearchScreenState extends State<SearchScreen>
             const SizedBox(height: 40),
           ],
 
-          // Browse Categories
           Text('Categories',
               style: AppTextStyles.h4.copyWith(color: AppColors.neutral900)),
           const SizedBox(height: 20),
+          if (_loadingDiscover)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(),
+            ))
+          else if (_categories.isEmpty)
+            Text('No categories yet.',
+                style: AppTextStyles.body.copyWith(color: AppColors.neutral500))
+          else
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -296,12 +354,7 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
                 child: _CategoryTile(
                   category: category,
-                  onTap: () {
-                    _controller.text = category.name;
-                    setState(() => _hasQuery = true);
-                    context.read<SearchBloc>().add(PerformSearchRequested(category.name));
-                    _addToRecentSearches(category.name);
-                  },
+                  onTap: () => _runSearch(category.name),
                 ),
               );
             },
@@ -310,18 +363,19 @@ class _SearchScreenState extends State<SearchScreen>
           const SizedBox(height: 40),
 
           // Trending Near You
-          Text('Trending Searches',
+          Text('Trending',
               style: AppTextStyles.h4.copyWith(color: AppColors.neutral900)),
           const SizedBox(height: 16),
+          if (_trending.isEmpty && !_loadingDiscover)
+            Text('No trending products yet.',
+                style: AppTextStyles.body.copyWith(color: AppColors.neutral500))
+          else
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: [
-              '🔥 Summer Collection',
-              '✨ Minimalist Decor',
-              '👟 Running Shoes',
-              '👜 Handcrafted Bags'
-            ].map((t) => _TrendingChip(label: t)).toList(),
+            children: _trending
+                .map((t) => _TrendingChip(label: t, onTap: () => _runSearch(t)))
+                .toList(),
           ),
           const SizedBox(height: 80),
         ],
@@ -371,7 +425,7 @@ class _SearchScreenState extends State<SearchScreen>
                   spacing: 12,
                   runSpacing: 12,
                   children: results.categories
-                      .map((c) => _TrendingChip(label: c.name))
+                      .map((c) => _TrendingChip(label: c.name, onTap: () => _runSearch(c.name)))
                       .toList(),
                 ),
                 const SizedBox(height: 32),
@@ -531,20 +585,24 @@ class _AnimatedChip extends StatelessWidget {
 
 class _TrendingChip extends StatelessWidget {
   final String label;
-  const _TrendingChip({required this.label});
+  final VoidCallback? onTap;
+  const _TrendingChip({required this.label, this.onTap});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.roleCustomerLight.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(
-            color: AppColors.roleCustomer.withValues(alpha: 0.2)),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.roleCustomerLight.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+              color: AppColors.roleCustomer.withValues(alpha: 0.2)),
+        ),
+        child: Text(label,
+            style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.roleCustomer, fontWeight: FontWeight.w700)),
       ),
-      child: Text(label,
-          style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.roleCustomer, fontWeight: FontWeight.w700)),
     );
   }
 }

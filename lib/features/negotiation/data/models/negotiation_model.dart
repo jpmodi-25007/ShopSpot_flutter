@@ -46,10 +46,10 @@ class NegotiationModel extends NegotiationEntity {
       shop: json['shop'] != null ? ShopModel.fromJson(json['shop']).toEntity() : null,
       customerId: json['customerId'],
       customerName: json['customer']?['name'] as String?,
-      initialPrice: (json['initialPrice'] ?? 0).toDouble(),
-      offeredPrice: (json['offeredPrice'] ?? 0).toDouble(),
-      counterPrice: json['counterPrice'] != null ? (json['counterPrice']).toDouble() : null,
-      finalPrice: json['finalPrice'] != null ? (json['finalPrice']).toDouble() : null,
+      initialPrice: _asDouble(json['initialPrice']),
+      offeredPrice: _asDouble(json['offeredPrice']),
+      counterPrice: json['counterPrice'] == null ? null : _asDouble(json['counterPrice']),
+      finalPrice: json['finalPrice'] == null ? null : _asDouble(json['finalPrice']),
       counterRound: json['counterRound'] ?? 0,
       status: status,
       customerMessage: json['customerMessage'],
@@ -63,4 +63,10 @@ class NegotiationModel extends NegotiationEntity {
           : [],
     );
   }
+}
+
+double _asDouble(dynamic value) {
+  if (value == null) return 0;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString()) ?? 0;
 }

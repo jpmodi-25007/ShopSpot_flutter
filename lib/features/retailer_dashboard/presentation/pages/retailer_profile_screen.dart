@@ -20,6 +20,7 @@ import '../../../../core/utils/location_helper.dart';
 import '../../../shop/domain/entities/shop_entity.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
+import '../../../../core/widgets/legal_document_bottom_sheet.dart';
 
 class RetailerProfileScreen extends StatefulWidget {
   const RetailerProfileScreen({super.key});
@@ -29,7 +30,6 @@ class RetailerProfileScreen extends StatefulWidget {
 }
 
 class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
-  bool _isOpen = true;
 
   @override
   void initState() {
@@ -44,6 +44,13 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
       builder: (context, dashState) {
         final shop =
             dashState is RetailerDashboardLoaded ? dashState.shop : null;
+        final isOpen = shop?.isOpen ?? true;
+        final address = [
+          shop?.address,
+          shop?.city,
+          shop?.state,
+          shop?.pincode,
+        ].where((part) => part != null && part.trim().isNotEmpty).join(', ');
         return Scaffold(
           backgroundColor: AppColors.neutral50,
           body: CustomScrollView(
@@ -273,14 +280,14 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: (_isOpen
+                                color: (isOpen
                                     ? AppColors.success100
                                     : AppColors.error100),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 LucideIcons.store,
-                                color: _isOpen
+                                color: isOpen
                                     ? AppColors.success500
                                     : AppColors.error500,
                                 size: 20,
@@ -295,7 +302,7 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                                       style: AppTextStyles.body.copyWith(
                                           fontWeight: FontWeight.w600)),
                                   Text(
-                                    _isOpen
+                                    isOpen
                                         ? 'Open • Customers can find you'
                                         : 'Closed • Hidden from search',
                                     style: AppTextStyles.bodySmall
@@ -305,8 +312,14 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                               ),
                             ),
                             Switch(
-                              value: _isOpen,
-                              onChanged: (val) => setState(() => _isOpen = val),
+                              value: isOpen,
+                              onChanged: shop == null
+                                  ? null
+                                  : (val) {
+                                      context.read<RetailerDashboardBloc>().add(
+                                            UpdateShopRequested({'isOpen': val}),
+                                          );
+                                    },
                               activeThumbColor: AppColors.success500,
                             ),
                           ],
@@ -321,13 +334,13 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                         icon: LucideIcons.info,
                         children: [
                           _InfoRow(LucideIcons.mapPin, 'Address',
-                              shop?.address ?? 'Not set'),
+                              address.isEmpty ? 'Not set' : address),
                           _InfoRow(LucideIcons.phone, 'Phone',
                               shop?.phone ?? 'Not set'),
                           _InfoRow(LucideIcons.mail, 'Email',
                               shop?.email ?? 'Not set'),
-                          _InfoRow(LucideIcons.globe, 'Website',
-                              'www.${(shop?.name ?? 'shop').toLowerCase().replaceAll(' ', '')}.com'),
+                          _InfoRow(LucideIcons.badgeCheck, 'Plan',
+                              shop?.subscriptionTier ?? '—'),
                         ],
                       ),
 
@@ -352,16 +365,15 @@ class _RetailerProfileScreenState extends State<RetailerProfileScreen> {
                         title: 'Account Settings',
                         icon: LucideIcons.settings,
                         children: [
-                          _SettingsRow(LucideIcons.creditCard,
-                              'Payment & Billing', () {}),
                           _SettingsRow(
                               LucideIcons.bellRing,
                               'Notification Preferences',
                               () => context.push('/notifications')),
-                          _SettingsRow(LucideIcons.shieldCheck,
-                              'Privacy & Security', () {}),
+                          _SettingsRow(LucideIcons.shieldCheck, 'Privacy & Security', () {
+                            LegalDocumentBottomSheet.show(context, role: 'shopkeeper', documentType: 'privacy');
+                          }),
                           _SettingsRow(
-                              LucideIcons.helpCircle, 'Help & Support', () {}),
+                              LucideIcons.helpCircle, 'Help & Support', () => context.push('/help-support')),
                         ],
                       ),
 

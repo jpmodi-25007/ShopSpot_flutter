@@ -299,6 +299,7 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => GetMyBidsUseCase(getIt()));
   getIt.registerLazySingleton(() => SubmitBidUseCase(getIt()));
   getIt.registerLazySingleton(() => WithdrawBidUseCase(getIt()));
+  getIt.registerLazySingleton(() => RespondToCounterUseCase(getIt()));
   getIt.registerLazySingleton(() => GetInfluencerAnalyticsUseCase(getIt()));
   getIt.registerLazySingleton(() => GetMyAssignmentsUseCase(getIt()));
   getIt.registerLazySingleton(() => SubmitDeliverableUseCase(getIt()));
@@ -310,6 +311,7 @@ Future<void> configureDependencies() async {
         getMyBids: getIt(),
         submitBid: getIt(),
         withdrawBid: getIt(),
+        respondToCounter: getIt(),
         getAnalytics: getIt(),
         getMyAssignments: getIt(),
         submitDeliverable: getIt(),

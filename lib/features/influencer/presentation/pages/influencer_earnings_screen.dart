@@ -10,6 +10,11 @@ import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
 
+double _money(dynamic value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
 class InfluencerEarningsScreen extends StatefulWidget {
   const InfluencerEarningsScreen({super.key});
 
@@ -81,18 +86,13 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                                 if (state is InfluencerLoaded &&
                                     state.analytics != null) {
                                   totalEarnings =
-                                      (state.analytics!['totalEarnings']
-                                                  as num?)
-                                              ?.toDouble() ??
-                                          0;
+                                      _money(state.analytics!['totalEarnings']);
                                   final payouts = state.analytics!['payouts']
                                           as List<dynamic>? ??
                                       [];
                                   for (var p in payouts) {
                                     if (p['status'] == 'Pending') {
-                                      pendingEarnings +=
-                                          (p['amount'] as num?)?.toDouble() ??
-                                              0;
+                                      pendingEarnings += _money(p['amount']);
                                     }
                                   }
                                 }
@@ -170,8 +170,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                         // Build _MonthBar list from real payout data
                         final List<_MonthBar> monthBars = payouts.map((p) {
                           final month = (p['month'] as String?) ?? '';
-                          final amount =
-                              ((p['amount'] as num?)?.toDouble() ?? 0.0);
+                          final amount = _money(p['amount']);
                           return _MonthBar(month, amount);
                         }).toList();
 
@@ -278,7 +277,7 @@ class _InfluencerEarningsScreenState extends State<InfluencerEarningsScreen>
                           final p = payouts[index];
                           final isPaid = p['status'] == 'Paid';
                           final monthStr = p['month'] ?? '';
-                          final amount = (p['amount'] as num?)?.toInt() ?? 0;
+                          final amount = _money(p['amount']).toInt();
 
                           return AnimatedFadeSlide(
                             delay: Duration(milliseconds: 50 * index),

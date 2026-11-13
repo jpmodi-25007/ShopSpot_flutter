@@ -40,14 +40,16 @@ final class ShopStateLoaded extends ShopState {
     List<ProductEntity>? products,
     List<ShopEntity>? nearbyShops,
     bool? isLoading,
-    Failure? failure,
+    Object? failure = _keepFailure,
   }) {
     return ShopStateLoaded(
       shop: shop ?? this.shop,
       products: products ?? this.products,
       nearbyShops: nearbyShops ?? this.nearbyShops,
       isLoading: isLoading ?? this.isLoading,
-      failure: failure ?? this.failure,
+      failure: identical(failure, _keepFailure) ? this.failure : failure as Failure?,
     );
   }
 }
+
+const Object _keepFailure = Object();

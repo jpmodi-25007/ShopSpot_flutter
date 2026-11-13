@@ -21,6 +21,7 @@ import '../bloc/promotion_state.dart';
 import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
+import '../../domain/entities/event_entity.dart';
 import '../../../../core/utils/guest_helper.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
@@ -28,7 +29,6 @@ import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
 import '../../../saved/presentation/bloc/saved_state.dart';
 import '../../../../core/widgets/app_network_image.dart';
-import '../../../../core/utils/cloudinary_url_builder.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -40,6 +40,7 @@ class HomeFeedScreen extends StatefulWidget {
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _currentAddress = 'Fetching location...';
   Position? _currentPos;
+  List<EventEntity> _upcomingEvents = const [];
   final PageController _bannerController = PageController(viewportFraction: 0.9);
 
   @override
@@ -48,6 +49,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     _fetchLocationAndShops();
     context.read<ProductBloc>().add(const GetTrendingProductsRequested());
     context.read<PromotionBloc>().add(const GetPromotionsRequested());
+    final eventsState = context.read<EventBloc>().state;
+    if (eventsState is EventsLoaded) {
+      _upcomingEvents = eventsState.events;
+    }
     context.read<EventBloc>().add(const GetEventsRequested());
   }
 
@@ -286,31 +291,39 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                           offset: const Offset(0, 4),
                                         )
                                       ],
-                                        image: DecorationImage(
-                                          image: NetworkImage(CloudinaryUrlBuilder.buildUrl(secureUrl: banner.imageUrl)),
-                                          fit: BoxFit.cover,
-                                        ),
                                     ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(20),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [
-                                            Colors.black.withValues(alpha: 0.6),
-                                            Colors.transparent,
-                                          ],
+                                    clipBehavior: Clip.antiAlias,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        AppNetworkImage(
+                                          url: banner.imageUrl,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          placeholderIcon: LucideIcons.image,
                                         ),
-                                      ),
-                                      padding: const EdgeInsets.all(16),
-                                      alignment: Alignment.bottomLeft,
-                                      child: banner.title != null && banner.title!.isNotEmpty
-                                          ? Text(
-                                              banner.title!,
-                                              style: AppTextStyles.h3.copyWith(color: AppColors.white),
-                                            )
-                                          : const SizedBox.shrink(),
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.bottomCenter,
+                                              end: Alignment.topCenter,
+                                              colors: [
+                                                Colors.black.withValues(alpha: 0.6),
+                                                Colors.transparent,
+                                              ],
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.all(16),
+                                          alignment: Alignment.bottomLeft,
+                                          child: banner.title != null && banner.title!.isNotEmpty
+                                              ? Text(
+                                                  banner.title!,
+                                                  style: AppTextStyles.h3.copyWith(color: AppColors.white),
+                                                )
+                                              : const SizedBox.shrink(),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );
@@ -436,9 +449,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ],
                     ),
                   ),
-                  BlocBuilder<EventBloc, EventState>(
+                  BlocConsumer<EventBloc, EventState>(
+                    listener: (context, state) {
+                      if (state is EventsLoaded) {
+                        setState(() => _upcomingEvents = state.events);
+                      }
+                    },
                     builder: (context, state) {
-                      if (state is EventLoading) {
+                      final events = state is EventsLoaded ? state.events : _upcomingEvents;
+                      if (state is EventLoading && events.isEmpty) {
                         return SizedBox(
                           height: 200,
                           child: ListView.builder(
@@ -448,15 +467,15 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                             itemBuilder: (context, index) => const EventCardSkeleton(),
                           ),
                         );
-                      } else if (state is EventsLoaded && state.events.isNotEmpty) {
+                      } else if (events.isNotEmpty) {
                         return SizedBox(
                           height: 200,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: state.events.take(5).length,
+                            itemCount: events.take(5).length,
                             itemBuilder: (context, index) {
-                              final event = state.events[index];
+                              final event = events[index];
                               return AnimatedFadeSlide(
                                 key: ValueKey('home-event-${event.id}'),
                                 delay: staggerDelay(index),
@@ -468,33 +487,40 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(16),
                                     color: AppColors.neutral200,
-                                    image: event.imageUrl != null && event.imageUrl!.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(CloudinaryUrlBuilder.buildUrl(secureUrl: event.imageUrl!)),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
                                   ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      AppNetworkImage(
+                                        url: event.imageUrl,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        placeholderIcon: LucideIcons.calendar,
                                       ),
-                                    ),
-                                    padding: const EdgeInsets.all(16),
-                                    alignment: Alignment.bottomLeft,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(event.title, style: AppTextStyles.h4.copyWith(color: AppColors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        const SizedBox(height: 4),
-                                        Text('${event.startDate.day}/${event.startDate.month} • ${event.shopName ?? "ShopSpot"}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral200)),
-                                      ],
-                                    ),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.8)],
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.all(16),
+                                        alignment: Alignment.bottomLeft,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(event.title, style: AppTextStyles.h4.copyWith(color: AppColors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                            const SizedBox(height: 4),
+                                            Text('${event.startDate.day}/${event.startDate.month} • ${event.shopName ?? "ShopSpot"}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral200)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               )),

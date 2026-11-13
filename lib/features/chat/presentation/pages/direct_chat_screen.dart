@@ -10,11 +10,13 @@ import '../bloc/chat_event_state.dart';
 import '../../../authentication/presentation/bloc/authentication_bloc.dart';
 import '../../../authentication/presentation/bloc/authentication_state.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DirectChatScreen extends StatefulWidget {
   final String targetUserId;
   final String? targetUserName;
   final String? targetUserAvatar;
+  final String? targetUserPhone;
   final String? contextType;
   final String? contextId;
 
@@ -23,6 +25,7 @@ class DirectChatScreen extends StatefulWidget {
     required this.targetUserId,
     this.targetUserName,
     this.targetUserAvatar,
+    this.targetUserPhone,
     this.contextType,
     this.contextId,
   });
@@ -82,17 +85,25 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
 
   String _getRoleBadge(String? role) {
     switch (role?.toUpperCase()) {
-      case 'RETAILER': return 'Retailer';
-      case 'INFLUENCER': return 'Influencer';
-      default: return 'Customer';
+      case 'SHOPKEEPER':
+      case 'RETAILER':
+        return 'Retailer';
+      case 'INFLUENCER':
+        return 'Influencer';
+      default:
+        return 'Customer';
     }
   }
 
   Color _getRoleColor(String? role) {
     switch (role?.toUpperCase()) {
-      case 'RETAILER': return AppColors.roleRetailer;
-      case 'INFLUENCER': return AppColors.roleInfluencer;
-      default: return AppColors.roleCustomer;
+      case 'SHOPKEEPER':
+      case 'RETAILER':
+        return AppColors.roleRetailer;
+      case 'INFLUENCER':
+        return AppColors.roleInfluencer;
+      default:
+        return AppColors.roleCustomer;
     }
   }
 
@@ -204,11 +215,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
       actions: [
         IconButton(
           icon: const Icon(LucideIcons.phone, color: AppColors.neutral500),
-          onPressed: () {},
+          onPressed: _callOtherUser,
         ),
         IconButton(
           icon: const Icon(LucideIcons.moreVertical, color: AppColors.neutral500),
-          onPressed: () {},
+          onPressed: _showChatMenu,
         ),
       ],
     );
@@ -332,14 +343,15 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
   }
 
   Widget _buildDateSeparator(DateTime date) {
+    final local = date.toLocal();
     final now = DateTime.now();
     String label;
-    if (_isSameDay(date, now)) {
+    if (_isSameDay(local, now)) {
       label = 'Today';
-    } else if (_isSameDay(date, now.subtract(const Duration(days: 1)))) {
+    } else if (_isSameDay(local, now.subtract(const Duration(days: 1)))) {
       label = 'Yesterday';
     } else {
-      label = DateFormat('MMM d, yyyy').format(date);
+      label = DateFormat('MMM d, yyyy').format(local);
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -429,7 +441,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    DateFormat('h:mm a').format(createdAt),
+                    DateFormat('h:mm a').format(createdAt.toLocal()),
                     style: AppTextStyles.caption.copyWith(
                       color: isMe ? AppColors.white.withValues(alpha: 0.65) : AppColors.neutral400,
                       fontSize: 10,
@@ -523,6 +535,55 @@ class _DirectChatScreenState extends State<DirectChatScreen> with TickerProvider
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _callOtherUser() async {
+    final state = context.read<ChatBloc>().state;
+    String? phone;
+    if (state is ChatRoomLoaded) {
+      final authState = context.read<AuthenticationBloc>().state;
+      final myId = authState is AuthenticationLoaded ? authState.user.id : '';
+      final other = state.room.participantA == myId ? state.room.userB : state.room.userA;
+      phone = other['phone']?.toString() ?? other['mobile']?.toString();
+    }
+    phone ??= widget.targetUserPhone;
+    if (phone == null || phone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This shop has no phone number yet')),
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$phone');
+    if (!await launchUrl(uri)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not start a call')),
+      );
+    }
+  }
+
+  void _showChatMenu() {
+    final state = context.read<ChatBloc>().state;
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(LucideIcons.refreshCw),
+              title: const Text('Refresh messages'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                if (state is ChatRoomLoaded) {
+                  context.read<ChatBloc>().add(GetMessagesRequested(state.room.id));
+                }
+              },
             ),
           ],
         ),

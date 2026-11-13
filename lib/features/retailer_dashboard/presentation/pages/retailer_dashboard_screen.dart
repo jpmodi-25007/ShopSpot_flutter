@@ -10,6 +10,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/animated_fade_slide.dart';
 import '../bloc/retailer_dashboard_bloc.dart';
 import '../bloc/retailer_dashboard_event.dart';
 import '../bloc/retailer_dashboard_state.dart';
@@ -95,12 +97,13 @@ class RetailerDashboardScreen extends StatelessWidget {
                       final logoUrl = state is RetailerDashboardLoaded
                           ? state.shop?.logoUrl
                           : null;
-                      return CircleAvatar(
-                        radius: 14,
-                        backgroundImage: logoUrl != null && logoUrl.isNotEmpty
-                            ? NetworkImage(logoUrl) as ImageProvider
-                            : const AssetImage(
-                                'assets/images/web_hero_boutique.jpg'),
+                      return ClipOval(
+                        child: AppNetworkImage(
+                          url: logoUrl,
+                          width: 28,
+                          height: 28,
+                          placeholderIcon: LucideIcons.store,
+                        ),
                       );
                     },
                   ),
@@ -158,13 +161,24 @@ class RetailerDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Good morning,\n${state.shop?.name ?? 'Retailer'} 👋",
-                        style: AppTextStyles.h1.copyWith(
-                            color: AppColors.neutral900, height: 1.2)),
-                    const SizedBox(height: 8),
-                    Text('Here\'s what\'s happening at your shop today.',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.neutral500)),
+                    AnimatedFadeSlide(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Good morning,\n${state.shop?.name ?? 'Retailer'} 👋",
+                            style: AppTextStyles.h1.copyWith(
+                                color: AppColors.neutral900, height: 1.2),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Here\'s what\'s happening at your shop today.',
+                            style: AppTextStyles.body
+                                .copyWith(color: AppColors.neutral500),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 32),
 
                     // Premium Top Stats
@@ -173,21 +187,27 @@ class RetailerDashboardScreen extends StatelessWidget {
                         Expanded(
                           child: isLoading
                               ? const DashboardStatSkeleton()
-                              : _buildPremiumStatCard(
-                                  compactFormat.format(views),
-                                  'Total Views',
-                                  formatTrend(viewsTrend),
-                                  viewsTrend >= 0),
+                              : AnimatedFadeSlide(
+                                  delay: const Duration(milliseconds: 60),
+                                  child: _buildPremiumStatCard(
+                                      compactFormat.format(views),
+                                      'Total Views',
+                                      formatTrend(viewsTrend),
+                                      viewsTrend >= 0),
+                                ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: isLoading
                               ? const DashboardStatSkeleton()
-                              : _buildPremiumStatCard(
-                                  compactFormat.format(inquiries),
-                                  'Active Orders',
-                                  formatTrend(ordersTrend),
-                                  ordersTrend >= 0),
+                              : AnimatedFadeSlide(
+                                  delay: const Duration(milliseconds: 120),
+                                  child: _buildPremiumStatCard(
+                                      compactFormat.format(inquiries),
+                                      'Active Orders',
+                                      formatTrend(ordersTrend),
+                                      ordersTrend >= 0),
+                                ),
                         ),
                       ],
                     ),

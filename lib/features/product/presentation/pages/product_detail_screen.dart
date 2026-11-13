@@ -18,6 +18,8 @@ import '../../../../core/utils/guest_helper.dart';
 import '../../../saved/presentation/bloc/saved_bloc.dart';
 import '../../../saved/presentation/bloc/saved_event.dart';
 import '../../../saved/presentation/bloc/saved_state.dart';
+import '../../../negotiation/domain/entities/negotiation_entity.dart';
+import '../../../negotiation/domain/entities/negotiation_enums.dart';
 import '../../../negotiation/presentation/bloc/negotiation_bloc.dart';
 import '../../../negotiation/presentation/bloc/negotiation_event.dart';
 import '../../../negotiation/presentation/bloc/negotiation_state.dart';
@@ -42,6 +44,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   bool _isDetailsExpanded = true;
   bool _isSaved = false;
   bool _isSavingInProgress = false;
+  bool _openingOffer = false;
 
   // Animation controllers for the heart / save action
   late AnimationController _heartController;
@@ -50,15 +53,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   @override
   void initState() {
     super.initState();
+    final auth = context.read<AuthenticationBloc>().state;
+    final role = auth is AuthenticationLoaded ? auth.user.role.toUpperCase() : '';
+    if (role == 'SHOPKEEPER' || role == 'RETAILER') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/retailer/inventory');
+      });
+      return;
+    }
     context
         .read<ProductBloc>()
         .add(GetProductDetailRequested(widget.productId));
 
-    final savedState = context.read<SavedBloc>().state;
-    if (savedState is SavedInitial) {
-      context.read<SavedBloc>().add(const GetSavedProductsRequested());
-    } else if (savedState is SavedLoaded) {
-      _isSaved = savedState.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
+    if (auth is AuthenticationLoaded) {
+      context.read<NegotiationBloc>().add(const GetMyNegotiationsRequested(limit: 50));
+      final savedState = context.read<SavedBloc>().state;
+      if (savedState is SavedInitial) {
+        context.read<SavedBloc>().add(const GetSavedProductsRequested());
+      } else if (savedState is SavedLoaded) {
+        _isSaved = savedState.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
+      }
     }
 
     _heartController = AnimationController(
@@ -95,16 +109,35 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     } else {
       context.read<SavedBloc>().add(RemoveSavedProductRequested(productId));
     }
+  }
 
-    // Re-enable after a brief debounce
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) setState(() => _isSavingInProgress = false);
-    });
+  NegotiationEntity? _openOffer(String productId) {
+    final state = context.read<NegotiationBloc>().state;
+    if (state is! NegotiationLoaded) return null;
+    bool open(NegotiationEntity offer) =>
+        offer.productId == productId &&
+        (offer.status == NegotiationStatus.PENDING || offer.status == NegotiationStatus.COUNTERED);
+    final active = state.activeNegotiation;
+    final closedIds = <String>{};
+    if (active != null && active.productId == productId) {
+      if (open(active)) return active;
+      closedIds.add(active.id);
+    }
+    for (final offer in state.negotiations ?? const <NegotiationEntity>[]) {
+      if (closedIds.contains(offer.id)) continue;
+      if (open(offer)) return offer;
+    }
+    return null;
   }
 
   void _startNegotiation(
       BuildContext context, String productId, double sellingPrice) {
     if (GuestHelper.checkGuestAndPrompt(context)) return;
+    final existing = _openOffer(productId);
+    if (existing != null) {
+      context.push('/negotiation/${existing.id}');
+      return;
+    }
     _showNegotiationBottomSheet(context, productId, sellingPrice);
   }
 
@@ -221,6 +254,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
 
   void _dispatchStartNegotiation(BuildContext context, String productId,
       double offerPrice, String? message) {
+    _openingOffer = true;
     context.read<NegotiationBloc>().add(
       StartNegotiationRequested(
         productId: productId,
@@ -413,7 +447,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
     final authState = context.read<AuthenticationBloc>().state;
-    final isRetailer = authState is AuthenticationLoaded && authState.user.role.toUpperCase() == 'RETAILER';
+    final isRetailer = authState is AuthenticationLoaded &&
+        (authState.user.role.toUpperCase() == 'SHOPKEEPER' ||
+            authState.user.role.toUpperCase() == 'RETAILER');
+    if (isRetailer) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return MultiBlocListener(
       listeners: [
@@ -421,17 +462,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           listener: (context, state) {
             if (state is SavedLoaded) {
               if (state.failure != null) {
-                // Rollback optimistic update on failure
-                setState(() => _isSaved = !_isSaved);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.failure!.message),
-                    backgroundColor: AppColors.error500,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                );
+                if (_isSavingInProgress) {
+                  setState(() => _isSaved = !_isSaved);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.failure!.message),
+                      backgroundColor: AppColors.error500,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  );
+                }
               } else {
                 // Sync UI with actual state (handles initial fetch or background updates)
                 final actualIsSaved = state.savedProducts?.any((p) => p['id'] == widget.productId) ?? false;
@@ -459,9 +501,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ),
         BlocListener<NegotiationBloc, NegotiationState>(
           listener: (context, state) {
-            if (state is NegotiationLoaded && state.activeNegotiation != null && !state.isSubmitting) {
-              context.go('/negotiation/${state.activeNegotiation!.id}');
+            if (_openingOffer && state is NegotiationLoaded && state.activeNegotiation != null && !state.isSubmitting) {
+              _openingOffer = false;
+              context.push('/negotiation/${state.activeNegotiation!.id}');
             } else if (state is NegotiationError) {
+              _openingOffer = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -680,24 +724,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   ),
                                   child: Row(
                                     children: [
-                                      Container(
-                                        width: 56,
-                                        height: 56,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                              color: AppColors.neutral200),
-                                          image: product.shopLogoUrl != null
-                                              ? DecorationImage(
-                                                  image: NetworkImage(
-                                                      product.shopLogoUrl!),
-                                                  fit: BoxFit.cover)
-                                              : null,
+                                      ClipOval(
+                                        child: AppNetworkImage(
+                                          url: product.shopLogoUrl,
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                          placeholderIcon: LucideIcons.store,
+                                          backgroundColor: AppColors.neutral100,
                                         ),
-                                        child: product.shopLogoUrl == null
-                                            ? const Icon(LucideIcons.store,
-                                                color: AppColors.neutral400)
-                                            : null,
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
@@ -883,17 +918,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             children: [
                               Expanded(
                                 flex: 2,
-                                child: AppButton(
-                                  text: 'Negotiate',
-                                  variant: AppButtonVariant.outline,
-                                  onPressed: product.stockQuantity > 0
-                                      ? () => _startNegotiation(
-                                          context,
-                                          product.id,
-                                          double.tryParse(product.sellingPrice
-                                                  .toString()) ??
-                                              0)
-                                      : null,
+                                child: BlocBuilder<NegotiationBloc, NegotiationState>(
+                                  builder: (context, _) {
+                                    final hasOffer = _openOffer(product.id) != null;
+                                    return AppButton(
+                                      text: hasOffer ? 'View offer' : 'Negotiate',
+                                      variant: AppButtonVariant.outline,
+                                      onPressed: product.stockQuantity > 0
+                                          ? () => _startNegotiation(
+                                              context,
+                                              product.id,
+                                              double.tryParse(product.sellingPrice
+                                                      .toString()) ??
+                                                  0)
+                                          : null,
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 16),

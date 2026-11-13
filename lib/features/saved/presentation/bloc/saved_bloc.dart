@@ -50,8 +50,10 @@ class SavedBloc extends Bloc<SavedEvent, SavedState> {
     result.fold(
       (f) => emit(_current.copyWith(isLoading: false, failure: f)),
       (_) {
-        emit(_current.copyWith(isLoading: false, isSuccess: true));
-        add(const GetSavedProductsRequested());
+        final products = List<dynamic>.from(_current.savedProducts ?? []);
+        products.removeWhere((p) => '${p is Map ? p['id'] : ''}' == event.productId);
+        products.insert(0, {'id': event.productId});
+        emit(_current.copyWith(isLoading: false, isSuccess: true, savedProducts: products));
       },
     );
   }
@@ -62,8 +64,9 @@ class SavedBloc extends Bloc<SavedEvent, SavedState> {
     result.fold(
       (f) => emit(_current.copyWith(isLoading: false, failure: f)),
       (_) {
-        emit(_current.copyWith(isLoading: false, isSuccess: true));
-        add(const GetSavedProductsRequested());
+        final products = List<dynamic>.from(_current.savedProducts ?? [])
+          ..removeWhere((p) => '${p is Map ? p['id'] : ''}' == event.productId);
+        emit(_current.copyWith(isLoading: false, isSuccess: true, savedProducts: products));
       },
     );
   }

@@ -1,6 +1,8 @@
 class ServerException implements Exception {
   final String message;
   const ServerException([this.message = "A server error occurred."]);
+  @override
+  String toString() => message;
 }
 
 class CacheException implements Exception {
@@ -16,9 +18,13 @@ class NetworkException implements Exception {
 class UnauthorizedException implements Exception {
   final String message;
   const UnauthorizedException([this.message = "Unauthorized access."]);
+  @override
+  String toString() => message;
 }
 
 class ValidationException implements Exception {
   final String message;
   const ValidationException([this.message = "Validation failed."]);
+  @override
+  String toString() => message;
 }

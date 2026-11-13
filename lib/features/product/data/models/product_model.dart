@@ -6,6 +6,7 @@ class ProductModel extends ProductEntity {
     required super.name,
     super.description,
     super.categoryId,
+    super.categoryName,
     super.brand,
     super.images = const [],
     super.mrp,
@@ -27,6 +28,7 @@ class ProductModel extends ProductEntity {
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
       categoryId: json['categoryId']?.toString(),
+      categoryName: json['category'] is Map ? json['category']['name']?.toString() : null,
       brand: json['brand']?.toString(),
       images: _parseImages(json),
       mrp: json['mrp'] != null ? double.tryParse(json['mrp'].toString()) : null,
@@ -68,6 +70,7 @@ class ProductModel extends ProductEntity {
       name: name,
       description: description,
       categoryId: categoryId,
+      categoryName: categoryName,
       brand: brand,
       images: images,
       mrp: mrp,
@@ -77,6 +80,9 @@ class ProductModel extends ProductEntity {
       sku: sku,
       barcode: barcode,
       shopId: shopId,
+      shopName: shopName,
+      shopCity: shopCity,
+      shopLogoUrl: shopLogoUrl,
       tags: tags,
     );
   }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
 import '../bloc/influencer_bloc.dart';
@@ -34,7 +35,22 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
     super.dispose();
   }
 
+  DateTime? _parseDate(String text) {
+    final parts = text.split('/');
+    if (parts.length != 3) return null;
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return null;
+    return DateTime(year, month, day);
+  }
+
   void _submitProposal() {
+    final campaignId = widget.campaign?.id;
+    if (campaignId == null || campaignId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open a campaign before submitting a proposal.')));
+      return;
+    }
     if (_feeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a proposed price.')));
       return;
@@ -46,15 +62,26 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
       return;
     }
 
+    final available = _parseDate(_startDateController.text);
+    final delivery = _parseDate(_deliveryDateController.text);
+    if (available == null || delivery == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose a start date and a delivery date.')));
+      return;
+    }
+    if (delivery.isBefore(available)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delivery date must be on or after the start date.')));
+      return;
+    }
+
     final data = {
       'proposedAmount': price,
-      'proposal': _messageController.text,
-      'availableDate': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
-      'deliveryDate': DateTime.now().add(const Duration(days: 8)).toIso8601String(),
+      'proposal': _messageController.text.trim(),
+      'availableDate': available.toUtc().toIso8601String(),
+      'deliveryDate': delivery.toUtc().toIso8601String(),
     };
 
     context.read<InfluencerBloc>().add(
-      SubmitBidRequested(campaignId: widget.campaign?.id ?? 'test_campaign_id', data: data)
+      SubmitBidRequested(campaignId: campaignId, data: data)
     );
   }
 
@@ -90,9 +117,7 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
-                  context.pop(); // Close dialog
-                  context.pop(); // Pop submit bid
-                  context.pop(); // Pop campaign details
+                  context.go('/influencer/home');
                 },
                 child: const Text('Back to Discover', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
@@ -144,27 +169,15 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
                 ),
                 child: Row(
                   children: [
-                    if (widget.campaign?.shopCoverUrl != null || widget.campaign?.productImageUrl != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          widget.campaign!.shopCoverUrl ?? widget.campaign!.productImageUrl!,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/web_hero_boutique.jpg', width: 60, height: 60, fit: BoxFit.cover),
-                        ),
-                      )
-                    else
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          'assets/images/web_hero_boutique.jpg',
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AppNetworkImage(
+                        url: widget.campaign?.shopCoverUrl ?? widget.campaign?.productImageUrl,
+                        width: 60,
+                        height: 60,
+                        placeholderIcon: LucideIcons.store,
                       ),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -187,8 +200,8 @@ class _SubmitBidScreenState extends State<SubmitBidScreen> {
               const SizedBox(height: 16),
               AppTextField(
                 controller: _feeController,
-                label: 'Total Fee (USD)',
-                hintText: 'e.g. 150',
+                label: 'Total Fee (₹)',
+                hintText: 'e.g. 5000',
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 32),

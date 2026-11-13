@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/event_bloc.dart';
 import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
@@ -235,7 +236,13 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                         ? (widget.eventToEdit != null && widget.eventToEdit!.imageUrl != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(24),
-                                child: Image.network(widget.eventToEdit!.imageUrl!, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
+                                child: AppNetworkImage(
+                                  url: widget.eventToEdit!.imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  placeholderIcon: LucideIcons.image,
+                                ),
                               )
                             : Column(
                             mainAxisAlignment: MainAxisAlignment.center,

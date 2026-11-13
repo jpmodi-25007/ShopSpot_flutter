@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/influencer_bloc.dart';
@@ -73,17 +74,14 @@ class CampaignDetailsScreen extends StatelessWidget {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      if (campaign?.shopCoverUrl != null || campaign?.productImageUrl != null)
-                        Image.network(
-                          campaign!.shopCoverUrl ?? campaign!.productImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/web_hero_boutique.jpg', fit: BoxFit.cover),
-                        )
-                      else
-                        Image.asset(
-                          'assets/images/web_hero_boutique.jpg',
-                          fit: BoxFit.cover,
-                        ),
+                      AppNetworkImage(
+                        url: campaign?.shopCoverUrl ?? campaign?.productImageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        placeholderIcon: LucideIcons.store,
+                        backgroundColor: AppColors.neutral200,
+                      ),
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -112,7 +110,7 @@ class CampaignDetailsScreen extends StatelessWidget {
                             children: [
                               const Icon(LucideIcons.star, size: 12, color: AppColors.white),
                               const SizedBox(width: 6),
-                              Text(campaign?.targetCategories.isNotEmpty == true ? campaign!.targetCategories.first : 'Premium Tier', style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
+                              Text(campaign?.targetCategories.isNotEmpty == true ? campaign!.targetCategories.first : (campaign?.shopName ?? 'Open brief'), style: AppTextStyles.caption.copyWith(color: AppColors.white, fontWeight: FontWeight.w800)),
                             ],
                           ),
                         ),
@@ -174,29 +172,17 @@ class CampaignDetailsScreen extends StatelessWidget {
                           ),
                           child: Row(
                             children: [
-                              if (campaign?.shopLogoUrl != null)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    campaign!.shopLogoUrl!,
-                                    width: 56,
-                                    height: 56,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 56,
-                                      height: 56,
-                                      decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
-                                      child: const Icon(LucideIcons.store, color: AppColors.roleInfluencer, size: 24),
-                                    ),
-                                  ),
-                                )
-                              else
-                                Container(
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: AppNetworkImage(
+                                  url: campaign?.shopLogoUrl,
                                   width: 56,
                                   height: 56,
-                                  decoration: BoxDecoration(color: AppColors.roleInfluencerLight.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12)),
-                                  child: const Icon(LucideIcons.store, color: AppColors.roleInfluencer, size: 24),
+                                  fit: BoxFit.cover,
+                                  placeholderIcon: LucideIcons.store,
+                                  backgroundColor: AppColors.roleInfluencerLight,
                                 ),
+                              ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(

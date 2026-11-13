@@ -61,7 +61,26 @@ class ShopRemoteDataSourceImpl implements ShopRemoteDataSource {
     }
 
     final response = await apiClient.get('/nearby/shops', queryParameters: queryParams);
-    final List<dynamic> data = response.data['data'] ?? response.data;
-    return data.map((json) => ShopModel.fromJson(json)).toList();
+    final shops = _shopsFrom(response.data);
+    if (shops.isNotEmpty) return shops;
+
+    // Simulator / out-of-market GPS (for example San Francisco) would otherwise
+    // hide every Indian shop. Fall back to the Mumbai catalog.
+    final fallback = await apiClient.get('/nearby/shops', queryParameters: {
+      'lat': 19.076,
+      'lng': 72.8777,
+      'radiusKm': 50,
+      if (categoryId != null) 'categoryId': categoryId,
+    });
+    return _shopsFrom(fallback.data);
+  }
+
+  List<ShopModel> _shopsFrom(dynamic body) {
+    final raw = body is Map ? (body['data'] ?? body) : body;
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map>()
+        .map((json) => ShopModel.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
   }
 }

@@ -7,11 +7,15 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 import '../../../reservation/presentation/bloc/reservation_bloc.dart';
 import '../../../reservation/presentation/bloc/reservation_event.dart';
 import '../../../reservation/presentation/bloc/reservation_state.dart';
 import '../../../reservation/domain/entities/reservation_entity.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -34,6 +38,11 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.read<AuthenticationBloc>().state;
+    final role = auth is AuthenticationLoaded ? auth.user.role.toUpperCase() : '';
+    if (role == 'SHOPKEEPER' || role == 'RETAILER') {
+      return const _ShopkeeperReservationsView();
+    }
     return BlocProvider(
       create: (context) => getIt<ReservationBloc>()..add(FetchMyReservations()),
       child: BlocListener<ReservationBloc, ReservationState>(
@@ -239,20 +248,12 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
+                AppNetworkImage(
+                  url: imageUrl,
                   width: 80,
                   height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.neutral100,
-                    borderRadius: BorderRadius.circular(12),
-                    image: imageUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                  ),
-                  child: imageUrl == null ? const Icon(LucideIcons.package, color: AppColors.neutral400) : null,
+                  borderRadius: BorderRadius.circular(12),
+                  placeholderIcon: LucideIcons.package,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -503,6 +504,176 @@ class _RescheduleBottomSheetState extends State<_RescheduleBottomSheet> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShopkeeperReservationsView extends StatefulWidget {
+  const _ShopkeeperReservationsView();
+
+  @override
+  State<_ShopkeeperReservationsView> createState() => _ShopkeeperReservationsViewState();
+}
+
+class _ShopkeeperReservationsViewState extends State<_ShopkeeperReservationsView> {
+  int _tabIndex = 0;
+  bool _loading = true;
+  String? _error;
+  List<Map<String, dynamic>> _rows = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await getIt<ApiClient>().get('/shopkeeper/reservations?limit=50');
+      final raw = response.data;
+      final list = raw is Map ? (raw['data'] as List? ?? []) : (raw as List? ?? []);
+      if (!mounted) return;
+      setState(() {
+        _rows = list.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _act(String id, String action) async {
+    try {
+      await getIt<ApiClient>().post('/shopkeeper/reservations/$id/$action');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(action == 'complete' ? 'Reservation completed' : 'Reservation cancelled')),
+      );
+      await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error500),
+      );
+    }
+  }
+
+  bool _isPast(Map<String, dynamic> row) {
+    final status = row['status']?.toString() ?? '';
+    return status == 'COMPLETED' || status == 'CANCELLED' || status == 'EXPIRED';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _rows.where((row) => _tabIndex == 0 ? !_isPast(row) : _isPast(row)).toList();
+    return Scaffold(
+      backgroundColor: AppColors.neutral50,
+      appBar: AppBar(
+        leading: IconButton(icon: const Icon(LucideIcons.arrowLeft), onPressed: () => context.pop()),
+        title: Text('Shop Reservations', style: AppTextStyles.h3),
+        centerTitle: true,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: Text(
+              'Reservations customers made at your shop.',
+              style: AppTextStyles.body.copyWith(color: AppColors.neutral700),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(child: _tab('Active', 0)),
+              Expanded(child: _tab('Past', 1)),
+            ],
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text(_error!, style: AppTextStyles.body.copyWith(color: AppColors.error500)))
+                    : filtered.isEmpty
+                        ? Center(child: Text('No reservations found.', style: AppTextStyles.body.copyWith(color: AppColors.neutral500)))
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final row = filtered[index];
+                                final product = row['product'] is Map ? row['product']['name']?.toString() : 'Product';
+                                final customer = row['customer'] is Map ? row['customer']['name']?.toString() : 'Customer';
+                                final status = row['status']?.toString() ?? '';
+                                final active = status == 'ACTIVE';
+                                return Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: AppColors.neutral300),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(product ?? 'Product', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                                      const SizedBox(height: 4),
+                                      Text('$customer · $status', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                                      if (active) ...[
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: OutlinedButton(
+                                                onPressed: () => _act(row['id'].toString(), 'cancel'),
+                                                child: const Text('Cancel'),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: ElevatedButton(
+                                                onPressed: () => _act(row['id'].toString(), 'complete'),
+                                                child: const Text('Complete'),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tab(String label, int index) {
+    final selected = _tabIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _tabIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: selected ? AppColors.roleRetailer : Colors.transparent, width: 2)),
+        ),
+        child: Center(
+          child: Text(label, style: AppTextStyles.body.copyWith(color: selected ? AppColors.roleRetailer : AppColors.neutral500, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
         ),
       ),
     );

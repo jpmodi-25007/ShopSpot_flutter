@@ -91,6 +91,18 @@ class InfluencerRepositoryImpl implements InfluencerRepository {
   }
 
   @override
+  Future<Either<Failure, void>> respondToCounter(String bidId, {required bool accept}) async {
+    try {
+      await remoteDataSource.respondToCounter(bidId, accept: accept);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> withdrawBid(String bidId) async {
     try {
       await remoteDataSource.withdrawBid(bidId);

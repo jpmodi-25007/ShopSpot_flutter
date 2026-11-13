@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
@@ -64,8 +65,9 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
               int active = 0;
               int short = 0;
               if (state is RetailerCampaignBidsLoaded && state.campaignId == widget.campaignId) {
-                active = state.bids.length;
-                short = state.bids.where((b) => b.isShortlisted).length;
+                final openBids = state.bids.where((b) => b.status != 'WITHDRAWN').toList();
+                active = openBids.length;
+                short = openBids.where((b) => b.isShortlisted).length;
               }
               return Text('$active Active Bids • $short Shortlisted', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500));
             },
@@ -91,11 +93,12 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                   itemBuilder: (context, index) => const BidCardSkeleton(),
                 );
               } else if (state is RetailerCampaignBidsLoaded && state.campaignId == widget.campaignId) {
-                if (state.bids.isEmpty) {
+                final openBids = state.bids.where((b) => b.status != 'WITHDRAWN').toList();
+                if (openBids.isEmpty) {
                   return const Center(child: Text("No bids yet for this campaign."));
                 }
                 return Column(
-                  children: state.bids.map((b) => Column(
+                  children: openBids.map((b) => Column(
                     children: [
                       _buildBidCard(context: context, bid: b),
                       const SizedBox(height: 16),
@@ -133,17 +136,11 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                child: Image.network(
-                  bid.influencerAvatar ?? 'https://ui-avatars.com/api/?name=${bid.influencerName ?? 'Influencer'}&background=random',
+                child: AppNetworkImage(
+                  url: bid.influencerAvatar,
                   width: 48,
                   height: 48,
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, st) => Container(
-                    width: 48,
-                    height: 48,
-                    color: AppColors.neutral200,
-                    child: const Icon(LucideIcons.user, color: AppColors.neutral500),
-                  ),
+                  placeholderIcon: LucideIcons.user,
                 ),
               ),
               const SizedBox(width: 12),
@@ -255,7 +252,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                   child: Text('Profile', style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700, fontWeight: FontWeight.w600)),
                 ),
               ),
-              if (bid.status != 'ACCEPTED') ...[
+              if (bid.status != 'ACCEPTED' && bid.status != 'WITHDRAWN' && bid.status != 'REJECTED') ...[
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
@@ -269,6 +266,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                   ),
                 ),
               ],
+              if (bid.status != 'WITHDRAWN' && bid.status != 'REJECTED') ...[
               const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton(
@@ -284,6 +282,7 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
                   child: Text(bid.status == 'ACCEPTED' ? 'Approved' : 'Approve', style: AppTextStyles.bodySmall.copyWith(color: AppColors.white, fontWeight: FontWeight.w600)),
                 ),
               ),
+              ],
             ],
           ),
         ],

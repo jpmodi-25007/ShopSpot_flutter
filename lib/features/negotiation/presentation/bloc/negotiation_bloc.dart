@@ -111,7 +111,8 @@ class NegotiationBloc extends Bloc<NegotiationEvent, NegotiationState> {
     if (currentState is NegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
 
     try {
-      final negotiation = await counterOffer(event.id, event.counterPrice);
+      await counterOffer(event.id, event.counterPrice);
+      final negotiation = await getNegotiationDetail(event.id);
       if (currentState is NegotiationLoaded) {
         emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
       } else {
@@ -127,7 +128,8 @@ class NegotiationBloc extends Bloc<NegotiationEvent, NegotiationState> {
     if (currentState is NegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
 
     try {
-      final negotiation = await acceptDeal(event.id);
+      await acceptDeal(event.id);
+      final negotiation = await getNegotiationDetail(event.id);
       if (currentState is NegotiationLoaded) {
         emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
       } else {
@@ -143,7 +145,8 @@ class NegotiationBloc extends Bloc<NegotiationEvent, NegotiationState> {
     if (currentState is NegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
 
     try {
-      final negotiation = await rejectDeal(event.id);
+      await rejectDeal(event.id);
+      final negotiation = await getNegotiationDetail(event.id);
       if (currentState is NegotiationLoaded) {
         emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
       } else {

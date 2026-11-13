@@ -10,6 +10,7 @@ import '../bloc/event_event.dart';
 import '../bloc/event_state.dart';
 import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
@@ -41,15 +42,18 @@ class _EventsListScreenState extends State<EventsListScreen> {
       ),
       body: BlocBuilder<EventBloc, EventState>(
         builder: (context, state) {
-          if (state is EventLoading) {
+          final events = state is EventsLoaded
+              ? state.events
+              : context.read<EventBloc>().catalog;
+          if (state is EventLoading && events.isEmpty) {
             return ListView.separated(
               padding: const EdgeInsets.all(24),
               itemCount: 4,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) => const EventCardSkeleton(),
             );
-          } else if (state is EventsLoaded) {
-            if (state.events.isEmpty) {
+          } else if (events.isNotEmpty || state is EventsLoaded) {
+            if (events.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -66,10 +70,10 @@ class _EventsListScreenState extends State<EventsListScreen> {
             }
             return ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: state.events.length,
+              itemCount: events.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final event = state.events[index];
+                final event = events[index];
                 final dateFormat = DateFormat('MMM d, yyyy');
                 return AnimatedFadeSlide(
                   delay: Duration(milliseconds: 50 * index),
@@ -87,20 +91,14 @@ class _EventsListScreenState extends State<EventsListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
-                          Image.network(
-                            event.imageUrl!,
-                            height: 160,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          )
-                        else
-                          Container(
-                            height: 160,
-                            width: double.infinity,
-                            color: AppColors.neutral200,
-                            child: const Icon(LucideIcons.image, size: 48, color: AppColors.neutral400),
-                          ),
+                        AppNetworkImage(
+                          url: event.imageUrl,
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholderIcon: LucideIcons.image,
+                          backgroundColor: AppColors.neutral200,
+                        ),
                         Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(

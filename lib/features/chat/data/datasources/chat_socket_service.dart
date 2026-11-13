@@ -22,8 +22,9 @@ class ChatSocketService {
   bool get isConnected => _isConnected;
 
   Future<void> connect(String roomId) async {
-    if (_isConnected) {
+    if (_socket != null) {
       _joinRoom(roomId);
+      if (!_isConnected) _socket!.connect();
       return;
     }
 
@@ -33,10 +34,11 @@ class ChatSocketService {
       ApiConstants.socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
+          .setAuth({'token': token ?? ''})
           .setQuery({'token': token ?? ''})
           .enableAutoConnect()
           .enableReconnection()
-          .setReconnectionAttempts(5)
+          .setReconnectionAttempts(8)
           .setReconnectionDelay(2000)
           .build(),
     );

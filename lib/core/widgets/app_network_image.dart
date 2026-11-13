@@ -45,25 +45,38 @@ class AppNetworkImage extends StatelessWidget {
   });
 
   bool get _isValidUrl {
-    if (url == null || url!.trim().isEmpty) return false;
-    return true; // CloudinaryUrlBuilder will handle formatting the URL properly
+    final value = url?.trim() ?? '';
+    if (value.isEmpty) return false;
+    if (value.toLowerCase().contains('placehold.co')) return false;
+    if (value.toLowerCase().contains('images.unsplash.com/photo-1441986300917')) {
+      // Generic stock fallback used when logos were missing — treat as empty.
+      return false;
+    }
+    return CloudinaryUrlBuilder.isHttpUrl(value) || !value.contains(' ');
   }
 
   Widget _buildPlaceholder() {
     if (placeholder != null) return placeholder!;
-    
+
     return Container(
       width: width,
       height: height,
       color: backgroundColor ?? AppColors.neutral100,
       child: Center(
-        child: Image.asset(
-          'assets/images/placeholder_image.png',
-          width: width != null ? width! * 0.5 : 48,
-          height: height != null ? height! * 0.5 : 48,
-          fit: BoxFit.contain,
-          color: AppColors.neutral300,
-        ),
+        child: placeholderIcon != null
+            ? Icon(placeholderIcon, color: AppColors.neutral400, size: 28)
+            : Image.asset(
+                'assets/images/placeholder_image.png',
+                width: width != null ? width! * 0.5 : 48,
+                height: height != null ? height! * 0.5 : 48,
+                fit: BoxFit.contain,
+                color: AppColors.neutral300,
+                errorBuilder: (_, __, ___) => const Icon(
+                  LucideIcons.image,
+                  color: AppColors.neutral400,
+                  size: 28,
+                ),
+              ),
       ),
     );
   }

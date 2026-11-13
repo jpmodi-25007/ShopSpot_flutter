@@ -4,12 +4,15 @@ import 'event_event.dart';
 import 'event_state.dart';
 import '../../data/datasources/event_remote_data_source.dart';
 import '../../data/models/event_model.dart';
+import '../../domain/entities/event_entity.dart';
 
 class EventBloc extends Bloc<EventEvent, EventState> {
   final EventRemoteDataSource remoteDataSource;
+  List<EventEntity> catalog = const [];
 
   EventBloc({required this.remoteDataSource}) : super(EventInitial()) {
     on<GetEventsRequested>(_onGetEventsRequested);
+    on<RestoreEventsCatalog>(_onRestoreEventsCatalog);
     on<GetShopEventsRequested>(_onGetShopEventsRequested);
     on<GetEventDetailRequested>(_onGetEventDetailRequested);
     on<CreateEventRequested>(_onCreateEventRequested);
@@ -24,10 +27,18 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(EventLoading());
     try {
       final events = await remoteDataSource.getEvents();
+      catalog = events;
       emit(EventsLoaded(events));
     } catch (e) {
       emit(EventError(ServerFailure(e.toString())));
     }
+  }
+
+  Future<void> _onRestoreEventsCatalog(
+    RestoreEventsCatalog event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventsLoaded(catalog));
   }
 
   Future<void> _onGetShopEventsRequested(

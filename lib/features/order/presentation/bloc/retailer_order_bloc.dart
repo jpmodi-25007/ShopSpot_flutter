@@ -92,7 +92,8 @@ class RetailerOrderBloc extends Bloc<RetailerOrderEvent, RetailerOrderState> {
     emit(RetailerOrderUpdating(orders: currentOrders, orderId: event.orderId));
     try {
       await _dataSource.updateOrderStatus(event.orderId, event.status);
-      emit(RetailerOrderUpdated(currentOrders));
+      final orders = await _dataSource.getShopOrders();
+      emit(RetailerOrdersLoaded(orders));
     } catch (e) {
       final msg = e is DioException
           ? (e.response?.data?['message'] ?? e.message ?? 'Failed to update order')

@@ -23,36 +23,36 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     on<GetNearbyShopsRequested>(_onGetNearbyShopsRequested);
   }
 
+  ShopStateLoaded _loaded() =>
+      state is ShopStateLoaded ? state as ShopStateLoaded : const ShopStateLoaded();
+
   Future<void> _onGetPublicShopRequested(GetPublicShopRequested event, Emitter<ShopState> emit) async {
-    final currentState = state is ShopStateLoaded ? state as ShopStateLoaded : const ShopStateLoaded();
-    emit(currentState.copyWith(isLoading: true, failure: null));
-    
+    emit(_loaded().copyWith(isLoading: true, failure: null));
+
     final result = await _getPublicShopUseCase.execute(event.id);
     result.fold(
-      (failure) => emit(currentState.copyWith(isLoading: false, failure: failure)),
-      (shop) => emit(currentState.copyWith(isLoading: false, shop: shop)),
+      (failure) => emit(_loaded().copyWith(isLoading: false, failure: failure)),
+      (shop) => emit(_loaded().copyWith(isLoading: false, shop: shop, failure: null)),
     );
   }
 
   Future<void> _onGetShopProductsRequested(GetShopProductsRequested event, Emitter<ShopState> emit) async {
-    final currentState = state is ShopStateLoaded ? state as ShopStateLoaded : const ShopStateLoaded();
-    emit(currentState.copyWith(isLoading: true, failure: null));
-    
+    emit(_loaded().copyWith(isLoading: true, failure: null));
+
     final result = await _getShopProductsUseCase.execute(
       id: event.id,
       page: event.page,
       limit: event.limit,
     );
     result.fold(
-      (failure) => emit(currentState.copyWith(isLoading: false, failure: failure)),
-      (products) => emit(currentState.copyWith(isLoading: false, products: products)),
+      (failure) => emit(_loaded().copyWith(isLoading: false, failure: failure)),
+      (products) => emit(_loaded().copyWith(isLoading: false, products: products, failure: null)),
     );
   }
 
   Future<void> _onGetNearbyShopsRequested(GetNearbyShopsRequested event, Emitter<ShopState> emit) async {
-    final currentState = state is ShopStateLoaded ? state as ShopStateLoaded : const ShopStateLoaded();
-    emit(currentState.copyWith(isLoading: true, failure: null));
-    
+    emit(_loaded().copyWith(isLoading: true, failure: null));
+
     final result = await _getNearbyShopsUseCase.execute(
       lat: event.lat,
       lng: event.lng,
@@ -60,8 +60,8 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       categoryId: event.categoryId,
     );
     result.fold(
-      (failure) => emit(currentState.copyWith(isLoading: false, failure: failure)),
-      (shops) => emit(currentState.copyWith(isLoading: false, nearbyShops: shops)),
+      (failure) => emit(_loaded().copyWith(isLoading: false, failure: failure)),
+      (shops) => emit(_loaded().copyWith(isLoading: false, nearbyShops: shops, failure: null)),
     );
   }
 }

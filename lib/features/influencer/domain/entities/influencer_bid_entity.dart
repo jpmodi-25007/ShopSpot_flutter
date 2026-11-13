@@ -37,6 +37,8 @@ class InfluencerBidEntity extends Equatable {
   // Assignment (created when bid accepted)
   final String? assignmentId;
   final String? submittedContentUrl;
+  final double? counterAmount;
+  final String? counterMessage;
 
   const InfluencerBidEntity({
     required this.id,
@@ -67,6 +69,8 @@ class InfluencerBidEntity extends Equatable {
     this.shopAddress,
     this.assignmentId,
     this.submittedContentUrl,
+    this.counterAmount,
+    this.counterMessage,
   });
 
   @override
@@ -77,6 +81,6 @@ class InfluencerBidEntity extends Equatable {
         influencerFollowers, influencerEngagement, influencerNiche,
         campaignTitle, campaignStatus, productName, productImageUrl,
         shopName, shopEmail, shopPhone, shopLogoUrl, shopAddress,
-        assignmentId, submittedContentUrl,
+        assignmentId, submittedContentUrl, counterAmount, counterMessage,
       ];
 }

@@ -1,11 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/network/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/legal_document_bottom_sheet.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
 
 class AboutFindivoScreen extends StatelessWidget {
   const AboutFindivoScreen({super.key});
+
+  String _legalRole(BuildContext context) {
+    final auth = context.read<AuthenticationBloc>().state;
+    if (auth is AuthenticationLoaded) {
+      return auth.user.role.toLowerCase();
+    }
+    return 'customer';
+  }
+
+  Future<void> _rateApp(BuildContext context) async {
+    final uri = Uri.parse(ApiConstants.appStoreUrl);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the App Store')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,11 +82,15 @@ class AboutFindivoScreen extends StatelessWidget {
                     style: AppTextStyles.body.copyWith(color: AppColors.neutral600, height: 1.6),
                   ),
                   const SizedBox(height: 32),
-                  _buildLinkRow(LucideIcons.fileText, 'Terms of Service', () {}),
+                  _buildLinkRow(LucideIcons.fileText, 'Terms of Service', () {
+                    LegalDocumentBottomSheet.show(context, role: _legalRole(context), documentType: 'terms');
+                  }),
                   const Divider(height: 1),
-                  _buildLinkRow(LucideIcons.shield, 'Privacy Policy', () {}),
+                  _buildLinkRow(LucideIcons.shield, 'Privacy Policy', () {
+                    LegalDocumentBottomSheet.show(context, role: _legalRole(context), documentType: 'privacy');
+                  }),
                   const Divider(height: 1),
-                  _buildLinkRow(LucideIcons.star, 'Rate us on App Store', () {}),
+                  _buildLinkRow(LucideIcons.star, 'Rate us on App Store', () => _rateApp(context)),
                   const SizedBox(height: 40),
                   Center(
                     child: Text(

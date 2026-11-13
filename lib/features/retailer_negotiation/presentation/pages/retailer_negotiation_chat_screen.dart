@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/retailer_negotiation_bloc.dart';
 import '../bloc/retailer_negotiation_event.dart';
 import '../bloc/retailer_negotiation_state.dart';
@@ -18,18 +19,58 @@ class RetailerNegotiationChatScreen extends StatefulWidget {
 }
 
 class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-    context.read<RetailerNegotiationBloc>().add(const GetShopNegotiationsRequested());
+    context.read<RetailerNegotiationBloc>().add(const GetShopNegotiationsRequested(limit: 50));
   }
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
+  String _statusLabel(NegotiationStatus status) {
+    switch (status) {
+      case NegotiationStatus.PENDING:
+        return 'Customer is waiting';
+      case NegotiationStatus.COUNTERED:
+        return 'Waiting for the customer';
+      case NegotiationStatus.ACCEPTED:
+        return 'Agreed';
+      case NegotiationStatus.REJECTED:
+        return 'Closed';
+      case NegotiationStatus.EXPIRED:
+        return 'Expired';
+    }
+  }
+
+  void _sendCounter(String id, double current) {
+    final controller = TextEditingController(text: current.toStringAsFixed(0));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Your price'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Price in ₹',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final price = double.tryParse(controller.text.trim());
+              if (price == null || price <= 0) return;
+              context.read<RetailerNegotiationBloc>().add(
+                    ShopkeeperCounterRequested(id: id, counterPrice: price),
+                  );
+              Navigator.pop(ctx);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -40,10 +81,17 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => context.pop(),
         ),
-        title: Text('Customer Chat', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+        title: Text('Customer offer', style: AppTextStyles.h3),
         centerTitle: true,
       ),
-      body: BlocBuilder<RetailerNegotiationBloc, RetailerNegotiationState>(
+      body: BlocConsumer<RetailerNegotiationBloc, RetailerNegotiationState>(
+        listener: (context, state) {
+          if (state is RetailerNegotiationError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: AppColors.error500),
+            );
+          }
+        },
         builder: (context, state) {
           if (state is RetailerNegotiationLoaded) {
             final negotiation = state.negotiations != null
@@ -65,9 +113,9 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
                     children: [
                       Row(
                         children: [
-                          Text('Customer', style: AppTextStyles.h4),
+                          Text(negotiation.customerName ?? 'Customer', style: AppTextStyles.h4),
                           const Spacer(),
-                          Text(negotiation.status.name, style: AppTextStyles.caption.copyWith(color: AppColors.primary500)),
+                          Text(_statusLabel(negotiation.status), style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w700)),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -81,11 +129,13 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
-                              child: Image.network(
-                                negotiation.product?.images.isNotEmpty == true ? negotiation.product!.images.first : 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=100&auto=format&fit=crop',
+                              child: AppNetworkImage(
+                                url: negotiation.product?.images.isNotEmpty == true
+                                    ? negotiation.product!.images.first
+                                    : null,
                                 width: 40,
                                 height: 40,
-                                fit: BoxFit.cover,
+                                placeholderIcon: LucideIcons.package,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -94,13 +144,11 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(negotiation.product?.name ?? 'Product', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                                  Row(
-                                    children: [
-                                      Text('₹${negotiation.initialPrice.toStringAsFixed(0)}', style: AppTextStyles.caption.copyWith(decoration: TextDecoration.lineThrough, color: AppColors.neutral500)),
-                                      const Spacer(),
-                                      Text('Offered: ₹${negotiation.offeredPrice.toStringAsFixed(0)}', style: AppTextStyles.body.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
-                                    ],
-                                  )
+                                  const SizedBox(height: 4),
+                                  Text('Listed ₹${negotiation.initialPrice.toStringAsFixed(0)}', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                                  Text('Customer offer ₹${negotiation.offeredPrice.toStringAsFixed(0)}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
+                                  if (negotiation.counterPrice != null)
+                                    Text('Your price ₹${negotiation.counterPrice!.toStringAsFixed(0)}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w700)),
                                 ],
                               ),
                             )
@@ -170,10 +218,9 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                             ),
-                            onPressed: () {
-                              context.read<RetailerNegotiationBloc>().add(ShopkeeperAcceptRequested(negotiation.id));
-                              context.pop();
-                            },
+                            onPressed: state.isSubmitting
+                                ? null
+                                : () => context.read<RetailerNegotiationBloc>().add(ShopkeeperAcceptRequested(negotiation.id)),
                             child: const Text('Accept Deal', style: TextStyle(fontWeight: FontWeight.w600)),
                           ),
                         ),
@@ -186,14 +233,12 @@ class _RetailerNegotiationChatScreenState extends State<RetailerNegotiationChatS
                               side: const BorderSide(color: AppColors.neutral300),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                             ),
-                            onPressed: () {
-                               // Counter offer logic
-                               context.read<RetailerNegotiationBloc>().add(ShopkeeperCounterRequested(
-                                 id: negotiation.id, 
-                                 counterPrice: (negotiation.counterPrice ?? negotiation.offeredPrice) + 50
-                               ));
-                               context.pop();
-                            },
+                            onPressed: state.isSubmitting
+                                ? null
+                                : () => _sendCounter(
+                                      negotiation.id,
+                                      negotiation.counterPrice ?? negotiation.offeredPrice,
+                                    ),
                             child: const Text('Counter Offer', style: TextStyle(fontWeight: FontWeight.w600)),
                           ),
                         ),

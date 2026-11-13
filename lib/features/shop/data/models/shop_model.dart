@@ -74,8 +74,8 @@ class ShopModel {
       logoUrl: json['logoUrl']?.toString(),
       coverImageUrl: json['coverImageUrl']?.toString(),
       address: json['address']?.toString() ?? '',
-      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : 0.0,
-      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : 0.0,
+      latitude: _asDouble(json['latitude']),
+      longitude: _asDouble(json['longitude']),
       city: json['city']?.toString(),
       state: json['state']?.toString(),
       pincode: json['pincode']?.toString(),
@@ -87,7 +87,7 @@ class ShopModel {
       isKycVerified: json['isKycVerified'] ?? false,
       businessHours: json['businessHours'] as Map<String, dynamic>?,
       rating: double.tryParse(json['rating']?.toString() ?? '0') ?? 0.0,
-      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+      reviewCount: _asInt(json['reviewCount']),
       subscriptionTier: json['subscriptionTier']?.toString() ?? 'FREE',
       subscriptionExpiresAt: json['subscriptionExpiresAt'] != null
           ? DateTime.tryParse(json['subscriptionExpiresAt'].toString())
@@ -137,4 +137,14 @@ class ShopModel {
       updatedAt: updatedAt,
     );
   }
+}
+
+double _asDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int _asInt(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }

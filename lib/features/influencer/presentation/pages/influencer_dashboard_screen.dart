@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
 import '../bloc/influencer_state.dart';
@@ -115,11 +116,13 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                   final avatarUrl = state is InfluencerLoaded
                       ? state.profile?.profileImage
                       : null;
-                  return CircleAvatar(
-                    backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                        ? NetworkImage(avatarUrl) as ImageProvider
-                        : const AssetImage(
-                            'assets/images/web_hero_boutique.jpg'),
+                  return ClipOval(
+                    child: AppNetworkImage(
+                      url: avatarUrl,
+                      width: 36,
+                      height: 36,
+                      placeholderIcon: LucideIcons.user,
+                    ),
                   );
                 },
               ),
@@ -174,18 +177,16 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                       final isAnalyticsLoading = state is InfluencerLoaded &&
                           state.isLoading &&
                           analytics == null;
-                      final totalEarnings =
-                          (analytics?['totalEarnings'] as num?)?.toDouble() ??
-                              0.0;
+                      double money(dynamic value) {
+                        if (value is num) return value.toDouble();
+                        return double.tryParse(value?.toString() ?? '') ?? 0;
+                      }
+                      final totalEarnings = money(analytics?['totalEarnings']);
                       final payouts =
                           analytics?['payouts'] as List<dynamic>? ?? [];
                       final pendingClearance = payouts
                           .where((p) => p['status'] == 'Pending')
-                          .fold<double>(
-                              0,
-                              (sum, p) =>
-                                  sum +
-                                  ((p['amount'] as num?)?.toDouble() ?? 0));
+                          .fold<double>(0, (sum, p) => sum + money(p['amount']));
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,10 +343,8 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                         ],
                       );
                     }
-                    // Show all bids that are not in a final state (ACCEPTED/REJECTED/COMPLETED)
-                    final activeBids = bids
-                        .where((b) => b.status != 'ACCEPTED' && b.status != 'REJECTED' && b.status != 'COMPLETED')
-                        .toList();
+                    const openStatuses = {'SUBMITTED', 'VIEWED', 'SHORTLISTED', 'COUNTERED'};
+                    final activeBids = bids.where((b) => openStatuses.contains(b.status)).toList();
                     if (activeBids.isEmpty) {
                       return Center(
                         child: Padding(
@@ -386,7 +385,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                               bid: bid,
                               statusColor: statusColor,
                               onTap: () => context.push('/influencer/bid-detail', extra: bid),
-                              onWithdraw: () {
+                              onWithdraw: const {'SUBMITTED', 'VIEWED', 'SHORTLISTED', 'COUNTERED'}.contains(bid.status) ? () {
                                 showDialog(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
@@ -413,7 +412,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                                     ],
                                   ),
                                 );
-                              },
+                              } : null,
                             ),
                           ),
                         );
@@ -608,7 +607,7 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                 const SizedBox(width: 8),
                 _InfoChip(label: 'Due ${bid.deliveryDate.day}/${bid.deliveryDate.month}', icon: LucideIcons.calendar, color: AppColors.neutral600),
                 const Spacer(),
-                if (bid.status != 'ACCEPTED' && bid.status != 'REJECTED')
+                if (const {'SUBMITTED', 'VIEWED', 'SHORTLISTED', 'COUNTERED'}.contains(bid.status))
                   TextButton(
                     onPressed: onWithdraw,
                     style: TextButton.styleFrom(
@@ -714,31 +713,18 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
               children: [
                 Row(
                   children: [
-                    if (bid.shopLogoUrl != null)
-                      Container(
-                        width: 36,
-                        height: 36,
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.neutral200),
-                          image: DecorationImage(
-                            image: NetworkImage(bid.shopLogoUrl!),
-                            fit: BoxFit.cover,
-                            onError: (e, s) {},
-                          ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: ClipOval(
+                        child: AppNetworkImage(
+                          url: bid.shopLogoUrl,
+                          width: 36,
+                          height: 36,
+                          placeholderIcon: LucideIcons.store,
+                          backgroundColor: AppColors.roleInfluencerLight,
                         ),
-                      )
-                    else
-                      Container(
-                        width: 36, height: 36,
-                        margin: const EdgeInsets.only(right: 10),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.roleInfluencerLight,
-                        ),
-                        child: const Icon(LucideIcons.store, size: 16, color: AppColors.roleInfluencer),
                       ),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

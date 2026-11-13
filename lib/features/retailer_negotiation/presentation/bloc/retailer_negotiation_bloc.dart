@@ -41,51 +41,35 @@ class RetailerNegotiationBloc extends Bloc<RetailerNegotiationEvent, RetailerNeg
     }
   }
 
-  Future<void> _onShopkeeperCounter(ShopkeeperCounterRequested event, Emitter<RetailerNegotiationState> emit) async {
-    final currentState = state;
-    if (currentState is RetailerNegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
-
-    try {
-      final negotiation = await shopkeeperCounter(event.id, event.counterPrice, message: event.message);
-      if (currentState is RetailerNegotiationLoaded) {
-        emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
-      } else {
-        emit(RetailerNegotiationLoaded(activeNegotiation: negotiation));
-      }
-    } catch (e) {
-      emit(RetailerNegotiationError(e.toString()));
+  Future<void> _refreshAfterAction(
+    RetailerNegotiationState currentState,
+    Emitter<RetailerNegotiationState> emit,
+    Future<void> Function() action,
+  ) async {
+    if (currentState is RetailerNegotiationLoaded) {
+      emit(currentState.copyWith(isSubmitting: true));
     }
+    try {
+      await action();
+      final negotiations = await getShopNegotiations(page: 1, limit: 50);
+      emit(RetailerNegotiationLoaded(negotiations: negotiations));
+    } catch (e) {
+      emit(RetailerNegotiationError(e.toString().replaceFirst('Exception: ', '')));
+      if (currentState is RetailerNegotiationLoaded) {
+        emit(currentState.copyWith(isSubmitting: false));
+      }
+    }
+  }
+
+  Future<void> _onShopkeeperCounter(ShopkeeperCounterRequested event, Emitter<RetailerNegotiationState> emit) async {
+    await _refreshAfterAction(state, emit, () => shopkeeperCounter(event.id, event.counterPrice, message: event.message));
   }
 
   Future<void> _onShopkeeperAccept(ShopkeeperAcceptRequested event, Emitter<RetailerNegotiationState> emit) async {
-    final currentState = state;
-    if (currentState is RetailerNegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
-
-    try {
-      final negotiation = await shopkeeperAccept(event.id);
-      if (currentState is RetailerNegotiationLoaded) {
-        emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
-      } else {
-        emit(RetailerNegotiationLoaded(activeNegotiation: negotiation));
-      }
-    } catch (e) {
-      emit(RetailerNegotiationError(e.toString()));
-    }
+    await _refreshAfterAction(state, emit, () => shopkeeperAccept(event.id));
   }
 
   Future<void> _onShopkeeperReject(ShopkeeperRejectRequested event, Emitter<RetailerNegotiationState> emit) async {
-    final currentState = state;
-    if (currentState is RetailerNegotiationLoaded) emit(currentState.copyWith(isSubmitting: true));
-
-    try {
-      final negotiation = await shopkeeperReject(event.id);
-      if (currentState is RetailerNegotiationLoaded) {
-        emit(currentState.copyWith(activeNegotiation: negotiation, isSubmitting: false));
-      } else {
-        emit(RetailerNegotiationLoaded(activeNegotiation: negotiation));
-      }
-    } catch (e) {
-      emit(RetailerNegotiationError(e.toString()));
-    }
+    await _refreshAfterAction(state, emit, () => shopkeeperReject(event.id));
   }
 }

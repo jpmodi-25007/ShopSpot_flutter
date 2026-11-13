@@ -165,6 +165,8 @@ class InfluencerBidModel {
   // Assignment
   final String? assignmentId;
   final String? submittedContentUrl;
+  final double? counterAmount;
+  final String? counterMessage;
 
   InfluencerBidModel({
     required this.id,
@@ -195,12 +197,23 @@ class InfluencerBidModel {
     this.shopAddress,
     this.assignmentId,
     this.submittedContentUrl,
+    this.counterAmount,
+    this.counterMessage,
   });
 
   factory InfluencerBidModel.fromJson(Map<String, dynamic> json) {
     final campaign = json['campaign'] as Map<String, dynamic>?;
     final shop = campaign?['shop'] as Map<String, dynamic>?;
     final product = campaign?['product'] as Map<String, dynamic>?;
+
+    final counters = json['counterOffers'];
+    double? counterAmount;
+    String? counterMessage;
+    if (counters is List && counters.isNotEmpty && counters.first is Map) {
+      final offer = counters.first as Map;
+      counterAmount = double.tryParse(offer['amount']?.toString() ?? '');
+      counterMessage = offer['message']?.toString();
+    }
 
     String? productImage;
     if (product != null) {
@@ -249,6 +262,8 @@ class InfluencerBidModel {
       // Assignment (passed separately when loading assignments)
       assignmentId: json['assignmentId'],
       submittedContentUrl: json['submittedContentUrl'],
+      counterAmount: counterAmount,
+      counterMessage: counterMessage,
     );
   }
 
@@ -281,6 +296,8 @@ class InfluencerBidModel {
         shopAddress: shopAddress,
         assignmentId: assignmentId,
         submittedContentUrl: submittedContentUrl,
+        counterAmount: counterAmount,
+        counterMessage: counterMessage,
       );
 }
 

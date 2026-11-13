@@ -21,10 +21,13 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
   Future<List<EventEntity>> getEvents() async {
     try {
       final response = await dio.get('${ApiConstants.baseUrl}/events/all');
-      if (response.data['status'] == 'success') {
-        final List<dynamic> data = response.data['data'];
-        return data
-            .map((json) => EventModel.fromJson(json).toEntity())
+      final body = response.data;
+      final raw = body is Map ? body['data'] : body;
+      if (raw is List) {
+        return raw
+            .whereType<Map>()
+            .map((json) => EventModel.fromJson(Map<String, dynamic>.from(json)).toEntity())
+            .where((event) => event.isActive)
             .toList();
       }
       throw Exception('Failed to load events');

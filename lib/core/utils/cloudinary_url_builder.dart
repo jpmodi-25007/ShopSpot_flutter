@@ -1,8 +1,11 @@
-class CloudinaryUrlBuilder {
-  static const String _baseUrl = 'https://res.cloudinary.com/';
+import '../network/api_constants.dart';
 
-  /// Generates an optimized Cloudinary delivery URL
-  /// By default uses automatic format and automatic quality.
+class CloudinaryUrlBuilder {
+  static const String _cloudinaryHost = 'res.cloudinary.com';
+
+  /// Generates an optimized delivery URL when the source is Cloudinary.
+  /// Absolute non-Cloudinary URLs (S3, CDN, backend uploads) are left intact.
+  /// Relative paths are resolved against the API origin.
   static String buildUrl({
     required String secureUrl,
     int? width,
@@ -11,56 +14,47 @@ class CloudinaryUrlBuilder {
     bool qAuto = true,
     bool fAuto = true,
   }) {
-    if (secureUrl.isEmpty) {
-      return secureUrl;
+    var url = secureUrl.trim();
+    if (url.isEmpty) return url;
+
+    if (url.startsWith('http://')) {
+      url = url.replaceFirst('http://', 'https://');
     }
 
-    if (secureUrl.startsWith('http://')) {
-      secureUrl = secureUrl.replaceFirst('http://', 'https://');
-    }
-
-    if (!secureUrl.startsWith('http')) {
-      // It's likely a raw Cloudinary public ID or relative path
-      if (!secureUrl.startsWith('/')) {
-        secureUrl = '${_baseUrl}image/upload/$secureUrl';
-      } else {
-        secureUrl = '${_baseUrl}image/upload$secureUrl';
+    // Relative backend paths: /uploads/... or uploads/...
+    if (!url.startsWith('http')) {
+      if (url.startsWith('/')) {
+        final origin = Uri.parse(ApiConstants.baseUrl).origin;
+        url = '$origin$url';
+      } else if (url.contains('://') == false && !url.contains('/upload/')) {
+        // Treat bare Cloudinary public IDs as Cloudinary assets.
+        url = 'https://$_cloudinaryHost/image/upload/$url';
+      } else if (url.startsWith('image/upload/') || url.startsWith('upload/')) {
+        url = 'https://$_cloudinaryHost/${url.startsWith('image/') ? url : 'image/$url'}';
       }
     }
 
-    if (!secureUrl.contains('/upload/')) {
-      // If it's an absolute URL but missing upload pattern, try to append
-      return secureUrl;
+    final uri = Uri.tryParse(url);
+    final isCloudinary =
+        uri != null && uri.host.contains(_cloudinaryHost) && url.contains('/upload/');
+
+    if (!isCloudinary) {
+      return url;
     }
 
     final List<String> transformations = [];
+    if (width != null) transformations.add('w_$width');
+    if (height != null) transformations.add('h_$height');
+    if (cropMode != null) transformations.add('c_$cropMode');
+    if (qAuto) transformations.add('q_auto');
+    if (fAuto) transformations.add('f_auto');
+    if (transformations.isEmpty) return url;
 
-    if (width != null) {
-      transformations.add('w_$width');
-    }
-    
-    if (height != null) {
-      transformations.add('h_$height');
-    }
-
-    if (cropMode != null) {
-      transformations.add('c_$cropMode');
-    }
-
-    if (qAuto) {
-      transformations.add('q_auto');
-    }
-
-    if (fAuto) {
-      transformations.add('f_auto');
-    }
-
-    if (transformations.isEmpty) {
-      return secureUrl;
-    }
-
-    final String transformationStr = transformations.join(',');
-    return secureUrl.replaceFirst('/upload/', '/upload/$transformationStr/');
+    final transformationStr = transformations.join(',');
+    // Avoid stacking transforms if one is already present after /upload/.
+    final alreadyTransformed = RegExp(r'/upload/(?:[^/]+,)?(?:w_|h_|c_|q_|f_)').hasMatch(url);
+    if (alreadyTransformed) return url;
+    return url.replaceFirst('/upload/', '/upload/$transformationStr/');
   }
 
   /// Specifically for product listing thumbnails
@@ -75,6 +69,19 @@ class CloudinaryUrlBuilder {
 
   /// Profile image/avatar
   static String avatar(String secureUrl) {
-    return buildUrl(secureUrl: secureUrl, width: 250, height: 250, cropMode: 'fill');
+    return buildUrl(
+      secureUrl: secureUrl,
+      width: 250,
+      height: 250,
+      cropMode: 'fill',
+    );
+  }
+
+  static bool isHttpUrl(String? value) {
+    if (value == null) return false;
+    final v = value.trim();
+    if (v.isEmpty) return false;
+    final uri = Uri.tryParse(v.startsWith('http') ? v : 'https://x/$v');
+    return uri != null;
   }
 }

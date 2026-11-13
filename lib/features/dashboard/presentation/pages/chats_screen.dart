@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../negotiation/domain/entities/negotiation_enums.dart';
 import '../../../negotiation/presentation/bloc/negotiation_bloc.dart';
 import '../../../negotiation/presentation/bloc/negotiation_event.dart';
 import '../../../negotiation/presentation/bloc/negotiation_state.dart';
@@ -184,6 +185,7 @@ class _DirectChatTile extends StatelessWidget {
     Color roleColor;
     String roleLabel;
     switch (otherRole?.toUpperCase()) {
+      case 'SHOPKEEPER':
       case 'RETAILER':
         roleColor = AppColors.roleRetailer;
         roleLabel = 'Retailer';
@@ -295,14 +297,33 @@ class _DirectChatTile extends StatelessWidget {
   }
 
   String _formatTime(DateTime dt) {
+    final local = dt.toLocal();
     final now = DateTime.now();
-    if (now.difference(dt).inDays == 0) return DateFormat('h:mm a').format(dt);
-    if (now.difference(dt).inDays == 1) return 'Yesterday';
-    return DateFormat('MMM d').format(dt);
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(local.year, local.month, local.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return DateFormat('h:mm a').format(local);
+    if (diff == 1) return 'Yesterday';
+    return DateFormat('MMM d').format(local);
   }
 }
 
 // ── Negotiations Tab ──────────────────────────────────────────────────────────
+
+String _statusLabel(NegotiationStatus status) {
+  switch (status) {
+    case NegotiationStatus.PENDING:
+      return 'Pending';
+    case NegotiationStatus.COUNTERED:
+      return 'Countered';
+    case NegotiationStatus.ACCEPTED:
+      return 'Accepted';
+    case NegotiationStatus.REJECTED:
+      return 'Rejected';
+    case NegotiationStatus.EXPIRED:
+      return 'Expired';
+  }
+}
 
 class _NegotiationsTab extends StatelessWidget {
   final bool showCompleted;
@@ -322,9 +343,13 @@ class _NegotiationsTab extends StatelessWidget {
         }
 
         final negotiations = state is NegotiationLoaded ? state.negotiations ?? [] : [];
+        bool isDone(NegotiationStatus status) =>
+            status == NegotiationStatus.ACCEPTED ||
+            status == NegotiationStatus.REJECTED ||
+            status == NegotiationStatus.EXPIRED;
         final filtered = showCompleted
-            ? negotiations.where((n) => n.status == 'COMPLETED' || n.status == 'REJECTED').toList()
-            : negotiations.where((n) => n.status != 'COMPLETED' && n.status != 'REJECTED').toList();
+            ? negotiations.where((n) => isDone(n.status)).toList()
+            : negotiations.where((n) => !isDone(n.status)).toList();
 
         if (filtered.isEmpty) {
           return Center(
@@ -388,9 +413,13 @@ class _NegotiationsTab extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
-                          child: n.product?.images.isNotEmpty == true
-                              ? Image.network(n.product!.images.first, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(LucideIcons.package, color: statusColor))
-                              : Icon(LucideIcons.package, color: statusColor),
+                          child: AppNetworkImage(
+                            url: n.product?.images.isNotEmpty == true ? n.product!.images.first : null,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            placeholderIcon: LucideIcons.package,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -407,7 +436,7 @@ class _NegotiationsTab extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                                  child: Text(n.status, style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600)),
+                                  child: Text(_statusLabel(n.status), style: AppTextStyles.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600)),
                                 ),
                               ],
                             ),

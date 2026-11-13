@@ -39,6 +39,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     context.read<RetailerInventoryBloc>().add(const GetMyProductsRequested());
   }
 
+  Future<void> _openProductForm(dynamic product) async {
+    await context.push('/retailer/add-product', extra: product);
+    if (mounted) _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -347,7 +352,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           
                           final Map<String, int> categoryCounts = {};
                           for (var p in state.products) {
-                            final cat = p.categoryId ?? 'Uncategorized';
+                            final cat = p.categoryName ?? 'Uncategorized';
                             categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
                           }
                           
@@ -425,7 +430,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: _buildLowStockItem(
                           p.name, 
-                          p.categoryId ?? 'Uncategorized', 
+                          p.categoryName ?? 'Uncategorized', 
                           '${p.stockQuantity} Left',
                           p.stockQuantity <= 3 ? AppColors.error500 : AppColors.warning600
                         ),
@@ -573,7 +578,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                 product,
                                 product.id,
                                 product.name,
-                                product.categoryId ?? 'Uncategorized',
+                                product.categoryName ?? 'Uncategorized',
                                 '₹${product.sellingPrice}',
                                 product.stockQuantity,
                                 product.images.isNotEmpty
@@ -642,8 +647,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       Expanded(
                         flex: 2,
                         child: ElevatedButton(
-                          onPressed: () =>
-                              context.push('/retailer/add-product'),
+                          onPressed: () => _openProductForm(null),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: AppColors.roleRetailer,
@@ -827,10 +831,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         stockQuantity > 0 ? '$stockQuantity left' : 'Out of Stock';
 
     return InkWell(
-      onTap: () async {
-        await context.push('/product-detail/$id');
-        if (mounted) _refresh();
-      },
+      onTap: () => _openProductForm(productObj),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -883,7 +884,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   borderRadius: BorderRadius.circular(12)),
               onSelected: (value) {
                 if (value == 'edit') {
-                  context.push('/retailer/add-product', extra: productObj);
+                  _openProductForm(productObj);
                 } else if (value == 'delete') {
                   // Handle delete
                 }

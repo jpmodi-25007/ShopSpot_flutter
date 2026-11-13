@@ -18,6 +18,13 @@ import '../bloc/shop_state.dart';
 import '../../../product/domain/entities/product_entity.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
+import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/utils/guest_helper.dart';
+import '../../../authentication/presentation/bloc/authentication_bloc.dart';
+import '../../../authentication/presentation/bloc/authentication_state.dart';
+import '../../../saved/presentation/bloc/saved_bloc.dart';
+import '../../../saved/presentation/bloc/saved_event.dart';
+import '../../../saved/presentation/bloc/saved_state.dart';
 
 class ShopDetailScreen extends StatefulWidget {
   final String shopId;
@@ -42,6 +49,10 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
     _tabController = TabController(length: 4, vsync: this);
     context.read<ShopBloc>().add(GetPublicShopRequested(widget.shopId));
     context.read<ShopBloc>().add(GetShopProductsRequested(id: widget.shopId));
+    final auth = context.read<AuthenticationBloc>().state;
+    if (auth is AuthenticationLoaded && context.read<SavedBloc>().state is SavedInitial) {
+      context.read<SavedBloc>().add(const GetSavedProductsRequested());
+    }
     _fetchReviews();
     _fetchOffers();
   }
@@ -263,9 +274,13 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.network(
-                            shop?.coverImageUrl ?? 'https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=800&auto=format&fit=crop',
+                          AppNetworkImage(
+                            url: shop?.coverImageUrl,
                             fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            placeholderIcon: LucideIcons.store,
+                            backgroundColor: AppColors.neutral200,
                           ),
                           Container(
                             decoration: BoxDecoration(
@@ -299,10 +314,14 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                                   boxShadow: [
                                     BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
                                   ],
-                                  image: DecorationImage(
-                                    image: NetworkImage(shop?.logoUrl ?? 'https://images.unsplash.com/photo-1555529733-0e670560f7e1?q=80&w=100&auto=format&fit=crop'),
-                                    fit: BoxFit.contain,
-                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: AppNetworkImage(
+                                  url: shop?.logoUrl,
+                                  width: 88,
+                                  height: 88,
+                                  fit: BoxFit.cover,
+                                  placeholderIcon: LucideIcons.store,
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -360,6 +379,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                               context.push('/chat/${shop.ownerId}', extra: {
                                 'targetUserName': shop.name,
                                 'targetUserAvatar': shop.logoUrl,
+                                'targetUserPhone': shop.phone,
                               });
                             }
                           }),
@@ -493,11 +513,11 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
   }
 
   Widget _buildProductsTab(List<ProductEntity> products) {
-    final List<String> categories = ['All', ...products.map((p) => p.categoryId ?? 'Other').toSet()];
+    final List<String> categories = ['All', ...products.map((p) => p.categoryName ?? 'Other').toSet()];
     final String selectedCategory = categories.length > _selectedCategoryIndex ? categories[_selectedCategoryIndex] : 'All';
     final List<ProductEntity> filteredProducts = selectedCategory == 'All' 
         ? products 
-        : products.where((p) => (p.categoryId ?? 'Other') == selectedCategory).toList();
+        : products.where((p) => (p.categoryName ?? 'Other') == selectedCategory).toList();
 
     return CustomScrollView(
       slivers: [
@@ -564,9 +584,12 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                           p.id,
                           p.name, 
                           '₹${p.sellingPrice}', 
-                          p.images.isNotEmpty ? p.images.first : 'https://placehold.co/400x400.png', 
+                          p.images.isNotEmpty ? p.images.first : null, 
                           p.stockQuantity > 0 ? AppBadgeType.inStock : AppBadgeType.lowStock, 
-                          p.stockQuantity > 0 ? 'In Stock' : 'Out of Stock'
+                          p.stockQuantity > 0 ? 'In Stock' : 'Out of Stock',
+                          subtitle: (p.description != null && p.description!.trim().isNotEmpty)
+                              ? p.description!.trim()
+                              : (p.categoryName ?? ''),
                         ),
                       );
                     },
@@ -579,54 +602,107 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildProductCard(String productId, String title, String price, String imageUrl, AppBadgeType? badgeType, String badgeText) {
-    return InkWell(
-      onTap: () => context.push(
-        '/product-detail/$productId${widget.isInfluencer ? '?from=influencer' : ''}',
+  void _toggleWishlist(String productId) {
+    if (GuestHelper.checkGuestAndPrompt(context)) return;
+    final auth = context.read<AuthenticationBloc>().state;
+    if (auth is! AuthenticationLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to save products')),
+      );
+      return;
+    }
+    final saved = context.read<SavedBloc>().state;
+    final isSaved = saved is SavedLoaded &&
+        (saved.savedProducts?.any((p) => '${p['id']}' == productId) ?? false);
+    context.read<SavedBloc>().add(
+          isSaved ? RemoveSavedProductRequested(productId) : SaveProductRequested(productId),
+        );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isSaved ? 'Removed from Wishlist' : 'Saved to Wishlist!'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
       ),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.neutral300),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-                    child: Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover),
-                  ),
-                  if (badgeType != null)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: AppBadge(type: badgeType, text: badgeText),
+    );
+  }
+
+  Widget _buildProductCard(String productId, String title, String price, String? imageUrl, AppBadgeType? badgeType, String badgeText, {String subtitle = ''}) {
+    void openProduct() => context.push(
+          '/product-detail/$productId${widget.isInfluencer ? '?from=influencer' : ''}');
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.neutral300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: openProduct,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+                      child: AppNetworkImage(
+                        url: imageUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholderIcon: LucideIcons.package,
+                      ),
                     ),
+                  ),
+                ),
+                if (badgeType != null)
                   Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
-                      child: const Icon(LucideIcons.heart, size: 14, color: AppColors.neutral500),
-                    ),
+                    top: 8,
+                    left: 8,
+                    child: AppBadge(type: badgeType, text: badgeText),
                   ),
-                ],
-              ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: BlocBuilder<SavedBloc, SavedState>(
+                    builder: (context, saved) {
+                      final isSaved = saved is SavedLoaded &&
+                          (saved.savedProducts?.any((p) => '${p['id']}' == productId) ?? false);
+                      return Material(
+                        color: AppColors.white,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => _toggleWishlist(productId),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              isSaved ? Icons.favorite : LucideIcons.heart,
+                              size: 16,
+                              color: isSaved ? AppColors.error500 : AppColors.neutral500,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            Padding(
+          ),
+          GestureDetector(
+            onTap: openProduct,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text('Immersive audio and vibrant colors.', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  if (subtitle.isNotEmpty)
+                    Text(subtitle, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -641,9 +717,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> with SingleTickerPr
                   ),
                 ],
               ),
-            )
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

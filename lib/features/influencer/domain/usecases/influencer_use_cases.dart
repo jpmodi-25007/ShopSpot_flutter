@@ -41,6 +41,13 @@ class SubmitBidUseCase {
       repository.submitBid(campaignId: campaignId, data: data);
 }
 
+class RespondToCounterUseCase {
+  final InfluencerRepository repository;
+  RespondToCounterUseCase(this.repository);
+  Future<Either<Failure, void>> execute(String bidId, {required bool accept}) =>
+      repository.respondToCounter(bidId, accept: accept);
+}
+
 class WithdrawBidUseCase {
   final InfluencerRepository repository;
   WithdrawBidUseCase(this.repository);

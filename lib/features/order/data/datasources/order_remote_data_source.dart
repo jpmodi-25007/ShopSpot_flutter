@@ -37,16 +37,14 @@ class ShopOrderModel {
     return ShopOrderModel(
       id: json['id'] as String? ?? '',
       orderNumber: json['orderNumber'] as String? ?? '',
-      customerName: json['customer']?['name'] as String? ?? 'Customer',
-      customerEmail: json['customer']?['email'] as String?,
-      customerMobile: json['customer']?['mobile'] as String?,
-      items: json['items'] as List<dynamic>? ?? [],
+      customerName: json['customer'] is Map ? (json['customer']['name']?.toString().isNotEmpty == true ? json['customer']['name'].toString() : 'Customer') : 'Customer',
+      customerEmail: json['customer'] is Map ? json['customer']['email']?.toString() : null,
+      customerMobile: json['customer'] is Map ? json['customer']['mobile']?.toString() : null,
+      items: json['items'] is List ? json['items'] as List : [],
       total: _parseDouble(json['total']),
-      status: json['status'] as String? ?? 'PENDING',
-      deliveryType: json['deliveryType'] as String? ?? 'STANDARD',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt']) ?? DateTime.now()
-          : DateTime.now(),
+      status: json['status']?.toString() ?? 'PENDING',
+      deliveryType: json['deliveryType']?.toString() ?? 'STANDARD',
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
     );
   }
 

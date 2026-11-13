@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/negotiation_bloc.dart';
 import '../bloc/negotiation_event.dart';
 import '../bloc/negotiation_state.dart';
@@ -19,18 +20,80 @@ class NegotiationChatScreen extends StatefulWidget {
 }
 
 class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     context.read<NegotiationBloc>().add(GetNegotiationDetailRequested(widget.negotiationId));
   }
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
+  String _statusLabel(NegotiationStatus status) {
+    switch (status) {
+      case NegotiationStatus.PENDING:
+        return 'Waiting for the shop';
+      case NegotiationStatus.COUNTERED:
+        return 'The shop sent a price';
+      case NegotiationStatus.ACCEPTED:
+        return 'Agreed';
+      case NegotiationStatus.REJECTED:
+        return 'Closed';
+      case NegotiationStatus.EXPIRED:
+        return 'Expired';
+    }
+  }
+
+  String _clock(DateTime value) {
+    final local = value.toLocal();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  void _sendNewPrice(String id, double current) {
+    final controller = TextEditingController(text: current.toStringAsFixed(0));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Your new price'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Price in ₹', border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final price = double.tryParse(controller.text.trim());
+              if (price == null || price <= 0) return;
+              context.read<NegotiationBloc>().add(CounterOfferRequested(id: id, counterPrice: price));
+              Navigator.pop(ctx);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _cancelOffer(String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel this offer?'),
+        content: const Text('The shop will no longer be able to accept it.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Keep it')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<NegotiationBloc>().add(RejectDealRequested(id));
+            },
+            child: const Text('Cancel offer', style: TextStyle(color: AppColors.error500)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -39,19 +102,22 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+              return;
+            }
+            final state = context.read<NegotiationBloc>().state;
+            final productId = state is NegotiationLoaded ? state.activeNegotiation?.productId : null;
+            if (productId != null && productId.isNotEmpty) {
+              context.go('/product-detail/$productId');
+            } else {
+              context.go('/home');
+            }
+          },
         ),
-        title: Text('Findivo', style: AppTextStyles.h3.copyWith(color: AppColors.primary500)),
+        title: Text('Your offer', style: AppTextStyles.h3),
         centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(LucideIcons.moreVertical), onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: Colors.transparent,
-              builder: (ctx) => const _NegotiationSettingsBottomSheet(),
-            );
-          }),
-        ],
       ),
       body: BlocConsumer<NegotiationBloc, NegotiationState>(
         listener: (context, state) {
@@ -80,252 +146,148 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
         }
           if (state is NegotiationLoaded && state.activeNegotiation != null) {
             final negotiation = state.activeNegotiation!;
+            final open = negotiation.status == NegotiationStatus.PENDING || negotiation.status == NegotiationStatus.COUNTERED;
             return Column(
               children: [
-                // Header info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppColors.neutral300)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
                     children: [
                       Row(
                         children: [
-                          Text(negotiation.shop?.name ?? 'Shop', style: AppTextStyles.h4),
-                          const SizedBox(width: 4),
-                          const Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.primary500),
-                          const Spacer(),
-                          Text(negotiation.status.name, style: AppTextStyles.caption.copyWith(color: AppColors.primary500)),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: AppNetworkImage(
+                              url: negotiation.product?.images.isNotEmpty == true ? negotiation.product!.images.first : null,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              placeholderIcon: LucideIcons.package,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(negotiation.product?.name ?? 'Product', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 2),
+                                Text(negotiation.shop?.name ?? 'Shop', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.neutral100,
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.primary100,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.network(
-                                negotiation.product?.images.isNotEmpty == true ? negotiation.product!.images.first : 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?q=80&w=100&auto=format&fit=crop',
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.cover,
-                              ),
+                        child: Text(_statusLabel(negotiation.status), style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700, color: AppColors.primary600)),
+                      ),
+                      const SizedBox(height: 12),
+                      _PriceRow(label: 'Listed price', value: negotiation.initialPrice),
+                      _PriceRow(label: 'Your offer', value: negotiation.offeredPrice, emphasized: negotiation.counterPrice == null && negotiation.finalPrice == null),
+                      if (negotiation.counterPrice != null)
+                        _PriceRow(label: 'Shop price', value: negotiation.counterPrice!, emphasized: negotiation.finalPrice == null),
+                      if (negotiation.finalPrice != null)
+                        _PriceRow(label: 'Agreed price', value: negotiation.finalPrice!, emphasized: true),
+                      if ((negotiation.customerMessage ?? '').isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text('Your note', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(negotiation.customerMessage!, style: AppTextStyles.body),
+                      ],
+                      if ((negotiation.shopkeeperMessage ?? '').isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text('Shop note', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text(negotiation.shopkeeperMessage!, style: AppTextStyles.body),
+                      ],
+                      if (negotiation.messages.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Text('Updates', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        ...negotiation.messages.map((message) {
+                          final mine = message.senderRole == 'customer';
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              '${mine ? 'You' : 'Shop'} · ${_clock(message.createdAt)}\n${message.content}',
+                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral700),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(negotiation.product?.name ?? 'Product', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                                  Row(
-                                    children: [
-                                      Text('₹${negotiation.initialPrice.toStringAsFixed(0)}', style: AppTextStyles.caption.copyWith(decoration: TextDecoration.lineThrough, color: AppColors.neutral500)),
-                                      const Spacer(),
-                                      Text('₹${(negotiation.counterPrice ?? negotiation.offeredPrice).toStringAsFixed(0)}', style: AppTextStyles.body.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      )
+                          );
+                        }),
+                      ],
                     ],
                   ),
                 ),
-                
-                // Chat Area
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: negotiation.messages.length,
-                    itemBuilder: (context, index) {
-                      final m = negotiation.messages[index];
-                      final isMe = m.senderRole == 'customer';
-                      
-                      if (m.messageType == MessageType.PRICE_COUNTER || m.messageType == MessageType.PRICE_OFFER) {
-                         return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Align(
-                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                              child: _OfferBubble(
-                                amount: '₹${negotiation.counterPrice ?? negotiation.offeredPrice}',
-                                status: negotiation.status.name,
-                                time: 'Now',
-                                isMe: isMe,
+                if (open || negotiation.product != null)
+                  SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Column(
+                        children: [
+                          if (negotiation.status == NegotiationStatus.COUNTERED)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary500,
+                                      foregroundColor: AppColors.white,
+                                      minimumSize: const Size.fromHeight(48),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    onPressed: () => context.read<NegotiationBloc>().add(AcceptDealRequested(negotiation.id)),
+                                    child: Text('Accept ₹${negotiation.counterPrice?.toStringAsFixed(0) ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                                    onPressed: () => _sendNewPrice(negotiation.id, negotiation.counterPrice ?? negotiation.offeredPrice),
+                                    child: const Text('New price'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (negotiation.status == NegotiationStatus.PENDING)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(48),
+                                  foregroundColor: AppColors.error500,
+                                  side: const BorderSide(color: AppColors.error100),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () => _cancelOffer(negotiation.id),
+                                child: const Text('Cancel offer'),
                               ),
                             ),
-                          );
-                      }
-                      
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: _ChatBubble(
-                            message: m.content,
-                            time: 'Now',
-                            isMe: isMe,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Waiting note while the retailer has not responded yet
-                if (negotiation.status == NegotiationStatus.PENDING)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    color: AppColors.white,
-                    child: Text(
-                      'Waiting for the retailer to respond to your offer.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
-                    ),
-                  ),
-
-                // Actions once the retailer has countered
-                if (negotiation.status == NegotiationStatus.COUNTERED)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      boxShadow: [
-                        BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary500,
-                              foregroundColor: AppColors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          if (negotiation.status == NegotiationStatus.COUNTERED)
+                            TextButton(
+                              onPressed: () => _cancelOffer(negotiation.id),
+                              child: const Text('Decline', style: TextStyle(color: AppColors.error500)),
                             ),
-                            onPressed: () {
-                              context.read<NegotiationBloc>().add(AcceptDealRequested(negotiation.id));
-                            },
-                            child: const Text('Accept Offer', style: TextStyle(fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.neutral700,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: const BorderSide(color: AppColors.neutral300),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                            ),
-                            onPressed: () {
-                               showDialog(
-                                 context: context,
-                                 builder: (ctx) {
-                                   final priceController = TextEditingController(text: (negotiation.counterPrice ?? negotiation.offeredPrice).toStringAsFixed(0));
-                                   return AlertDialog(
-                                     title: const Text('Counter Offer'),
-                                     content: TextField(
-                                       controller: priceController,
-                                       keyboardType: TextInputType.number,
-                                       decoration: const InputDecoration(
-                                         labelText: 'Counter Price (₹)',
-                                         border: OutlineInputBorder(),
-                                       ),
-                                     ),
-                                     actions: [
-                                       TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                                       ElevatedButton(
-                                         onPressed: () {
-                                           final price = double.tryParse(priceController.text);
-                                           if (price != null) {
-                                             context.read<NegotiationBloc>().add(CounterOfferRequested(id: negotiation.id, counterPrice: price));
-                                             Navigator.pop(ctx);
-                                           }
-                                         },
-                                         child: const Text('Submit'),
-                                       )
-                                     ],
-                                   );
-                                 },
-                               );
-                            },
-                            child: const Text('Counter', style: TextStyle(fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Input Area
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: AppColors.white,
-                    border: Border(top: BorderSide(color: AppColors.neutral200)),
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(LucideIcons.plus, color: AppColors.neutral500),
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (ctx) => const _AttachmentPickerBottomSheet(),
-                            );
-                          },
-                        ),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.neutral100,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: TextField(
-                              controller: _messageController,
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Type a message...',
-                                hintStyle: AppTextStyles.body.copyWith(color: AppColors.neutral400),
+                          if (negotiation.product != null && !open)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: () => context.push('/product-detail/${negotiation.product!.id}'),
+                                child: const Text('View product'),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary500,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: const Icon(LucideIcons.send, color: AppColors.white, size: 20),
-                            onPressed: () {
-                              if (_messageController.text.trim().isNotEmpty) {
-                                _messageController.clear();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Message sent'), backgroundColor: AppColors.primary500),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ],
             );
           }
@@ -338,205 +300,30 @@ class _NegotiationChatScreenState extends State<NegotiationChatScreen> {
   }
 }
 
-class _ChatBubble extends StatelessWidget {
-  final String message;
-  final String time;
-  final bool isMe;
-
-  const _ChatBubble({
-    required this.message,
-    required this.time,
-    required this.isMe,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isMe ? AppColors.primary500 : AppColors.white,
-        borderRadius: BorderRadius.circular(16).copyWith(
-          bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
-          bottomLeft: !isMe ? const Radius.circular(4) : const Radius.circular(16),
-        ),
-        boxShadow: isMe ? [] : [
-          BoxShadow(color: AppColors.neutral900.withValues(alpha: 0.05), blurRadius: 5, offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            message,
-            style: AppTextStyles.body.copyWith(
-              color: isMe ? AppColors.white : AppColors.neutral800,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            time,
-            style: AppTextStyles.caption.copyWith(
-              color: isMe ? AppColors.primary100 : AppColors.neutral500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OfferBubble extends StatelessWidget {
-  final String amount;
-  final String status;
-  final String time;
-  final bool isMe;
-
-  const _OfferBubble({
-    required this.amount,
-    required this.status,
-    required this.time,
-    required this.isMe,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16).copyWith(
-          bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(16),
-          bottomLeft: !isMe ? const Radius.circular(4) : const Radius.circular(16),
-        ),
-        border: Border.all(color: AppColors.primary100),
-        boxShadow: [
-          BoxShadow(color: AppColors.primary500.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(LucideIcons.tag, size: 16, color: AppColors.primary500),
-              const SizedBox(width: 8),
-              Text(status, style: AppTextStyles.caption.copyWith(color: AppColors.primary500, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(amount, style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
-          const SizedBox(height: 8),
-          Text(time, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-        ],
-      ),
-    );
-  }
-}
-
-class _NegotiationSettingsBottomSheet extends StatelessWidget {
-  const _NegotiationSettingsBottomSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.neutral200, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(LucideIcons.dollarSign, color: AppColors.primary500),
-              title: const Text('Make Final Offer'),
-              onTap: () {
-                context.pop();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer created!'), backgroundColor: AppColors.success500));
-              },
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.info, color: AppColors.neutral700),
-              title: const Text('View Product Details'),
-              onTap: () => context.pop(),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.xCircle, color: AppColors.error500),
-              title: const Text('Cancel Negotiation', style: TextStyle(color: AppColors.error500)),
-              onTap: () {
-                context.pop();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Negotiation cancelled.'), backgroundColor: AppColors.neutral700));
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AttachmentPickerBottomSheet extends StatelessWidget {
-  const _AttachmentPickerBottomSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _AttachmentOption(icon: LucideIcons.image, label: 'Photo', color: Colors.blue, onTap: () => context.pop()),
-                  _AttachmentOption(icon: LucideIcons.camera, label: 'Camera', color: Colors.pink, onTap: () => context.pop()),
-                  _AttachmentOption(icon: LucideIcons.fileText, label: 'Document', color: Colors.orange, onTap: () => context.pop()),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AttachmentOption extends StatelessWidget {
-  final IconData icon;
+class _PriceRow extends StatelessWidget {
   final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _AttachmentOption({required this.icon, required this.label, required this.color, required this.onTap});
+  final double value;
+  final bool emphasized;
+  const _PriceRow({required this.label, required this.value, this.emphasized = false});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 28),
+          Text(label, style: AppTextStyles.body.copyWith(color: AppColors.neutral600)),
+          const Spacer(),
+          Text(
+            '₹${value.toStringAsFixed(0)}',
+            style: AppTextStyles.body.copyWith(
+              fontWeight: emphasized ? FontWeight.w800 : FontWeight.w600,
+              color: emphasized ? AppColors.primary600 : AppColors.neutral900,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(label, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 }
+

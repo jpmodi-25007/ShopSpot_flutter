@@ -11,6 +11,11 @@ class GetEventsRequested extends EventEvent {
   const GetEventsRequested();
 }
 
+/// Puts the last home/list catalog back after an event detail screen closes.
+class RestoreEventsCatalog extends EventEvent {
+  const RestoreEventsCatalog();
+}
+
 class GetShopEventsRequested extends EventEvent {
   const GetShopEventsRequested();
 }

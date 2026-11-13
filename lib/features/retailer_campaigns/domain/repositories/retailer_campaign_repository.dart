@@ -10,7 +10,7 @@ class CreateCampaignParams {
   final double budgetMin;
   final double budgetMax;
   final String? productId;
-  final String? imageUrl;
+  final List<String> targetCategories;
   final DateTime? applicationDeadline;
   final DateTime? publishByDate;
 
@@ -23,7 +23,7 @@ class CreateCampaignParams {
     required this.budgetMin,
     required this.budgetMax,
     this.productId,
-    this.imageUrl,
+    this.targetCategories = const [],
     this.applicationDeadline,
     this.publishByDate,
   });
@@ -38,8 +38,7 @@ class CreateCampaignParams {
       'budgetMin': budgetMin,
       'budgetMax': budgetMax,
       if (productId != null) 'productId': productId,
-      if (imageUrl != null) 'imageUrl': imageUrl,
-      if (imageUrl != null) 'coverImage': imageUrl, // Send as coverImage too just in case
+      if (targetCategories.isNotEmpty) 'targetCategories': targetCategories,
       if (applicationDeadline != null) 'applicationDeadline': applicationDeadline!.toIso8601String(),
       if (publishByDate != null) 'publishByDate': publishByDate!.toIso8601String(),
     };

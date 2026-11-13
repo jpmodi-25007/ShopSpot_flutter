@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../domain/entities/influencer_bid_entity.dart';
 import '../bloc/influencer_bloc.dart';
 import '../bloc/influencer_event.dart';
@@ -22,6 +23,7 @@ class BidDetailScreen extends StatefulWidget {
 class _BidDetailScreenState extends State<BidDetailScreen> {
   final _contentUrlController = TextEditingController();
   String? _assignmentId;
+  bool _respondingToCounter = false;
 
   @override
   void initState() {
@@ -226,6 +228,20 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
 
     return BlocListener<InfluencerBloc, InfluencerState>(
       listener: (context, state) {
+        if (_respondingToCounter && state is InfluencerLoaded) {
+          if (state.isSuccess) {
+            setState(() => _respondingToCounter = false);
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Counter offer updated')));
+            context.pop();
+            return;
+          }
+          if (state.failure != null && !state.isLoading) {
+            setState(() => _respondingToCounter = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.failure?.message ?? 'Could not update the counter offer'), backgroundColor: AppColors.error500),
+            );
+          }
+        }
         if (state is InfluencerLoaded && state.assignments != null) {
           // Find assignment matching this bid's campaign safely
           try {
@@ -327,21 +343,17 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
                       children: [
                         Row(
                           children: [
-                            if (bid.shopLogoUrl != null)
-                              Container(
-                                width: 48,
-                                height: 48,
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.neutral200),
-                                  image: DecorationImage(
-                                    image: NetworkImage(bid.shopLogoUrl!),
-                                    fit: BoxFit.cover,
-                                    onError: (e, s) {},
-                                  ),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: ClipOval(
+                                child: AppNetworkImage(
+                                  url: bid.shopLogoUrl,
+                                  width: 48,
+                                  height: 48,
+                                  placeholderIcon: LucideIcons.store,
                                 ),
                               ),
+                            ),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +504,47 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
                       const SizedBox(height: 12),
                     ],
 
-                    if (bid.status != 'ACCEPTED' && bid.status != 'REJECTED')
+                    if (bid.status == 'COUNTERED') ...[
+                      if (bid.counterAmount != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'Counter offer: ₹${bid.counterAmount!.toStringAsFixed(0)}${bid.counterMessage == null || bid.counterMessage!.isEmpty ? '' : '\n${bid.counterMessage}'}',
+                            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _respondingToCounter
+                                  ? null
+                                  : () {
+                                      setState(() => _respondingToCounter = true);
+                                      context.read<InfluencerBloc>().add(RespondToCounterRequested(bidId: bid.id, accept: false));
+                                    },
+                              child: const Text('Decline'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _respondingToCounter
+                                  ? null
+                                  : () {
+                                      setState(() => _respondingToCounter = true);
+                                      context.read<InfluencerBloc>().add(RespondToCounterRequested(bidId: bid.id, accept: true));
+                                    },
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.roleInfluencer, foregroundColor: AppColors.white),
+                              child: const Text('Accept'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    if (const {'SUBMITTED', 'VIEWED', 'SHORTLISTED', 'COUNTERED'}.contains(bid.status))
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(

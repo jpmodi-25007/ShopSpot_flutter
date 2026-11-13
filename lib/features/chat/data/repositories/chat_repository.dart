@@ -27,6 +27,15 @@ class ChatRepository {
     }
   }
 
+  Future<Either<String, ChatMessageEntity>> sendMessage(String roomId, String content) async {
+    try {
+      final result = await remoteDataSource.sendMessage(roomId, content);
+      return Right(result);
+    } catch (e) {
+      return Left(e.toString());
+    }
+  }
+
   Future<Either<String, List<ChatMessageEntity>>> getMessages(String roomId) async {
     try {
       final result = await remoteDataSource.getMessages(roomId);

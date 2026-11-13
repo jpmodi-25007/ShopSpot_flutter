@@ -12,6 +12,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
   final GetMyBidsUseCase _getMyBids;
   final SubmitBidUseCase _submitBid;
   final WithdrawBidUseCase _withdrawBid;
+  final RespondToCounterUseCase _respondToCounter;
   final GetInfluencerAnalyticsUseCase _getAnalytics;
   final GetMyAssignmentsUseCase _getMyAssignments;
   final SubmitDeliverableUseCase _submitDeliverable;
@@ -23,6 +24,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     required GetMyBidsUseCase getMyBids,
     required SubmitBidUseCase submitBid,
     required WithdrawBidUseCase withdrawBid,
+    required RespondToCounterUseCase respondToCounter,
     required GetInfluencerAnalyticsUseCase getAnalytics,
     required GetMyAssignmentsUseCase getMyAssignments,
     required SubmitDeliverableUseCase submitDeliverable,
@@ -32,6 +34,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
         _getMyBids = getMyBids,
         _submitBid = submitBid,
         _withdrawBid = withdrawBid,
+        _respondToCounter = respondToCounter,
         _getAnalytics = getAnalytics,
         _getMyAssignments = getMyAssignments,
         _submitDeliverable = submitDeliverable,
@@ -42,6 +45,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     on<GetMyBidsRequested>(_onGetMyBids);
     on<SubmitBidRequested>(_onSubmitBid);
     on<WithdrawBidRequested>(_onWithdrawBid);
+    on<RespondToCounterRequested>(_onRespondToCounter);
     on<GetInfluencerAnalyticsRequested>(_onGetAnalytics);
     on<GetMyAssignmentsRequested>(_onGetMyAssignments);
     on<SubmitDeliverableRequested>(_onSubmitDeliverable);
@@ -72,7 +76,7 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
     emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
     final result = await _updateProfile.execute(event.data);
     result.fold(
-      (f) => emit(_current.copyWith(isLoading: false, failure: f)),
+      (f) => emit(_current.copyWith(isLoading: false, failure: f, isSuccess: false)),
       (profile) => emit(_current.copyWith(isLoading: false, profile: profile, isSuccess: true)),
     );
   }
@@ -147,6 +151,24 @@ class InfluencerBloc extends Bloc<InfluencerEvent, InfluencerState> {
       (bid) {
         final updatedBids = <InfluencerBidEntity>[...(_current.bids ?? []), bid];
         emit(_current.copyWith(isLoading: false, bids: updatedBids, isSuccess: true));
+      },
+    );
+  }
+
+  Future<void> _onRespondToCounter(RespondToCounterRequested event, Emitter<InfluencerState> emit) async {
+    emit(_current.copyWith(isLoading: true, failure: null, isSuccess: false));
+    final result = await _respondToCounter.execute(event.bidId, accept: event.accept);
+    await result.fold(
+      (f) async => emit(_current.copyWith(isLoading: false, failure: f)),
+      (_) async {
+        final bids = await _getMyBids.execute();
+        final assignments = await _getMyAssignments.execute();
+        emit(_current.copyWith(
+          isLoading: false,
+          isSuccess: true,
+          bids: bids.fold((_) => _current.bids, (value) => value),
+          assignments: assignments.fold((_) => _current.assignments, (value) => value),
+        ));
       },
     );
   }

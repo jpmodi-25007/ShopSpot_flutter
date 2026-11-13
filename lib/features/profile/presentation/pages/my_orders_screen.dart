@@ -10,6 +10,7 @@ import '../../../order/presentation/bloc/order_bloc.dart';
 import '../../../order/presentation/bloc/order_event.dart';
 import '../../../order/presentation/bloc/order_state.dart';
 import '../../../order/domain/entities/order_entity.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class MyOrdersScreen extends StatelessWidget {
   const MyOrdersScreen({super.key});
@@ -136,20 +137,12 @@ class MyOrdersScreen extends StatelessWidget {
           const Divider(height: 24),
           Row(
             children: [
-              Container(
+              AppNetworkImage(
+                url: itemImage,
                 width: 60,
                 height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.neutral100,
-                  borderRadius: BorderRadius.circular(8),
-                  image: itemImage != null 
-                    ? DecorationImage(
-                        image: NetworkImage(itemImage),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-                ),
-                child: itemImage == null ? const Icon(LucideIcons.package, color: AppColors.neutral400) : null,
+                borderRadius: BorderRadius.circular(8),
+                placeholderIcon: LucideIcons.package,
               ),
               const SizedBox(width: 16),
               Expanded(

@@ -6,6 +6,7 @@ import 'chat_event_state.dart';
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepository repository;
   StreamSubscription<dynamic>? _socketSubscription;
+  Timer? _poll;
 
   ChatBloc({required this.repository}) : super(ChatInitial()) {
     on<LoadChatRoomsRequested>(_onLoadRooms);
@@ -40,10 +41,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           (failure) => emit(ChatRoomLoaded(room, const [])),
           (messages) => emit(ChatRoomLoaded(room, messages)),
         );
-        // Connect socket after room is established
         add(ConnectSocketRequested(room.id));
+        _startPolling(room.id);
       },
     );
+  }
+
+  void _startPolling(String roomId) {
+    _poll?.cancel();
+    _poll = Timer.periodic(const Duration(seconds: 4), (_) {
+      add(GetMessagesRequested(roomId));
+    });
   }
 
   Future<void> _onConnectSocket(ConnectSocketRequested event, Emitter<ChatState> emit) async {
@@ -81,22 +89,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (state is! ChatRoomLoaded) return;
     final current = state as ChatRoomLoaded;
 
-    // Strict Socket Enforcement
-    if (repository.isSocketConnected) {
-      repository.sendSocketMessage(event.roomId, event.content);
-      // We rely on the socket echo to add the message to the local list.
-    } else {
-      // If socket disconnected, try to reconnect or throw error
+    final result = await repository.sendMessage(event.roomId, event.content);
+    result.fold(
+      (failure) {
+        emit(ChatError(failure));
+        emit(ChatRoomLoaded(current.room, current.messages));
+      },
+      (message) {
+        final exists = current.messages.any((m) => m.id == message.id);
+        final updated = exists ? current.messages : [...current.messages, message];
+        emit(ChatRoomLoaded(current.room, updated));
+      },
+    );
+
+    if (!repository.isSocketConnected) {
       add(ConnectSocketRequested(event.roomId));
-      emit(const ChatError('Chat disconnected. Attempting to reconnect...'));
-      
-      // Re-emit loaded state so UI doesn't crash
-      emit(ChatRoomLoaded(current.room, current.messages));
     }
   }
 
   @override
   Future<void> close() async {
+    _poll?.cancel();
     await _socketSubscription?.cancel();
     repository.leaveRoom('');
     return super.close();

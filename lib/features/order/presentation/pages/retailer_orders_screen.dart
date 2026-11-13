@@ -10,6 +10,12 @@ import '../../../../core/widgets/shimmer/skeletons/order_card_skeleton.dart';
 import '../../data/datasources/order_remote_data_source.dart';
 import '../bloc/retailer_order_bloc.dart';
 
+String _statusLabel(String status) {
+  if (status.isEmpty) return status;
+  final lower = status.toLowerCase().replaceAll('_', ' ');
+  return lower[0].toUpperCase() + lower.substring(1);
+}
+
 class RetailerOrdersScreen extends StatefulWidget {
   const RetailerOrdersScreen({super.key});
 
@@ -117,9 +123,7 @@ class _RetailerOrdersScreenState extends State<RetailerOrdersScreen>
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          filter == 'All'
-                              ? 'All Orders'
-                              : filter.replaceAll('_', ' '),
+                          filter == 'All' ? 'All Orders' : _statusLabel(filter),
                           style: AppTextStyles.caption.copyWith(
                             color: isSelected
                                 ? AppColors.white
@@ -219,7 +223,7 @@ class _RetailerOrdersScreenState extends State<RetailerOrdersScreen>
                                 Text(
                                   _selectedFilter == 'All'
                                       ? 'When customers place orders from your shop,\nthey\'ll appear here.'
-                                      : 'No ${_selectedFilter.replaceAll("_", " ")} orders.',
+                                      : 'No ${_statusLabel(_selectedFilter)} orders.',
                                   style: AppTextStyles.body
                                       .copyWith(color: AppColors.neutral500),
                                   textAlign: TextAlign.center,
@@ -468,7 +472,7 @@ class _OrderCardState extends State<_OrderCard>
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              widget.order.status.replaceAll('_', ' '),
+                              _statusLabel(widget.order.status),
                               style: AppTextStyles.caption.copyWith(
                                 color: _statusColor,
                                 fontWeight: FontWeight.w700,
@@ -517,7 +521,7 @@ class _OrderCardState extends State<_OrderCard>
                                 const SizedBox(width: 6),
                                 Text(
                                   DateFormat('dd MMM yyyy, hh:mm a')
-                                      .format(widget.order.createdAt),
+                                      .format(widget.order.createdAt.toLocal()),
                                   style: AppTextStyles.caption
                                       .copyWith(color: AppColors.neutral500),
                                 ),
@@ -540,10 +544,13 @@ class _OrderCardState extends State<_OrderCard>
                             const Divider(
                                 height: 1, color: AppColors.neutral100),
                             const SizedBox(height: 10),
-                            ...widget.order.items.take(3).map((item) {
-                              final name = item['name'] as String? ?? 'Item';
-                              final qty = item['quantity']?.toString() ?? '1';
-                              final price = item['price']?.toString() ?? '';
+                            ...widget.order.items.map((item) {
+                              final map = item is Map ? item : const <String, dynamic>{};
+                              final name = map['name']?.toString().isNotEmpty == true
+                                  ? map['name'].toString()
+                                  : 'Item';
+                              final qty = map['quantity']?.toString() ?? '1';
+                              final price = map['price']?.toString() ?? '';
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 6),
                                 child: Row(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -14,6 +15,7 @@ import '../bloc/influencer_state.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../../../../core/services/cloudinary_service.dart';
 import '../../../../core/dependency_injection/injection.dart';
+import '../../../../core/network/api_client.dart';
 import 'package:image_picker/image_picker.dart';
 
 class InfluencerProfileScreen extends StatefulWidget {
@@ -34,6 +36,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
 
   final ScrollController _scrollController = ScrollController();
   bool _isHeaderCollapsed = false;
+  List<String> _categoryOptions = [];
 
   @override
   void initState() {
@@ -45,7 +48,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
     _animController.forward();
     
     _scrollController.addListener(() {
-      final isCollapsed = _scrollController.offset > (260 - kToolbarHeight);
+      final isCollapsed = _scrollController.offset > 120;
       if (isCollapsed != _isHeaderCollapsed) {
         setState(() => _isHeaderCollapsed = isCollapsed);
       }
@@ -53,6 +56,53 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
 
     context.read<InfluencerBloc>().add(const GetInfluencerProfileRequested());
     context.read<InfluencerBloc>().add(const GetMyBidsRequested());
+    context.read<InfluencerBloc>().add(const GetInfluencerAnalyticsRequested());
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final response = await getIt<ApiClient>().get('/categories');
+      final raw = response.data;
+      final names = raw is List
+          ? raw.whereType<Map>().map((item) => item['name']?.toString() ?? '').where((name) => name.isNotEmpty).toList()
+          : <String>[];
+      if (!mounted) return;
+      setState(() => _categoryOptions = names);
+    } catch (_) {}
+  }
+
+  bool _isGeneratedUsername(String? username) {
+    if (username == null || username.isEmpty) return true;
+    return RegExp(r'^user_[a-z0-9]+_\d+$').hasMatch(username);
+  }
+
+  String _subtitle(dynamic profile) {
+    if (profile == null) return 'Loading profile...';
+    final parts = <String>[];
+    if (!_isGeneratedUsername(profile.username)) parts.add('@${profile.username}');
+    if ((profile.city ?? '').toString().isNotEmpty) parts.add(profile.city as String);
+    final categories = (profile.categories as List?)?.take(2).join(' · ') ?? '';
+    if (categories.isNotEmpty) parts.add(categories);
+    if (parts.isEmpty) return 'Add a username, city, and categories';
+    return parts.join('   ·   ');
+  }
+
+  void _openEditor() {
+    final currentState = context.read<InfluencerBloc>().state;
+    if (currentState is! InfluencerLoaded || currentState.profile == null) return;
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (ctx) => BlocProvider.value(
+          value: context.read<InfluencerBloc>(),
+          child: EditInfluencerProfileBottomSheet(
+            profile: currentState.profile!,
+            categories: _categoryOptions,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -112,18 +162,18 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
           slivers: [
             // Gradient profile header
             SliverAppBar(
-              expandedHeight: 260,
+              expandedHeight: 253,
               pinned: true,
               title: _isHeaderCollapsed ? BlocBuilder<InfluencerBloc, InfluencerState>(
                 builder: (context, state) {
                   final profile = state is InfluencerLoaded ? state.profile : null;
                   return Text(
                     profile?.displayName ?? 'Creator',
-                    style: AppTextStyles.h3.copyWith(color: AppColors.white),
+                    style: AppTextStyles.h3.copyWith(color: AppColors.neutral900),
                   );
                 },
               ) : null,
-              backgroundColor: const Color(0xFF1E40AF),
+              backgroundColor: const Color(0xFFFFF7ED),
               flexibleSpace: FlexibleSpaceBar(
                 background: Stack(
                   fit: StackFit.expand,
@@ -133,7 +183,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF1E40AF), Color(0xFF7C3AED)],
+                          colors: [Color(0xFFFFFBF5), Color(0xFFFFF1D6), Color(0xFFFDE68A)],
                         ),
                       ),
                     ),
@@ -145,7 +195,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                         width: 120,
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.16),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -157,16 +207,16 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.04),
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 90, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 77, 20, 18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           BlocBuilder<InfluencerBloc, InfluencerState>(
                             builder: (context, state) {
@@ -191,6 +241,9 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                                 color: AppColors.white, width: 3),
+                                            boxShadow: [
+                                              BoxShadow(color: const Color(0xFFF59E0B).withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6)),
+                                            ],
                                           ),
                                           child: _isUploadingAvatar
                                               ? const CircularProgressIndicator(
@@ -219,15 +272,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                                     ),
                                   ),
                                   if (isApproved)
-                                    Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.secondary400,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(LucideIcons.badgeCheck,
-                                          color: Colors.white, size: 14),
-                                    ),
+                                    const SizedBox.shrink(),
                                 ],
                               );
                             },
@@ -243,42 +288,37 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                                   : 'Creator',
                             ),
                             style: AppTextStyles.h3
-                                .copyWith(color: AppColors.white),
+                                .copyWith(color: AppColors.neutral900),
                           ),
-                          Text(
-                            context.select<InfluencerBloc, String>(
-                              (b) => b.state is InfluencerLoaded
-                                  ? '@${(b.state as InfluencerLoaded).profile?.username ?? 'creator'} · ${((b.state as InfluencerLoaded).profile?.categories ?? []).take(2).join(" & ")}'
-                                  : '@creator',
-                            ),
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 12),
                           BlocBuilder<InfluencerBloc, InfluencerState>(
                             builder: (context, state) {
-                              final profile = state is InfluencerLoaded
-                                  ? state.profile
-                                  : null;
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              final profile = state is InfluencerLoaded ? state.profile : null;
+                              final verified = profile?.verificationStatus == 'VERIFIED';
+                              return Column(
                                 children: [
-                                  _StatPill(
-                                    label: profile == null
-                                        ? '—'
-                                        : profile.followers >= 1000
-                                            ? '${(profile.followers / 1000).toStringAsFixed(0)}K'
-                                            : '${profile.followers}',
-                                    sublabel: 'Followers',
+                                  Text(
+                                    _subtitle(profile),
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600),
                                   ),
-                                  _StatPill(
-                                      label:
-                                          '${profile?.completedCampaigns ?? 0}',
-                                      sublabel: 'Campaigns'),
-                                  _StatPill(
-                                      label:
-                                          '${profile?.rating.toStringAsFixed(1) ?? '—'}★',
-                                      sublabel: 'Rating'),
+                                  if (verified) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.white,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(LucideIcons.badgeCheck, color: AppColors.roleInfluencer, size: 14),
+                                          const SizedBox(width: 4),
+                                          Text('Verified creator', style: AppTextStyles.caption.copyWith(color: AppColors.roleInfluencer, fontWeight: FontWeight.w700)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               );
                             },
@@ -291,23 +331,8 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(LucideIcons.edit2, color: Colors.white),
-                  onPressed: () {
-                    final currentState = context.read<InfluencerBloc>().state;
-                    if (currentState is InfluencerLoaded &&
-                        currentState.profile != null) {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (ctx) => BlocProvider.value(
-                          value: context.read<InfluencerBloc>(),
-                          child: EditInfluencerProfileBottomSheet(
-                              profile: currentState.profile!),
-                        ),
-                      );
-                    }
-                  },
+                  icon: const Icon(LucideIcons.edit2, color: AppColors.neutral800),
+                  onPressed: _openEditor,
                 ),
               ],
             ),
@@ -318,6 +343,36 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Transform.translate(
+                      offset: const Offset(0, -16),
+                      child: BlocBuilder<InfluencerBloc, InfluencerState>(
+                        builder: (context, state) {
+                          final profile = state is InfluencerLoaded ? state.profile : null;
+                          final bids = state is InfluencerLoaded ? (state.bids?.length ?? 0) : 0;
+                          final followers = profile?.followers ?? 0;
+                          final followerLabel = followers >= 1000 ? '${(followers / 1000).toStringAsFixed(1)}K' : '$followers';
+                          return Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(color: const Color(0xFF92400E).withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 10)),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                _StatPill(label: followerLabel, sublabel: 'Followers'),
+                                Container(width: 1, height: 36, color: AppColors.neutral200),
+                                _StatPill(label: '$bids', sublabel: 'Bids'),
+                                Container(width: 1, height: 36, color: AppColors.neutral200),
+                                _StatPill(label: (profile?.rating ?? 0).toStringAsFixed(1), sublabel: 'Rating'),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                     // Availability Toggle
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -411,12 +466,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                               TextButton.icon(
                                 icon: const Icon(LucideIcons.edit2, size: 14),
                                 label: const Text('Edit'),
-                                onPressed: () {
-                                  final profile = context.read<InfluencerBloc>().state is InfluencerLoaded 
-                                      ? (context.read<InfluencerBloc>().state as InfluencerLoaded).profile
-                                      : null;
-                                  _showEditBioSheet(context, profile?.bio ?? '');
-                                },
+                                onPressed: _openEditor,
                                 style: TextButton.styleFrom(
                                     foregroundColor: AppColors.roleInfluencer),
                               ),
@@ -443,30 +493,12 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                                     const SizedBox(height: 16),
                                     Row(
                                       children: [
-                                        if (profile.instagramUrl != null &&
-                                            profile.instagramUrl!.isNotEmpty)
-                                          const Padding(
-                                            padding: EdgeInsets.only(right: 12),
-                                            child: Icon(Icons.camera_alt,
-                                                color: AppColors.roleInfluencer,
-                                                size: 20),
-                                          ),
-                                        if (profile.facebookUrl != null &&
-                                            profile.facebookUrl!.isNotEmpty)
-                                          const Padding(
-                                            padding: EdgeInsets.only(right: 12),
-                                            child: Icon(Icons.facebook,
-                                                color: AppColors.roleInfluencer,
-                                                size: 20),
-                                          ),
-                                        if (profile.youtubeUrl != null &&
-                                            profile.youtubeUrl!.isNotEmpty)
-                                          const Padding(
-                                            padding: EdgeInsets.only(right: 12),
-                                            child: Icon(Icons.video_library,
-                                                color: AppColors.roleInfluencer,
-                                                size: 20),
-                                          ),
+                                        if ((profile.instagramUrl ?? '').isNotEmpty)
+                                          _SocialButton(icon: Icons.camera_alt, url: profile.instagramUrl!),
+                                        if ((profile.facebookUrl ?? '').isNotEmpty)
+                                          _SocialButton(icon: Icons.facebook, url: profile.facebookUrl!),
+                                        if ((profile.youtubeUrl ?? '').isNotEmpty)
+                                          _SocialButton(icon: Icons.smart_display, url: profile.youtubeUrl!),
                                       ],
                                     ),
                                   ]
@@ -512,7 +544,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                         Text('Portfolio', style: AppTextStyles.h4),
                         TextButton(
                           onPressed: () {
-                            context.push('/coming-soon?feature=Portfolio');
+                            context.push('/influencer/all-bids');
                           },
                           child: Text('See All',
                               style: AppTextStyles.bodySmall
@@ -562,8 +594,7 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                           itemCount: completedBids.length,
                           itemBuilder: (context, index) {
                             final bid = completedBids[index];
-                            final imageUrl = bid.productImageUrl ??
-                                'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=300&auto=format&fit=crop';
+                            final imageUrl = bid.productImageUrl ?? '';
                             
                             final item = _PortfolioItem(
                               bid.campaignTitle ?? 'Campaign', 
@@ -616,22 +647,21 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
                             );
                           }),
                           const Divider(height: 1),
-                          _ActionRow(LucideIcons.fileText, 'Download Media Kit',
+                          _ActionRow(LucideIcons.fileText, 'Share Media Kit',
                               () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Generating Media Kit...'),
-                                  backgroundColor: AppColors.roleInfluencer),
-                            );
-                            Future.delayed(const Duration(seconds: 2), () {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'Media Kit downloaded successfully!'),
-                                    backgroundColor: AppColors.success500),
-                              );
-                            });
+                            final current = context.read<InfluencerBloc>().state;
+                            final profile = current is InfluencerLoaded ? current.profile : null;
+                            final lines = <String>[
+                              profile?.displayName ?? 'Creator',
+                              if ((profile?.username ?? '').isNotEmpty) '@${profile!.username}',
+                              if ((profile?.bio ?? '').isNotEmpty) profile!.bio!,
+                              if ((profile?.city ?? '').isNotEmpty) profile!.city!,
+                              if ((profile?.instagramUrl ?? '').isNotEmpty) 'Instagram: ${profile!.instagramUrl}',
+                              if ((profile?.facebookUrl ?? '').isNotEmpty) 'Facebook: ${profile!.facebookUrl}',
+                              if ((profile?.youtubeUrl ?? '').isNotEmpty) 'YouTube: ${profile!.youtubeUrl}',
+                              'Followers: ${profile?.followers ?? 0}',
+                            ];
+                            SharePlus.instance.share(ShareParams(text: lines.join('\n')));
                           }),
                           const Divider(height: 1),
                           _ActionRow(
@@ -700,79 +730,6 @@ class _InfluencerProfileScreenState extends State<InfluencerProfileScreen>
     );
   }
 
-  void _showEditBioSheet(BuildContext context, String currentBio) {
-    final controller = TextEditingController(text: currentBio);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Edit Bio', style: AppTextStyles.h3),
-                  IconButton(
-                    icon: const Icon(LucideIcons.x),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Tell brands about yourself...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.neutral300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.roleInfluencer, width: 2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context.read<InfluencerBloc>().add(
-                          UpdateInfluencerProfileRequested({'bio': controller.text.trim()}),
-                        );
-                    Navigator.pop(ctx);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.roleInfluencer,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Save Changes'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _StatPill extends StatelessWidget {
@@ -785,12 +742,36 @@ class _StatPill extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(label,
-              style: AppTextStyles.h4
-                  .copyWith(color: AppColors.white, fontSize: 16)),
-          Text(sublabel,
-              style: AppTextStyles.caption.copyWith(color: Colors.white60)),
+          Text(label, style: AppTextStyles.h3.copyWith(color: AppColors.neutral900)),
+          const SizedBox(height: 2),
+          Text(sublabel, style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
         ],
+      ),
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  final IconData icon;
+  final String url;
+  const _SocialButton({required this.icon, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: InkWell(
+        onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        borderRadius: BorderRadius.circular(21),
+        child: Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(
+            color: AppColors.roleInfluencerLight,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.roleInfluencer, size: 18),
+        ),
       ),
     );
   }
@@ -814,9 +795,13 @@ class _PortfolioCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(item.imageUrl,
+          AppNetworkImage(
+              url: item.imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
+              width: double.infinity,
+              height: double.infinity,
+              placeholderIcon: LucideIcons.image,
+              errorWidget:
                   Container(color: AppColors.neutral200)),
           Container(
             decoration: BoxDecoration(
@@ -894,7 +879,8 @@ class _ActionRow extends StatelessWidget {
 
 class EditInfluencerProfileBottomSheet extends StatefulWidget {
   final dynamic profile;
-  const EditInfluencerProfileBottomSheet({super.key, required this.profile});
+  final List<String> categories;
+  const EditInfluencerProfileBottomSheet({super.key, required this.profile, this.categories = const []});
 
   @override
   State<EditInfluencerProfileBottomSheet> createState() =>
@@ -905,123 +891,202 @@ class _EditInfluencerProfileBottomSheetState
     extends State<EditInfluencerProfileBottomSheet> {
   late TextEditingController _bioController;
   late TextEditingController _nameController;
+  late TextEditingController _usernameController;
+  late TextEditingController _cityController;
+  late TextEditingController _followersController;
+  late Set<String> _selectedCategories;
+  bool _awaitingSave = false;
+
+  bool get _generatedUsername {
+    final username = widget.profile.username?.toString() ?? '';
+    return RegExp(r'^user_[a-z0-9]+_\d+$').hasMatch(username);
+  }
 
   @override
   void initState() {
     super.initState();
     _bioController = TextEditingController(text: widget.profile.bio ?? '');
-    _nameController =
-        TextEditingController(text: widget.profile.displayName ?? '');
+    _nameController = TextEditingController(text: widget.profile.displayName ?? '');
+    _usernameController = TextEditingController(text: _generatedUsername ? '' : (widget.profile.username ?? ''));
+    _cityController = TextEditingController(text: widget.profile.city ?? '');
+    _followersController = TextEditingController(text: '${widget.profile.followers ?? 0}');
+    _selectedCategories = {...(widget.profile.categories as List? ?? const []).map((item) => item.toString())};
   }
 
   @override
   void dispose() {
     _bioController.dispose();
     _nameController.dispose();
+    _usernameController.dispose();
+    _cityController.dispose();
+    _followersController.dispose();
     super.dispose();
   }
 
   void _save() {
-    final data = {
-      'bio': _bioController.text,
-      'displayName': _nameController.text,
+    final username = _usernameController.text.trim().toLowerCase().replaceAll(' ', '');
+    if (username.isNotEmpty && !RegExp(r'^[a-z0-9_]{3,30}$').hasMatch(username)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username needs 3-30 letters, numbers, or underscores.')));
+      return;
+    }
+    final data = <String, dynamic>{
+      'bio': _bioController.text.trim(),
+      'displayName': _nameController.text.trim(),
+      'city': _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+      'followers': int.tryParse(_followersController.text.trim()) ?? 0,
+      'categories': _selectedCategories.toList(),
+      if (username.isNotEmpty) 'username': username,
     };
+    setState(() => _awaitingSave = true);
     context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return BlocListener<InfluencerBloc, InfluencerState>(
       listener: (context, state) {
-        if (state is InfluencerLoaded && state.isSuccess) {
+        if (!_awaitingSave || state is! InfluencerLoaded || state.isLoading) return;
+        setState(() => _awaitingSave = false);
+        if (state.isSuccess) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Profile updated!'),
+                content: Text('Profile updated'),
                 backgroundColor: AppColors.success500),
           );
-        } else if (state is InfluencerLoaded && state.failure != null) {
+        } else if (state.failure != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content:
-                    Text(state.failure?.message ?? 'Failed to update profile'),
+                content: Text(state.failure?.message ?? 'Failed to update profile'),
                 backgroundColor: AppColors.error500),
           );
         }
       },
-      child: Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFFBF5),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFFFBF5),
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(LucideIcons.x, color: AppColors.neutral900),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text('Edit Profile', style: AppTextStyles.h3),
         ),
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Edit Profile', style: AppTextStyles.h3),
-                  IconButton(
-                      icon: const Icon(LucideIcons.x),
-                      onPressed: () => Navigator.of(context).pop()),
-                ],
-              ),
-              const SizedBox(height: 24),
-              AppTextField(
-                controller: _nameController,
-                label: 'Display Name',
-                hintText: 'Your name',
-              ),
-              const SizedBox(height: 16),
-              Text('Bio',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _bioController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Tell brands about yourself...',
-                  filled: true,
-                  fillColor: AppColors.neutral50,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: [
+            AppTextField(
+              controller: _nameController,
+              label: 'Display Name',
+              hintText: 'Your name',
+            ),
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _usernameController,
+              label: 'Username',
+              hintText: 'jaymodi',
+            ),
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _cityController,
+              label: 'City',
+              hintText: 'Mumbai',
+            ),
+            const SizedBox(height: 16),
+            AppTextField(
+              controller: _followersController,
+              label: 'Followers',
+              hintText: '0',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            Text('Categories', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.categories.map((name) {
+                final selected = _selectedCategories.contains(name);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (selected) {
+                        _selectedCategories.remove(name);
+                      } else {
+                        _selectedCategories.add(name);
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.roleInfluencer : AppColors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: selected ? AppColors.roleInfluencer : AppColors.neutral300),
+                    ),
+                    child: Text(
+                      name,
+                      style: AppTextStyles.caption.copyWith(
+                        color: selected ? AppColors.white : AppColors.neutral800,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Text('Bio', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _bioController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: 'Tell brands about yourself...',
+                filled: true,
+                fillColor: AppColors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.neutral300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.neutral300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.roleInfluencer, width: 2),
                 ),
               ),
-              const SizedBox(height: 32),
-              BlocBuilder<InfluencerBloc, InfluencerState>(
-                builder: (context, state) {
-                  final isLoading =
-                      state is InfluencerLoaded && state.isLoading;
-                  return ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.roleInfluencer,
-                      foregroundColor: AppColors.white,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: isLoading ? null : _save,
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                color: AppColors.white, strokeWidth: 2))
-                        : const Text('Save Changes',
-                            style: TextStyle(fontWeight: FontWeight.w700)),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
+            SizedBox(height: bottomInset),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, bottomInset > 0 ? bottomInset : 12),
+            child: BlocBuilder<InfluencerBloc, InfluencerState>(
+              builder: (context, state) {
+                final isLoading = _awaitingSave && state is InfluencerLoaded && state.isLoading;
+                return ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.roleInfluencer,
+                    foregroundColor: AppColors.white,
+                    minimumSize: const Size.fromHeight(52),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: isLoading ? null : _save,
+                  child: isLoading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2))
+                      : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.w700)),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -1062,17 +1127,21 @@ class _LinkedSocialAccountsBottomSheetState
     super.dispose();
   }
 
+  String? _socialUrl(String raw, String host) {
+    final text = raw.trim();
+    if (text.isEmpty) return null;
+    if (text.startsWith('http://') || text.startsWith('https://')) return text;
+    final handle = text.startsWith('@') ? text.substring(1) : text;
+    if (handle.contains('.')) return 'https://$handle';
+    return 'https://$host/$handle';
+  }
+
   void _save() {
-    final data = <String, dynamic>{};
-    if (_instagramController.text.isNotEmpty) {
-      data['instagramUrl'] = _instagramController.text;
-    }
-    if (_facebookController.text.isNotEmpty) {
-      data['facebookUrl'] = _facebookController.text;
-    }
-    if (_youtubeController.text.isNotEmpty) {
-      data['youtubeUrl'] = _youtubeController.text;
-    }
+    final data = <String, dynamic>{
+      'instagramUrl': _socialUrl(_instagramController.text, 'instagram.com'),
+      'facebookUrl': _socialUrl(_facebookController.text, 'facebook.com'),
+      'youtubeUrl': _socialUrl(_youtubeController.text, 'youtube.com'),
+    };
 
     context.read<InfluencerBloc>().add(UpdateInfluencerProfileRequested(data));
   }
@@ -1208,24 +1277,7 @@ class PrivacyAndSecurityBottomSheet extends StatelessWidget {
                 color: AppColors.neutral400),
             onTap: () => context.push('/change-password'),
           ),
-          const Divider(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading:
-                const Icon(LucideIcons.eyeOff, color: AppColors.neutral700),
-            title: Text('Private Profile',
-                style:
-                    AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
-            subtitle: Text('Only approved brands can see your details',
-                style: AppTextStyles.caption
-                    .copyWith(color: AppColors.neutral500)),
-            trailing: Switch(
-              value: false,
-              activeThumbColor: AppColors.roleInfluencer,
-              onChanged: (val) {},
-            ),
-          ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
         ],
       ),
     );

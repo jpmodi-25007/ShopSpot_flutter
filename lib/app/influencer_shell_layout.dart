@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/responsive_builder.dart';
+import '../core/theme/app_colors.dart';
+import '../core/utils/responsive_builder.dart';
+import '../core/widgets/app_network_image.dart';
+import '../features/authentication/presentation/bloc/authentication_bloc.dart';
+import '../features/authentication/presentation/bloc/authentication_state.dart';
 
 import 'package:flutter/services.dart';
 
@@ -122,11 +126,20 @@ class _InfluencerShellLayoutState extends State<InfluencerShellLayout> {
             unselectedLabelTextStyle: const TextStyle(color: AppColors.neutral500, fontSize: 12),
             useIndicator: true,
             indicatorColor: AppColors.primary100,
-            leading: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop'),
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: BlocBuilder<AuthenticationBloc, AuthenticationState>(
+                builder: (context, state) {
+                  final avatar = state is AuthenticationLoaded ? state.user.avatarUrl : null;
+                  return ClipOval(
+                    child: AppNetworkImage(
+                      url: avatar,
+                      width: 32,
+                      height: 32,
+                      placeholderIcon: LucideIcons.user,
+                    ),
+                  );
+                },
               ),
             ),
             destinations: const [

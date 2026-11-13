@@ -14,6 +14,7 @@ abstract interface class InfluencerRepository {
     required Map<String, dynamic> data,
   });
   Future<Either<Failure, void>> withdrawBid(String bidId);
+  Future<Either<Failure, void>> respondToCounter(String bidId, {required bool accept});
   Future<Either<Failure, Map<String, dynamic>>> getInfluencerAnalytics();
   Future<Either<Failure, List<Map<String, dynamic>>>> getMyAssignments();
   Future<Either<Failure, Map<String, dynamic>>> submitDeliverable(String assignmentId, String contentUrl);

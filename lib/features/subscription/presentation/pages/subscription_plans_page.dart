@@ -106,7 +106,17 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       _selectedPlanId = planId;
     });
     try {
-      final orderData = await _service.createOrder(planId);
+      final orderData = await _service.createOrder(planId, planTier: plan['tier']?.toString());
+
+      if (orderData['activatedDirectly'] == true) {
+        setState(() => _paymentProcessing = false);
+        if (mounted) {
+          _showSuccessAnimation();
+          _loadData();
+        }
+        return;
+      }
+
       final amount = int.tryParse(orderData['amount']?.toString() ?? '0') ?? 0;
       final orderId = (orderData['orderId'] ?? '').toString();
       final keyId = (orderData['keyId'] ?? '').toString();
@@ -128,7 +138,10 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
 
       _razorpay.open(options);
     } catch (e) {
-      _showError('Failed to create payment order: ${e.toString()}');
+      final msg = e.toString().contains('Exception:')
+          ? e.toString().replaceAll('Exception:', '').trim()
+          : 'Payment initialization failed. Please try again.';
+      _showError(msg);
       if (mounted) setState(() => _paymentProcessing = false);
     }
   }
@@ -167,7 +180,13 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+        backgroundColor: Colors.red.shade800,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 

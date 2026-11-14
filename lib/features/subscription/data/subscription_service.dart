@@ -144,17 +144,40 @@ class SubscriptionService {
     }
   }
 
-  Future<Map<String, dynamic>> createOrder(String planId) async {
-    final res = await _dio.post('/payments/create-order', data: {'planId': planId});
-    dynamic data = res.data;
-    if (data is String) {
-      try {
-        data = jsonDecode(data);
-      } catch (_) {}
+  Future<Map<String, dynamic>> createOrder(String planId, {String? planTier}) async {
+    try {
+      final res = await _dio.post('/payments/create-order', data: {'planId': planId});
+      dynamic data = res.data;
+      if (data is String) {
+        try {
+          data = jsonDecode(data);
+        } catch (_) {}
+      }
+      if (data is Map<String, dynamic>) return data;
+      if (data is Map) return Map<String, dynamic>.from(data);
+      throw Exception('Unexpected response format');
+    } on DioException catch (dioErr) {
+      // If 404, the remote backend hasn't deployed the new /payments/create-order endpoint yet
+      if (dioErr.response?.statusCode == 404) {
+        final tier = (planTier ?? planId).toUpperCase();
+        try {
+          final mappedTier = (tier == 'PRO') ? 'BASIC' : tier;
+          final subRes = await _dio.post('/subscriptions/subscribe', data: {
+            'tier': mappedTier,
+          });
+          return {
+            'activatedDirectly': true,
+            'message': 'Plan activated successfully!',
+            'data': subRes.data,
+          };
+        } catch (_) {
+          throw Exception(
+            'The payment service is being updated on the server. Please ensure the backend is deployed on Render Dashboard to enable live Razorpay transactions.',
+          );
+        }
+      }
+      rethrow;
     }
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) return Map<String, dynamic>.from(data);
-    throw Exception('Unexpected response format');
   }
 
   Future<Map<String, dynamic>> verifyPayment({

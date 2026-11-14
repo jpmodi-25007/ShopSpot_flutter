@@ -94,16 +94,23 @@ class SubscriptionUsageCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 15, color: Colors.white60),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-              ],
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(icon, size: 15, color: Colors.white60),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -115,7 +122,7 @@ class SubscriptionUsageCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                limit == 0 ? (isEvent ? '0 (Upgrade for Events)' : '0 / 0') : '$used / $limit',
+                limit == 0 ? '0 / 0' : '$used / $limit',
                 style: TextStyle(
                   color: isAtLimit
                       ? Colors.redAccent
@@ -145,7 +152,15 @@ class SubscriptionUsageCard extends StatelessWidget {
             minHeight: 8,
           ),
         ),
-        if (isNearLimit && used < limit)
+        if (limit == 0 && isEvent)
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              '💡 Upgrade to Pro or Premium to promote events on home screen',
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11, fontWeight: FontWeight.w500),
+            ),
+          )
+        else if (isNearLimit && used < limit)
           Padding(
             padding: const EdgeInsets.only(top: 5),
             child: Text(

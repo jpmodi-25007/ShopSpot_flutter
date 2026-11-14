@@ -604,16 +604,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               final product = state.product;
               final images = product.images.where((i) => i.isNotEmpty).toList();
 
-              return Stack(
-                children: [
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.only(bottom: 120),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Premium Edge-to-Edge Gallery Hero
-                        SizedBox(
-                          height: screenH * 0.55,
+              final wide = MediaQuery.sizeOf(context).width >= 900;
+              final gallery = SizedBox(
+                          height: wide ? 520 : screenH * 0.55,
                           width: double.infinity,
                           child: PageView.builder(
                             itemCount: images.isEmpty ? 1 : images.length,
@@ -634,10 +627,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   : image;
                             },
                           ),
-                        ),
-
-                        // Product Info Section
-                        AnimatedFadeSlide(
+                        );
+              final info = AnimatedFadeSlide(
                           delay: const Duration(milliseconds: 120),
                           child: Padding(
                           padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
@@ -891,8 +882,34 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                             ],
                           ),
                         ),
-                        ),
-                      ],
+                        );
+
+              return Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(wide ? 32 : 0, wide ? 88 : 0, wide ? 32 : 0, 120),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1100),
+                        child: wide
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: gallery,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 32),
+                                  Expanded(child: info),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [gallery, info],
+                              ),
+                      ),
                     ),
                   ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../layouts/web_layout.dart';
 import '../widgets/responsive_container.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -37,7 +38,7 @@ class _WebContactPageState extends State<WebContactPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
-    return Column(
+    return WebPageScroll(
       children: [
         _buildHeader(context),
         Container(
@@ -45,67 +46,77 @@ class _WebContactPageState extends State<WebContactPage> {
           padding: EdgeInsets.symmetric(vertical: isMobile ? 48 : 80),
           child: ResponsiveContainer(
             maxWidth: 1000,
-            child: Flex(
-              direction: isMobile ? Axis.vertical : Axis.horizontal,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: isMobile ? 0 : 1,
-                  child: Column(
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildContactDetails(),
+                      const SizedBox(height: 48),
+                      _buildContactCard(),
+                    ],
+                  )
+                : Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Get in touch', style: AppTextStyles.h2),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Our team is here to help. Send us a message and we will respond within 24 hours.',
-                        style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral600),
-                      ),
-                      const SizedBox(height: 48),
-                      _buildContactMethod(
-                        icon: LucideIcons.mail,
-                        title: 'Email Us',
-                        value: 'support@findivo.com',
-                      ),
-                      const SizedBox(height: 32),
-                      _buildContactMethod(
-                        icon: LucideIcons.phone,
-                        title: 'Call Us',
-                        value: '+1 (555) 123-4567',
-                      ),
-                      const SizedBox(height: 32),
-                      _buildContactMethod(
-                        icon: LucideIcons.mapPin,
-                        title: 'Visit Us',
-                        value: '123 Market Street, San Francisco, CA',
-                      ),
+                      Expanded(child: _buildContactDetails()),
+                      Expanded(child: _buildContactCard()),
                     ],
                   ),
-                ),
-                if (isMobile) const SizedBox(height: 48),
-                Expanded(
-                  flex: isMobile ? 0 : 1,
-                  child: Container(
-                    margin: EdgeInsets.only(left: isMobile ? 0 : 64),
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.neutral900.withValues(alpha: 0.1),
-                          blurRadius: 40,
-                          offset: const Offset(0, 10),
-                        )
-                      ],
-                    ),
-                    child: _isSuccess ? _buildSuccessMessage() : _buildForm(),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildContactDetails() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Get in touch', style: AppTextStyles.h2),
+        const SizedBox(height: 24),
+        Text(
+          'Our team is here to help. Send us a message and we will respond within 24 hours.',
+          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.neutral600),
+        ),
+        const SizedBox(height: 48),
+        _buildContactMethod(
+          icon: LucideIcons.mail,
+          title: 'Email Us',
+          value: 'support@findivo.com',
+        ),
+        const SizedBox(height: 32),
+        _buildContactMethod(
+          icon: LucideIcons.phone,
+          title: 'Call Us',
+          value: '+1 (555) 123-4567',
+        ),
+        const SizedBox(height: 32),
+        _buildContactMethod(
+          icon: LucideIcons.mapPin,
+          title: 'Visit Us',
+          value: '123 Market Street, San Francisco, CA',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactCard() {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    return Container(
+      margin: EdgeInsets.only(left: isMobile ? 0 : 64),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutral900.withValues(alpha: 0.1),
+            blurRadius: 40,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: _isSuccess ? _buildSuccessMessage() : _buildForm(),
     );
   }
 

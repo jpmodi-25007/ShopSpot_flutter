@@ -5,6 +5,7 @@ import '../sections/cta_section.dart';
 import '../sections/faq_section.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../layouts/web_layout.dart';
 import '../widgets/responsive_container.dart';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ class _WebFAQPageState extends State<WebFAQPage> with TickerProviderStateMixin {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
     final selected = _categories[_selectedCategoryIndex];
 
-    return Column(
+    return WebPageScroll(
       children: [
         _buildHeroHeader(context, isMobile),
         _buildStatsStrip(context, isMobile),

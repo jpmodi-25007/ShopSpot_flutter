@@ -3,6 +3,7 @@ import '../sections/how_it_works_section.dart';
 import '../sections/cta_section.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../layouts/web_layout.dart';
 import '../widgets/responsive_container.dart';
 
 class WebHowItWorksPage extends StatelessWidget {
@@ -10,7 +11,7 @@ class WebHowItWorksPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return WebPageScroll(
       children: [
         _buildHeader(context),
         const HowItWorksSection(),

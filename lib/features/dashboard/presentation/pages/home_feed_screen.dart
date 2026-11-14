@@ -41,7 +41,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _currentAddress = 'Fetching location...';
   Position? _currentPos;
   List<EventEntity> _upcomingEvents = const [];
-  final PageController _bannerController = PageController(viewportFraction: 0.9);
+  final PageController _bannerController = PageController(viewportFraction: 1);
 
   @override
   void initState() {

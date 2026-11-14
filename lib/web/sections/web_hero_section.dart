@@ -150,22 +150,13 @@ class _WebHeroSectionState extends State<WebHeroSection>
         const SizedBox(height: 28),
 
         // Headline
-        RichText(
-          text: TextSpan(
-            style: (isMobile
-                    ? AppTextStyles.h1.copyWith(fontSize: 36)
-                    : AppTextStyles.display.copyWith(fontSize: 56))
-                .copyWith(
-              color: AppColors.neutral900,
-              height: 1.1,
-            ),
-            children: const [
-              TextSpan(text: 'The smarter way\nto '),
-              TextSpan(
-                text: 'shop local.',
-                style: TextStyle(color: AppColors.neutral900),
-              ),
-            ],
+        Text(
+          'The smarter way\nto shop local.',
+          style: TextStyle(
+            fontSize: isMobile ? 36 : 56,
+            fontWeight: FontWeight.w700,
+            color: AppColors.neutral900,
+            height: 1.1,
           ),
         ),
         const SizedBox(height: 24),
@@ -186,14 +177,25 @@ class _WebHeroSectionState extends State<WebHeroSection>
           spacing: 14,
           runSpacing: 14,
           children: [
-            _PrimaryButton(
-              label: 'Get Started Free',
-              icon: LucideIcons.arrowRight,
-              onTap: () => context.go('/signup'),
+            ElevatedButton.icon(
+              onPressed: () => context.go('/signup'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.neutral900,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('Get Started Free'),
             ),
-            _SecondaryButton(
-              label: 'See How It Works',
-              onTap: () => context.go('/how-it-works'),
+            OutlinedButton(
+              onPressed: () => context.go('/how-it-works'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.neutral800,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('See How It Works'),
             ),
           ],
         ),

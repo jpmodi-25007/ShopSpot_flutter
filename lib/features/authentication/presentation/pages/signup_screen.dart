@@ -598,7 +598,13 @@ class _SignupScreenState extends State<SignupScreen>
                 Text('Already have an account? ',
                     style: AppTextStyles.body),
                 GestureDetector(
-                  onTap: () => context.pop(),
+                  onTap: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/login');
+                    }
+                  },
                   child: Text('Log in',
                       style: AppTextStyles.body.copyWith(
                           color: _currentRole.color,

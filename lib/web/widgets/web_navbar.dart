@@ -11,7 +11,7 @@ class WebNavbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final bool isMobile = MediaQuery.of(context).size.width < 980;
 
     return ClipRect(
       child: BackdropFilter(

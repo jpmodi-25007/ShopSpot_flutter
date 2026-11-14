@@ -4,6 +4,7 @@ import '../sections/feature_section.dart';
 import '../sections/cta_section.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../layouts/web_layout.dart';
 import '../widgets/responsive_container.dart';
 
 class WebFeaturesPage extends StatefulWidget {
@@ -39,7 +40,7 @@ class _WebFeaturesPageState extends State<WebFeaturesPage>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return WebPageScroll(
       children: [
         _buildHeroHeader(context),
         _buildRoleComparisonStrip(context),

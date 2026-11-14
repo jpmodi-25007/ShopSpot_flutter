@@ -13,7 +13,7 @@ class WebLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final bool isMobile = MediaQuery.of(context).size.width < 980;
     
     return Scaffold(
       backgroundColor: AppColors.neutral50,
@@ -22,14 +22,7 @@ class WebLayout extends StatelessWidget {
         child: WebNavbar(),
       ),
       endDrawer: isMobile ? _buildMobileDrawer(context) : null,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            child,
-            const WebFooter(),
-          ],
-        ),
-      ),
+      body: child,
     );
   }
 
@@ -92,6 +85,28 @@ class WebLayout extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Marketing pages sit inside the shell navigator, which is exactly the
+/// window tall. Scroll the page content here so it is not clipped.
+class WebPageScroll extends StatelessWidget {
+  final List<Widget> children;
+
+  const WebPageScroll({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ...children,
+          const WebFooter(),
         ],
       ),
     );

@@ -78,25 +78,27 @@ class _FeatureSectionState extends State<FeatureSection>
       child: _buildImageColumn(isMobile),
     );
 
-    List<Widget> children = [
-      Expanded(flex: isMobile ? 0 : 1, child: textCol),
-      if (isMobile) const SizedBox(height: 40),
-      Expanded(flex: isMobile ? 0 : 1, child: imageCol),
-    ];
-
-    if (widget.reversed && !isMobile) {
-      children = children.reversed.toList();
-    }
+    final desktopChildren = widget.reversed
+        ? <Widget>[Expanded(child: imageCol), Expanded(child: textCol)]
+        : <Widget>[Expanded(child: textCol), Expanded(child: imageCol)];
 
     return Container(
       color: AppColors.white,
       padding: EdgeInsets.symmetric(vertical: isMobile ? 56 : 96),
       child: ResponsiveContainer(
-        child: Flex(
-          direction: isMobile ? Axis.vertical : Axis.horizontal,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: children,
-        ),
+        child: isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  textCol,
+                  const SizedBox(height: 40),
+                  imageCol,
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: desktopChildren,
+              ),
       ),
     );
   }

@@ -30,10 +30,14 @@ import 'core/widgets/mobile_web_app_banner.dart';
 import 'core/widgets/connectivity_wrapper.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Link the icon library before the first frame. On web, doing it from a
+  // deep widget build overflows the stack and leaves the page black.
+  LucideIcons.store.codePoint;
   
   // Load environment variables with fallback
   try {

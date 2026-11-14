@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class SubscriptionUsageCard extends StatelessWidget {
   final Map<String, dynamic> usage;
@@ -18,62 +17,151 @@ class SubscriptionUsageCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2D1B13),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        color: const Color(0xFF1E222D),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x40000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('This Month\'s Usage',
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.speed_rounded, color: Color(0xFFF59E0B), size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Current Monthly Usage',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _usageBar(
+            icon: Icons.inventory_2_outlined,
+            label: 'Product Catalogue Limit',
+            used: productsCount,
+            limit: productLimit,
+            pct: productPct,
+            barColor: const Color(0xFF3B82F6),
+          ),
           const SizedBox(height: 16),
-          _usageBar('Products', productsCount, productLimit, productPct, AppColors.primary600),
-          const SizedBox(height: 12),
-          if (eventLimit > 0)
-            _usageBar('Events on Home Screen', eventsUsed, eventLimit, eventPct, AppColors.secondary500),
+          _usageBar(
+            icon: Icons.campaign_outlined,
+            label: 'Home Screen Promoted Events',
+            used: eventsUsed,
+            limit: eventLimit,
+            pct: eventPct,
+            barColor: const Color(0xFFF59E0B),
+            isEvent: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _usageBar(String label, int used, int limit, double pct, Color color) {
-    final isNearLimit = pct >= 0.8;
+  Widget _usageBar({
+    required IconData icon,
+    required String label,
+    required int used,
+    required int limit,
+    required double pct,
+    required Color barColor,
+    bool isEvent = false,
+  }) {
+    final isNearLimit = pct >= 0.8 && limit > 0;
+    final isAtLimit = used >= limit && limit > 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-            Text('$used / $limit',
-              style: TextStyle(
-                color: isNearLimit ? Colors.orange : Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              )),
+            Row(
+              children: [
+                Icon(icon, size: 15, color: Colors.white60),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: isAtLimit
+                    ? Colors.red.withOpacity(0.2)
+                    : isNearLimit
+                        ? Colors.orange.withOpacity(0.2)
+                        : Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                limit == 0 ? (isEvent ? '0 (Upgrade for Events)' : '0 / 0') : '$used / $limit',
+                style: TextStyle(
+                  color: isAtLimit
+                      ? Colors.redAccent
+                      : isNearLimit
+                          ? Colors.orangeAccent
+                          : Colors.white,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
-            value: pct,
-            backgroundColor: Colors.white10,
+            value: limit == 0 ? 0.0 : pct,
+            backgroundColor: Colors.white.withOpacity(0.08),
             valueColor: AlwaysStoppedAnimation<Color>(
-              isNearLimit ? Colors.orange : color,
+              isAtLimit
+                  ? Colors.redAccent
+                  : isNearLimit
+                      ? Colors.orangeAccent
+                      : barColor,
             ),
             minHeight: 8,
           ),
         ),
         if (isNearLimit && used < limit)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text('⚠️ Nearing limit — consider upgrading',
-              style: TextStyle(color: Colors.orange.shade300, fontSize: 11)),
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              '⚠️ Reaching limit — upgrade plan to add more without interruption',
+              style: TextStyle(color: Colors.orange.shade300, fontSize: 11, fontWeight: FontWeight.w500),
+            ),
+          )
+        else if (isAtLimit)
+          const Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Text(
+              '🚫 Limit reached — upgrade to unlock more quota',
+              style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
           ),
       ],
     );
   }
 }
-

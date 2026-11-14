@@ -30,27 +30,31 @@ class _MySubscriptionPageState extends State<MySubscriptionPage> {
         _service.getMySubscription(),
         _service.getPaymentHistory(),
       ]);
-      setState(() {
-        _data = results[0] as Map<String, dynamic>;
-        _history = results[1] as List;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _data = results[0] as Map<String, dynamic>?;
+          _history = (results[1] as List?) ?? [];
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final tier = _data?['currentTier'] as String? ?? 'FREE';
+    final tier = (_data?['currentTier'] ?? 'FREE').toString().toUpperCase();
     final expiresAt = _data?['expiresAt'];
-    final plan = _data?['plan'] as Map<String, dynamic>?;
-    final usage = _data?['usage'] as Map<String, dynamic>?;
+    final plan = _data?['plan'] is Map ? Map<String, dynamic>.from(_data!['plan'] as Map) : null;
+    final usage = _data?['usage'] is Map ? Map<String, dynamic>.from(_data!['usage'] as Map) : null;
 
     final Map<String, Map<String, dynamic>> tierConfig = {
       'FREE': {'icon': '🆓', 'color': Colors.grey, 'name': 'Free'},
+      'BASIC': {'icon': '🆓', 'color': Colors.grey, 'name': 'Free'},
       'PRO': {'icon': '⭐', 'color': const Color(0xFF3B82F6), 'name': 'Pro'},
       'PREMIUM': {'icon': '👑', 'color': const Color(0xFFF59E0B), 'name': 'Premium'},
+      'ELITE': {'icon': '👑', 'color': const Color(0xFFF59E0B), 'name': 'Premium'},
     };
     final config = tierConfig[tier] ?? tierConfig['FREE']!;
 
@@ -119,7 +123,14 @@ class _MySubscriptionPageState extends State<MySubscriptionPage> {
                   const SizedBox(height: 16),
 
                   // Usage meters
-                  if (usage != null) SubscriptionUsageCard(usage: usage),
+                  SubscriptionUsageCard(
+                    usage: usage ?? const {
+                      'productsCount': 0,
+                      'productLimit': 50,
+                      'eventsUsedThisMonth': 0,
+                      'eventLimit': 0,
+                    },
+                  ),
                   const SizedBox(height: 16),
 
                   // Upgrade button (if not premium)

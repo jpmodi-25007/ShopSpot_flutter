@@ -46,23 +46,29 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
 
   Future<void> _loadData() async {
     try {
-      final results = await Future.wait([
-        _service.getPlans(),
-        _service.getMySubscription(),
-      ]);
-      setState(() {
-        _plans = results[0] as List;
-        _mySubscription = results[1] as Map<String, dynamic>;
-        _loading = false;
-      });
+      final plans = await _service.getPlans();
+      final mySub = await _service.getMySubscription();
+      if (mounted) {
+        setState(() {
+          _plans = plans;
+          _mySubscription = mySub;
+          _loading = false;
+          _error = null;
+        });
+      }
     } catch (e) {
-      setState(() { _loading = false; _error = e.toString(); });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
   Future<void> _subscribe(Map<String, dynamic> plan) async {
-    final planId = plan['id'] as String;
-    final price = double.tryParse(plan['price'].toString()) ?? 0;
+    final planId = (plan['id'] ?? plan['tier'] ?? '').toString();
+    final price = double.tryParse(plan['price']?.toString() ?? '0') ?? 0;
 
     if (price == 0) {
       // Free plan — activate directly
@@ -90,16 +96,16 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     });
     try {
       final orderData = await _service.createOrder(planId);
-      final amount = orderData['amount'] as int;
-      final orderId = orderData['orderId'] as String;
-      final keyId = orderData['keyId'] as String;
+      final amount = int.tryParse(orderData['amount']?.toString() ?? '0') ?? 0;
+      final orderId = (orderData['orderId'] ?? '').toString();
+      final keyId = (orderData['keyId'] ?? '').toString();
       _currentRazorpayOrderId = orderId;
 
       final options = {
         'key': keyId,
         'amount': amount,
         'name': 'ShopSpot',
-        'description': '${plan['name']} Plan Subscription',
+        'description': '${plan['name'] ?? plan['tier']} Plan Subscription',
         'order_id': orderId,
         'currency': 'INR',
         'prefill': {
@@ -112,7 +118,7 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       _razorpay.open(options);
     } catch (e) {
       _showError('Failed to create order: ${e.toString()}');
-      setState(() => _paymentProcessing = false);
+      if (mounted) setState(() => _paymentProcessing = false);
     }
   }
 
@@ -202,7 +208,7 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     );
   }
 
-  String get _currentTier => _mySubscription?['currentTier'] as String? ?? 'FREE';
+  String get _currentTier => (_mySubscription?['currentTier'] ?? 'FREE').toString();
 
   @override
   Widget build(BuildContext context) {
@@ -221,14 +227,18 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       ),
       body: _loading
         ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-        : _error != null
-          ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-          : _buildBody(),
+        : RefreshIndicator(
+            onRefresh: _loadData,
+            color: Colors.amber,
+            backgroundColor: const Color(0xFF2D1B13),
+            child: _buildBody(),
+          ),
     );
   }
 
   Widget _buildBody() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
           // Header gradient
@@ -283,12 +293,16 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: _plans.map<Widget>((plan) {
+              children: _plans.map<Widget>((p) {
+                final plan = p is Map<String, dynamic>
+                    ? p
+                    : (p is Map ? Map<String, dynamic>.from(p) : <String, dynamic>{});
+                final planTier = (plan['tier'] ?? '').toString().toUpperCase();
                 return PlanCard(
                   plan: plan,
-                  isCurrentPlan: plan['tier'] == _currentTier,
+                  isCurrentPlan: planTier.isNotEmpty && planTier == _currentTier.toUpperCase(),
                   isYearly: _isYearly,
-                  isProcessing: _paymentProcessing && _selectedPlanId == plan['id'],
+                  isProcessing: _paymentProcessing && _selectedPlanId == (plan['id']?.toString() ?? ''),
                   onSubscribe: _paymentProcessing ? null : () => _subscribe(plan),
                 );
               }).toList(),
@@ -296,10 +310,12 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
           ),
 
           // Current usage (if shopkeeper has a subscription)
-          if (_mySubscription != null && _mySubscription!['usage'] != null)
+          if (_mySubscription != null && _mySubscription!['usage'] is Map)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-              child: SubscriptionUsageCard(usage: _mySubscription!['usage']),
+              child: SubscriptionUsageCard(
+                usage: Map<String, dynamic>.from(_mySubscription!['usage'] as Map),
+              ),
             ),
 
           const SizedBox(height: 40),

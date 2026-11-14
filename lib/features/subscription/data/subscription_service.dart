@@ -7,6 +7,7 @@ class SubscriptionService {
   SubscriptionService(this._dio);
 
   Future<List<dynamic>> getPlans() async {
+    List<dynamic> serverPlans = [];
     try {
       final res = await _dio.get('/subscriptions/plans');
       dynamic data = res.data;
@@ -15,76 +16,107 @@ class SubscriptionService {
           data = jsonDecode(data);
         } catch (_) {}
       }
-      if (data is List && data.isNotEmpty) return data;
-      if (data is Map && data['data'] is List && (data['data'] as List).isNotEmpty) {
-        return data['data'] as List;
+      if (data is List && data.isNotEmpty) {
+        serverPlans = data;
+      } else if (data is Map && data['data'] is List && (data['data'] as List).isNotEmpty) {
+        serverPlans = data['data'] as List;
       }
     } catch (_) {}
 
-    // Fallback default marketing plans if server returned empty or is updating
+    // Helper to find a matching plan from server by tier candidates
+    Map<String, dynamic>? findServerPlan(List<String> matchTiers) {
+      for (final p in serverPlans) {
+        if (p is Map) {
+          final t = (p['tier'] ?? '').toString().toUpperCase();
+          if (matchTiers.contains(t)) {
+            return Map<String, dynamic>.from(p);
+          }
+        }
+      }
+      return null;
+    }
+
+    final freeServer = findServerPlan(['FREE']);
+    final proServer = findServerPlan(['PRO', 'BASIC']);
+    final premiumServer = findServerPlan(['PREMIUM', 'ELITE']);
+
+    // Canonical 3 tiers with rich metadata and seamless mapping to server IDs
     return [
       {
-        'id': 'free',
+        'id': freeServer?['id']?.toString() ?? 'free',
         'tier': 'FREE',
-        'name': 'Free',
-        'tagline': 'Get your shop online in minutes — zero cost, zero risk',
+        'name': (freeServer?['name'] != null && freeServer!['name'] != 'FREE')
+            ? freeServer['name'].toString()
+            : 'Free Starter',
+        'tagline': freeServer?['tagline']?.toString().isNotEmpty == true
+            ? freeServer!['tagline'].toString()
+            : 'Get your shop online in minutes — zero cost, zero risk',
         'price': 0,
         'yearlyPrice': null,
-        'productLimit': 50,
-        'eventLimit': 0,
+        'productLimit': int.tryParse(freeServer?['productLimit']?.toString() ?? '') ?? 50,
+        'eventLimit': int.tryParse(freeServer?['eventLimit']?.toString() ?? '') ?? 0,
+        'badge': 'STARTER',
         'features': [
-          'Up to 50 products',
-          'Basic shop profile',
-          'WhatsApp & call inquiries',
-          'Order & reservation management',
-          'Basic analytics',
-          'Standard search listing',
+          'Up to 50 products upload',
+          'Basic shop listing in local search',
+          'WhatsApp & call customer inquiries',
+          'Order & inquiry management inbox',
+          'Basic sales & visitor analytics',
+          '1st month completely free for new shops',
         ],
         'isHighlighted': false,
       },
       {
-        'id': 'pro',
+        'id': proServer?['id']?.toString() ?? 'pro',
         'tier': 'PRO',
-        'name': 'Pro',
-        'tagline': 'Grow your reach — promote events, attract more customers',
-        'price': 499,
-        'yearlyPrice': 4788,
-        'productLimit': 200,
-        'eventLimit': 1,
+        'name': (proServer?['name'] != null && !['PRO', 'BASIC'].contains(proServer!['name']))
+            ? proServer['name'].toString()
+            : 'Pro Growth',
+        'tagline': proServer?['tagline']?.toString().isNotEmpty == true
+            ? proServer!['tagline'].toString()
+            : 'Grow your reach — promote events, attract more customers',
+        'price': double.tryParse(proServer?['price']?.toString() ?? '') ?? 499,
+        'yearlyPrice': double.tryParse(proServer?['yearlyPrice']?.toString() ?? '') ?? 4788,
+        'productLimit': int.tryParse(proServer?['productLimit']?.toString() ?? '') ?? 200,
+        'eventLimit': int.tryParse(proServer?['eventLimit']?.toString() ?? '') ?? 1,
+        'badge': 'MOST POPULAR',
         'features': [
-          'Up to 200 products',
-          '1 promoted event/month on home screen',
-          'Advanced analytics',
-          '🔵 Pro badge on shop listing',
-          '20% higher search ranking',
-          'Customer chat enabled',
-          'Promotional banner in nearby feed',
-          'Auto GST invoice',
+          'Up to 200 products upload limit (4x more)',
+          '1 promoted event/month on customer home banner',
+          '🔵 Pro Verified badge on shop profile',
+          '20% boosted ranking in local search results',
+          'Customer direct chat & special offer sharing',
+          'Promotional banner in nearby shopper feeds',
+          'Automated GST-compliant invoices',
+          'Advanced revenue & customer analytics',
         ],
         'isHighlighted': true,
       },
       {
-        'id': 'premium',
+        'id': premiumServer?['id']?.toString() ?? 'premium',
         'tier': 'PREMIUM',
-        'name': 'Premium',
-        'tagline': 'Dominate your locality — maximum visibility, maximum sales',
-        'price': 1199,
-        'yearlyPrice': 11508,
-        'productLimit': 500,
-        'eventLimit': 3,
+        'name': (premiumServer?['name'] != null && !['PREMIUM', 'ELITE'].contains(premiumServer!['name']))
+            ? premiumServer['name'].toString()
+            : 'Premium VIP',
+        'tagline': premiumServer?['tagline']?.toString().isNotEmpty == true
+            ? premiumServer!['tagline'].toString()
+            : 'Dominate your locality — maximum visibility, maximum sales',
+        'price': double.tryParse(premiumServer?['price']?.toString() ?? '') ?? 1199,
+        'yearlyPrice': double.tryParse(premiumServer?['yearlyPrice']?.toString() ?? '') ?? 11508,
+        'productLimit': int.tryParse(premiumServer?['productLimit']?.toString() ?? '') ?? 500,
+        'eventLimit': int.tryParse(premiumServer?['eventLimit']?.toString() ?? '') ?? 3,
+        'badge': 'BEST VALUE',
         'features': [
-          'Up to 500 products',
-          'Up to 3 events/promotions on home carousel',
-          'Full analytics suite',
-          '👑 Premium gold badge',
-          '50% search boost + category top-3',
-          'Influencer campaigns (2/month)',
-          'Full-width home screen banner',
-          'Price negotiation feature',
-          'Bulk CSV inventory upload',
-          'Stock alerts',
-          'Auto GST invoice',
-          'Early access to new features',
+          'Up to 500 products upload limit (10x more)',
+          'Up to 3 events & flash promotions on home carousel',
+          '👑 Gold Crown VIP badge on shop & products',
+          '50% search ranking boost + Top-3 category placement',
+          'Influencer campaign invites (2/month)',
+          'Full-width home screen banner placement',
+          'Price negotiation & instant counter-offers',
+          'Bulk CSV product inventory upload & stock alerts',
+          'Automated GST-compliant invoices',
+          'Priority 24/7 retailer support hotline',
         ],
         'isHighlighted': false,
       },

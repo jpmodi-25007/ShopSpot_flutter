@@ -26,7 +26,6 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
   bool _isYearly = false;
   String? _selectedPlanId;
   String? _currentRazorpayOrderId;
-  String? _error;
 
   @override
   void initState() {
@@ -53,20 +52,29 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
           _plans = plans;
           _mySubscription = mySub;
           _loading = false;
-          _error = null;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString();
         });
       }
     }
   }
 
   Future<void> _subscribe(Map<String, dynamic> plan) async {
+    final planTier = (plan['tier'] ?? '').toString().toUpperCase();
+    if (planTier.isNotEmpty && planTier == _currentTier.toUpperCase()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You are already on this plan!'),
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+      return;
+    }
+
     final planId = (plan['id'] ?? plan['tier'] ?? '').toString();
     final price = double.tryParse(plan['price']?.toString() ?? '0') ?? 0;
 
@@ -77,12 +85,15 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
         await _service.createOrder(planId);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Free plan activated!'), backgroundColor: Colors.green),
+            const SnackBar(
+              content: Text('✅ Free Starter plan activated!'),
+              backgroundColor: Color(0xFF10B981),
+            ),
           );
-          Navigator.pop(context, true);
+          _loadData();
         }
       } catch (e) {
-        _showError('Failed to activate plan');
+        _showError('Failed to activate plan: ${e.toString()}');
       } finally {
         if (mounted) setState(() => _paymentProcessing = false);
       }
@@ -112,12 +123,12 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
           'contact': '',
           'email': '',
         },
-        'theme': {'color': '#4E342E'},
+        'theme': {'color': '#F59E0B'},
       };
 
       _razorpay.open(options);
     } catch (e) {
-      _showError('Failed to create order: ${e.toString()}');
+      _showError('Failed to create payment order: ${e.toString()}');
       if (mounted) setState(() => _paymentProcessing = false);
     }
   }
@@ -136,16 +147,17 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       setState(() => _paymentProcessing = false);
       if (mounted) {
         _showSuccessAnimation();
+        _loadData();
       }
     } catch (e) {
       setState(() => _paymentProcessing = false);
-      _showError('Payment verification failed');
+      _showError('Payment verification failed. Please contact support.');
     }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
     setState(() => _paymentProcessing = false);
-    _showError('Payment failed: ${response.message}');
+    _showError('Payment cancelled or failed: ${response.message}');
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -164,41 +176,53 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: const Color(0xFF1E222D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: 76,
+                height: 76,
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: const Color(0xFF10B981).withOpacity(0.15),
                   shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF10B981), width: 2),
                 ),
-                child: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                child: const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 48),
               ),
               const SizedBox(height: 20),
-              const Text('Payment Successful!',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text(
+                'Plan Activated!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 8),
-              const Text('Your plan has been activated.',
-                style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+              Text(
+                'Your subscription has been activated successfully. Your higher product limits and event promotions are now live.',
+                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13.5, height: 1.4),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary600,
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: const Color(0xFF1A1108),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).pop(true);
                   },
-                  child: const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Go to Dashboard', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                 ),
               ),
             ],
@@ -213,26 +237,37 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A0E0A),
+      backgroundColor: const Color(0xFF0F0B09),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
         ),
-        title: const Text('Choose Your Plan',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Choose Your Plan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 19),
+        ),
         centerTitle: true,
       ),
       body: _loading
-        ? const Center(child: CircularProgressIndicator(color: Colors.amber))
-        : RefreshIndicator(
-            onRefresh: _loadData,
-            color: Colors.amber,
-            backgroundColor: const Color(0xFF2D1B13),
-            child: _buildBody(),
-          ),
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFF59E0B)))
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: const Color(0xFFF59E0B),
+              backgroundColor: const Color(0xFF1E222D),
+              child: _buildBody(),
+            ),
     );
   }
 
@@ -241,41 +276,73 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
-          // Header gradient
+          // Header Hero Banner
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+            padding: const EdgeInsets.fromLTRB(22, 10, 22, 28),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF1A0E0A), Color(0xFF2D1B13)],
+                colors: [Color(0xFF0F0B09), Color(0xFF1C130D)],
               ),
             ),
             child: Column(
               children: [
+                // Top Tag
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, color: Color(0xFFF59E0B), size: 14),
+                      SizedBox(width: 6),
+                      Text(
+                        'GROW YOUR SHOP RETAIL REACH',
+                        style: TextStyle(
+                          color: Color(0xFFFBBF24),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 const Text(
                   'Supercharge Your Shop',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 26,
+                    fontSize: 27,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.6,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Reach more customers, grow faster',
-                  style: TextStyle(color: Colors.white60, fontSize: 15),
+                const SizedBox(height: 6),
+                Text(
+                  'Expand product catalogue, run featured home-screen banners, and get discovered by thousands of nearby customers.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 13.5,
+                    height: 1.35,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                // Yearly / Monthly toggle
+
+                // Monthly / Yearly Segmented Control
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFF1E222D),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -289,9 +356,9 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
             ),
           ),
 
-          // Plan cards
+          // Plan Cards List
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Column(
               children: _plans.map<Widget>((p) {
                 final plan = p is Map<String, dynamic>
@@ -309,16 +376,38 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
             ),
           ),
 
-          // Current usage (if shopkeeper has a subscription)
+          // Current usage card if available
           if (_mySubscription != null && _mySubscription!['usage'] is Map)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 20),
               child: SubscriptionUsageCard(
                 usage: Map<String, dynamic>.from(_mySubscription!['usage'] as Map),
               ),
             ),
 
-          const SizedBox(height: 40),
+          // Trust Badges Footer
+          Container(
+            margin: const EdgeInsets.fromLTRB(18, 8, 18, 32),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.06)),
+            ),
+            child: Column(
+              children: [
+                _trustItem(Icons.security_rounded, 'Bank-grade Razorpay payment security'),
+                const SizedBox(height: 10),
+                _trustItem(Icons.bolt_rounded, 'Instant limit increase upon payment'),
+                const SizedBox(height: 10),
+                _trustItem(Icons.receipt_long_rounded, 'Automated GST-compliant tax invoices'),
+                const SizedBox(height: 10),
+                _trustItem(Icons.autorenew_rounded, 'Upgrade, downgrade or cancel anytime'),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -329,21 +418,47 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? Colors.amber : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          gradient: active
+              ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)])
+              : null,
+          color: active ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: active ? Colors.black : Colors.white70,
-            fontWeight: active ? FontWeight.bold : FontWeight.normal,
+            color: active ? const Color(0xFF1A1108) : Colors.white70,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w500,
             fontSize: 13,
           ),
         ),
       ),
     );
   }
-}
 
+  Widget _trustItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF94A3B8), size: 16),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+}

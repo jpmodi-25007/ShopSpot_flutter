@@ -7,10 +7,10 @@ class SubscriptionUsageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productsCount = usage['productsCount'] as int? ?? 0;
-    final productLimit = usage['productLimit'] as int? ?? 50;
-    final eventsUsed = usage['eventsUsedThisMonth'] as int? ?? 0;
-    final eventLimit = usage['eventLimit'] as int? ?? 0;
+    final productsCount = int.tryParse(usage['productsCount']?.toString() ?? '') ?? 0;
+    final productLimit = int.tryParse(usage['productLimit']?.toString() ?? '') ?? 50;
+    final eventsUsed = int.tryParse(usage['eventsUsedThisMonth']?.toString() ?? '') ?? 0;
+    final eventLimit = int.tryParse(usage['eventLimit']?.toString() ?? '') ?? 0;
 
     final productPct = productLimit > 0 ? (productsCount / productLimit).clamp(0.0, 1.0) : 0.0;
     final eventPct = eventLimit > 0 ? (eventsUsed / eventLimit).clamp(0.0, 1.0) : 0.0;

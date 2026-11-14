@@ -19,24 +19,32 @@ class PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tier = plan['tier'] as String? ?? 'FREE';
-    final isHighlighted = plan['isHighlighted'] as bool? ?? false;
-    final price = double.tryParse(plan['price'].toString()) ?? 0;
+    final tier = (plan['tier'] ?? 'FREE').toString();
+    final isHighlighted = plan['isHighlighted'] == true;
+    final price = double.tryParse(plan['price']?.toString() ?? '0') ?? 0;
     final yearlyPrice = plan['yearlyPrice'] != null
       ? double.tryParse(plan['yearlyPrice'].toString())
       : null;
     final displayPrice = isYearly && yearlyPrice != null
       ? yearlyPrice / 12
       : price;
-    final features = (plan['features'] as List?)?.cast<String>() ?? [];
+
+    final List<String> features = [];
+    if (plan['features'] is List) {
+      for (final f in plan['features'] as List) {
+        if (f != null) features.add(f.toString());
+      }
+    }
 
     final Map<String, Map<String, dynamic>> tierConfig = {
       'FREE': {'icon': '🆓', 'gradient': [const Color(0xFF374151), const Color(0xFF1F2937)], 'accent': Colors.grey},
+      'BASIC': {'icon': '🆓', 'gradient': [const Color(0xFF374151), const Color(0xFF1F2937)], 'accent': Colors.grey},
       'PRO': {'icon': '⭐', 'gradient': [const Color(0xFF1E3A5F), const Color(0xFF1E40AF)], 'accent': const Color(0xFF3B82F6)},
       'PREMIUM': {'icon': '👑', 'gradient': [const Color(0xFF78350F), const Color(0xFFB45309)], 'accent': const Color(0xFFF59E0B)},
+      'ELITE': {'icon': '👑', 'gradient': [const Color(0xFF78350F), const Color(0xFFB45309)], 'accent': const Color(0xFFF59E0B)},
     };
 
-    final config = tierConfig[tier] ?? tierConfig['FREE']!;
+    final config = tierConfig[tier.toUpperCase()] ?? tierConfig['FREE']!;
     final gradientColors = (config['gradient'] as List).cast<Color>();
     final accent = config['accent'] as Color;
 
@@ -73,9 +81,9 @@ class PlanCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(plan['name'] as String? ?? tier,
+                          Text((plan['name'] ?? tier).toString(),
                             style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          Text(plan['tagline'] as String? ?? '',
+                          Text((plan['tagline'] ?? '').toString(),
                             style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
                         ],
                       ),
@@ -143,7 +151,7 @@ class PlanCard extends StatelessWidget {
                         : Text(
                             isCurrentPlan
                               ? '✓ Current Plan'
-                              : price == 0 ? 'Get Started Free' : 'Upgrade to ${plan['name']}',
+                              : price == 0 ? 'Get Started Free' : 'Upgrade to ${(plan['name'] ?? tier)}',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                     ),

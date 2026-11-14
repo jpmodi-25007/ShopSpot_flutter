@@ -130,6 +130,7 @@ import '../../features/chat/data/datasources/chat_remote_data_source.dart';
 import '../../features/chat/data/datasources/chat_socket_service.dart';
 import '../../features/chat/data/repositories/chat_repository.dart';
 import '../../features/chat/presentation/bloc/chat_bloc.dart';
+import '../../features/subscription/data/subscription_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -464,4 +465,9 @@ Future<void> configureDependencies() async {
   // Events
   getIt.registerLazySingleton<EventRemoteDataSource>(() => EventRemoteDataSourceImpl(dio: getIt()));
   getIt.registerFactory(() => EventBloc(remoteDataSource: getIt()));
+
+  // Subscriptions
+  getIt.registerLazySingleton<SubscriptionService>(
+    () => SubscriptionService(getIt<Dio>()),
+  );
 }

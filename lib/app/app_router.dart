@@ -1,3 +1,5 @@
+import '../../features/subscription/presentation/pages/subscription_plans_page.dart';
+import '../../features/subscription/presentation/pages/my_subscription_page.dart';
 import '../../features/profile/presentation/pages/help_support_screen.dart';
 import '../features/influencer/domain/entities/influencer_bid_entity.dart';
 import '../../features/profile/presentation/pages/about_findivo_screen.dart';
@@ -503,6 +505,14 @@ final appRouter = GoRouter(
         final bid = state.extra as InfluencerBidEntity;
         return BidDetailScreen(bid: bid);
       },
+    ),
+    GoRoute(
+      path: '/subscription/plans',
+      builder: (context, state) => const SubscriptionPlansPage(),
+    ),
+    GoRoute(
+      path: '/subscription/my',
+      builder: (context, state) => const MySubscriptionPage(),
     ),
   ],
 );

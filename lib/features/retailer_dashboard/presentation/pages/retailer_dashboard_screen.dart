@@ -29,6 +29,7 @@ import '../../../dashboard/presentation/bloc/event_event.dart';
 import '../../../dashboard/presentation/bloc/event_state.dart';
 
 import '../../../../core/widgets/shimmer/skeletons/dashboard_stat_skeleton.dart';
+import '../../../subscription/presentation/pages/my_subscription_page.dart';
 
 class RetailerDashboardScreen extends StatelessWidget {
   const RetailerDashboardScreen({super.key});
@@ -229,7 +230,84 @@ class RetailerDashboardScreen extends StatelessWidget {
                             () => context.go('/retailer/campaigns')),
                       ],
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 24),
+
+                    // My Plan Card
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MySubscriptionPage()),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2D1B13), Color(0xFF4E342E)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.roleRetailer.withValues(alpha: 0.25),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(LucideIcons.crown, color: Colors.amber, size: 24),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'My Plan',
+                                        style: AppTextStyles.h4.copyWith(color: Colors.white, fontSize: 16),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: const Text(
+                                          'MANAGE',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'View limits, event quota & upgrade options',
+                                    style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
 
                     // Performance Chart Placeholder
                     Row(

@@ -176,7 +176,25 @@ class SubscriptionService {
           );
         }
       }
-      rethrow;
+
+      // Extract clean error message from backend response (e.g. Razorpay credentials missing/invalid)
+      final resData = dioErr.response?.data;
+      String errorMsg = 'Failed to create payment order.';
+      if (resData is Map && resData['message'] != null) {
+        errorMsg = resData['message'].toString();
+      } else if (resData is String && resData.isNotEmpty) {
+        try {
+          final parsed = jsonDecode(resData);
+          if (parsed is Map && parsed['message'] != null) {
+            errorMsg = parsed['message'].toString();
+          } else {
+            errorMsg = resData;
+          }
+        } catch (_) {
+          errorMsg = resData;
+        }
+      }
+      throw Exception(errorMsg);
     }
   }
 

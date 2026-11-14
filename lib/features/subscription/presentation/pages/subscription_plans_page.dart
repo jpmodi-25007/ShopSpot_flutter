@@ -108,7 +108,9 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     try {
       final orderData = await _service.createOrder(planId, planTier: plan['tier']?.toString());
 
-      if (orderData['activatedDirectly'] == true) {
+      if (orderData['activatedDirectly'] == true ||
+          orderData['simulated'] == true ||
+          orderData['free'] == true) {
         setState(() => _paymentProcessing = false);
         if (mounted) {
           _showSuccessAnimation();

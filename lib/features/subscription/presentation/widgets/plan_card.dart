@@ -255,10 +255,10 @@ class PlanCard extends StatelessWidget {
 
                 if (isFree) ...[
                   const SizedBox(height: 4),
-                  Text(
+                  const Text(
                     '🎉 1st month free for all new shopkeepers',
                     style: TextStyle(
-                      color: Colors.emeraldGreen(),
+                      color: Color(0xFF34D399),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -500,8 +500,4 @@ class PlanCard extends StatelessWidget {
       ),
     );
   }
-}
-
-extension on Colors {
-  static Color emeraldGreen() => const Color(0xFF34D399);
 }

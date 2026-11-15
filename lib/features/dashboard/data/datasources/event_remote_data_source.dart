@@ -17,6 +17,24 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
 
   EventRemoteDataSourceImpl({required this.dio});
 
+  Exception _handleError(dynamic e) {
+    if (e is DioException) {
+      final resData = e.response?.data;
+      if (resData is Map) {
+        final msg = resData['message'];
+        if (msg is List) {
+          return Exception(msg.join(', '));
+        } else if (msg != null && msg.toString().isNotEmpty) {
+          return Exception(msg.toString());
+        }
+      }
+      if (e.message != null && e.message!.isNotEmpty) {
+        return Exception(e.message!);
+      }
+    }
+    return Exception(e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''));
+  }
+
   @override
   Future<List<EventEntity>> getEvents() async {
     try {
@@ -32,7 +50,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       }
       throw Exception('Failed to load events');
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 
@@ -48,7 +66,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       }
       throw Exception('Failed to load shop events');
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 
@@ -61,7 +79,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
       }
       throw Exception('Failed to load event detail');
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 
@@ -76,7 +94,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
         throw Exception('Failed to create event');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 
@@ -91,7 +109,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
         throw Exception('Failed to update event');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 
@@ -103,7 +121,7 @@ class EventRemoteDataSourceImpl implements EventRemoteDataSource {
         throw Exception('Failed to delete event');
       }
     } catch (e) {
-      throw Exception('Network error: $e');
+      throw _handleError(e);
     }
   }
 }

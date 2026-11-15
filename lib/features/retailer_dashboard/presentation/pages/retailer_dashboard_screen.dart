@@ -825,7 +825,7 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
                         }
 
                         return SizedBox(
-                          height: 140,
+                          height: 152,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: events.length,
@@ -838,83 +838,163 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
                                   ? dateFormat.format(event.startDate!)
                                   : 'N/A';
 
-                              return Container(
-                                width: 260,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border:
-                                      Border.all(color: AppColors.neutral200),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.neutral900
-                                          .withValues(alpha: 0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: event.isActive
-                                                ? AppColors.success50
-                                                : AppColors.neutral100,
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Icon(LucideIcons.calendar,
-                                              size: 16,
+                              return GestureDetector(
+                                onTap: () async {
+                                  await context.push('/retailer/events/edit',
+                                      extra: event);
+                                  if (mounted) _loadDashboardData();
+                                },
+                                child: Container(
+                                  width: 270,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border:
+                                        Border.all(color: AppColors.neutral200),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.neutral900
+                                            .withValues(alpha: 0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      )
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
                                               color: event.isActive
-                                                  ? AppColors.success600
-                                                  : AppColors.neutral500),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                                  ? AppColors.success50
+                                                  : AppColors.neutral100,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Icon(LucideIcons.calendar,
+                                                size: 16,
+                                                color: event.isActive
+                                                    ? AppColors.success600
+                                                    : AppColors.neutral500),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  event.title,
+                                                  style: AppTextStyles.body
+                                                      .copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w600),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                Text(
+                                                  startDate,
+                                                  style: AppTextStyles.caption
+                                                      .copyWith(
+                                                          color: AppColors
+                                                              .neutral500),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.roleRetailerLight
+                                                  .withValues(alpha: 0.3),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                  color: AppColors.roleRetailer
+                                                      .withValues(alpha: 0.3)),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(LucideIcons.pencil,
+                                                    size: 11,
+                                                    color:
+                                                        AppColors.roleRetailer),
+                                                SizedBox(width: 4),
+                                                Text(
+                                                  'Edit',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.roleRetailer,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: event.isActive
+                                                  ? AppColors.success50
+                                                  : AppColors.neutral100,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              event.isActive
+                                                  ? 'Active'
+                                                  : 'Completed/Inactive',
+                                              style: AppTextStyles.caption
+                                                  .copyWith(
+                                                color: event.isActive
+                                                    ? AppColors.success600
+                                                    : AppColors.neutral500,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Text(
-                                                event.title,
-                                                style: AppTextStyles.body
-                                                    .copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w600),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                startDate,
+                                                'Edit Details',
                                                 style: AppTextStyles.caption
                                                     .copyWith(
-                                                        color: AppColors
-                                                            .neutral500),
+                                                  color: AppColors.roleRetailer,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 11,
+                                                ),
                                               ),
+                                              const SizedBox(width: 2),
+                                              const Icon(
+                                                  LucideIcons.chevronRight,
+                                                  size: 14,
+                                                  color:
+                                                      AppColors.roleRetailer),
                                             ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      event.isActive
-                                          ? 'Active'
-                                          : 'Completed/Inactive',
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: event.isActive
-                                            ? AppColors.success600
-                                            : AppColors.neutral500,
-                                        fontWeight: FontWeight.w700,
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               );
                             },

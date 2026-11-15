@@ -20,6 +20,11 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<DeleteEventRequested>(_onDeleteEventRequested);
   }
 
+  String _cleanMessage(dynamic e) {
+    final str = e.toString();
+    return str.startsWith('Exception: ') ? str.substring(11) : str;
+  }
+
   Future<void> _onGetEventsRequested(
     GetEventsRequested event,
     Emitter<EventState> emit,
@@ -30,7 +35,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       catalog = events;
       emit(EventsLoaded(events));
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 
@@ -50,7 +55,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       final events = await remoteDataSource.getShopEvents();
       emit(ShopEventsLoaded(events));
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 
@@ -63,7 +68,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       final eventDetail = await remoteDataSource.getEventDetail(event.id);
       emit(EventDetailLoaded(eventDetail));
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 
@@ -85,7 +90,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       await remoteDataSource.createEvent(newEvent);
       emit(EventCreated());
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 
@@ -105,7 +110,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       await remoteDataSource.updateEvent(event.id, eventModel);
       emit(const EventActionSuccess('Event updated successfully'));
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 
@@ -115,7 +120,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       await remoteDataSource.deleteEvent(event.id);
       emit(const EventActionSuccess('Event deleted successfully'));
     } catch (e) {
-      emit(EventError(ServerFailure(e.toString())));
+      emit(EventError(ServerFailure(_cleanMessage(e))));
     }
   }
 }

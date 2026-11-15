@@ -179,16 +179,90 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
       ),
       body: BlocListener<EventBloc, EventState>(
         listener: (context, state) {
-          if (state is EventCreated) {
+          if (state is EventCreated || state is EventActionSuccess) {
+            final msg = state is EventActionSuccess
+                ? state.message
+                : (widget.eventToEdit != null
+                    ? 'Event updated successfully!'
+                    : 'Event created successfully!');
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Event created successfully!'), backgroundColor: AppColors.success600),
+              SnackBar(
+                content: Text(msg),
+                backgroundColor: AppColors.success600,
+                behavior: SnackBarBehavior.floating,
+              ),
             );
-            context.read<EventBloc>().add(const GetEventsRequested()); // Refresh feed
+            context.read<EventBloc>().add(const GetShopEventsRequested());
             context.pop();
           } else if (state is EventError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.failure.message), backgroundColor: AppColors.error500),
-            );
+            final msg = state.failure.message;
+            final isLimitReached = msg.toLowerCase().contains('limit reached') ||
+                msg.toLowerCase().contains('upgrade your subscription');
+
+            if (isLimitReached) {
+              showDialog(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  backgroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  title: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(LucideIcons.alertTriangle,
+                            color: Colors.amber, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Event Limit Reached',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                  content: Text(
+                    msg,
+                    style: AppTextStyles.body
+                        .copyWith(color: AppColors.neutral700, height: 1.4),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogCtx).pop(),
+                      child: Text('Cancel',
+                          style: TextStyle(color: AppColors.neutral600)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.roleRetailer,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.of(dialogCtx).pop();
+                        context.push('/retailer/subscription-plans');
+                      },
+                      child: const Text('Upgrade Plan'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(msg),
+                  backgroundColor: AppColors.error500,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
           }
         },
         child: SingleChildScrollView(
@@ -328,16 +402,19 @@ class _RetailerCreateEventScreenState extends State<RetailerCreateEventScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: state is EventCreating || _isUploading ? null : _submit,
+                        onPressed: state is EventCreating || state is EventLoading || _isUploading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.roleRetailer,
                           elevation: 0,
                           shadowColor: AppColors.roleRetailer.withValues(alpha: 0.3),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: state is EventCreating || _isUploading
+                        child: state is EventCreating || state is EventLoading || _isUploading
                             ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('Post Event', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            : Text(
+                                widget.eventToEdit != null ? 'Update Event' : 'Post Event',
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                       ),
                     );
                   }

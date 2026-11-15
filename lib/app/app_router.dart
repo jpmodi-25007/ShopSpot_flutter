@@ -385,6 +385,13 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/retailer/events/edit',
+      builder: (context, state) {
+        final eventToEdit = state.extra as EventEntity?;
+        return RetailerCreateEventScreen(eventToEdit: eventToEdit);
+      },
+    ),
+    GoRoute(
       path: '/retailer/stock-history',
       builder: (context, state) => const StockHistoryScreen(),
     ),

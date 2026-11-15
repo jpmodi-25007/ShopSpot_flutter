@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../app/app_router.dart';
 import '../widgets/plan_card.dart';
 import '../widgets/subscription_usage_card.dart';
 import '../../data/subscription_service.dart';
@@ -208,63 +210,87 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        backgroundColor: const Color(0xFF1E222D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withAlpha(38),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF10B981), width: 2),
-                ),
-                child: const Icon(Icons.check_circle_rounded,
-                    color: Color(0xFF34D399), size: 50),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '🎉 Plan Activated!',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Your new subscription is live. Higher product limits and event promotions are now available.',
-                style: TextStyle(
-                    color: Colors.white.withAlpha(178),
-                    fontSize: 13.5,
-                    height: 1.4),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF59E0B),
-                    foregroundColor: const Color(0xFF1A1108),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+      useRootNavigator: true,
+      builder: (dialogCtx) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          Navigator.of(dialogCtx, rootNavigator: true).pop();
+          try {
+            Navigator.of(dialogCtx).popUntil((route) => route.isFirst);
+          } catch (_) {}
+          try {
+            appRouter.go('/retailer/home');
+          } catch (_) {}
+        },
+        child: Dialog(
+          backgroundColor: const Color(0xFF1E222D),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withAlpha(38),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF10B981), width: 2),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop(true);
-                  },
-                  child: const Text('Go to Dashboard',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w900, fontSize: 15)),
+                  child: const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF34D399), size: 50),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  '🎉 Plan Activated!',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Your new subscription is live. Higher product limits and event promotions are now available.',
+                  style: TextStyle(
+                      color: Colors.white.withAlpha(178),
+                      fontSize: 13.5,
+                      height: 1.4),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: const Color(0xFF1A1108),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      // 1. Pop the dialog cleanly using dialog's own context on root navigator
+                      Navigator.of(dialogCtx, rootNavigator: true).pop();
+
+                      // 2. Pop any intermediate pushed pages until the root page
+                      try {
+                        Navigator.of(dialogCtx).popUntil((route) => route.isFirst);
+                      } catch (_) {}
+
+                      // 3. Ensure navigation lands cleanly on the retailer dashboard
+                      try {
+                        appRouter.go('/retailer/home');
+                      } catch (_) {}
+                    },
+                    child: const Text('Go to Dashboard',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w900, fontSize: 15)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -275,42 +301,45 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0D14),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(20),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 17),
-              onPressed: () => Navigator.pop(context),
+    return PopScope(
+      canPop: !_paymentProcessing,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0D14),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          leading: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(20),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new,
+                    color: Colors.white, size: 17),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
           ),
+          title: const Text(
+            'Choose Your Plan',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+          ),
+          centerTitle: true,
         ),
-        title: const Text(
-          'Choose Your Plan',
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
-        ),
-        centerTitle: true,
+        body: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFFF59E0B)))
+            : RefreshIndicator(
+                onRefresh: _loadData,
+                color: const Color(0xFFF59E0B),
+                backgroundColor: const Color(0xFF1E222D),
+                child: _buildBody(),
+              ),
       ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFF59E0B)))
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              color: const Color(0xFFF59E0B),
-              backgroundColor: const Color(0xFF1E222D),
-              child: _buildBody(),
-            ),
     );
   }
 

@@ -544,7 +544,7 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
                               enabled: true,
                               touchTooltipData: LineTouchTooltipData(
                                 getTooltipColor: (_) => AppColors.neutral900,
-                                tooltipRoundedRadius: 8,
+                                tooltipBorderRadius: BorderRadius.circular(8),
                                 tooltipPadding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 6),
                                 getTooltipItems: (touchedSpots) {

@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../core/theme/app_colors.dart';
 import '../core/utils/responsive_builder.dart';
-
 import 'package:flutter/services.dart';
+
+import '../features/retailer_dashboard/presentation/bloc/retailer_dashboard_bloc.dart';
+import '../features/retailer_dashboard/presentation/bloc/retailer_dashboard_event.dart';
+import '../features/retailer_campaigns/presentation/bloc/retailer_campaign_bloc.dart';
+import '../features/retailer_campaigns/presentation/bloc/retailer_campaign_event.dart';
+import '../features/dashboard/presentation/bloc/event_bloc.dart';
+import '../features/dashboard/presentation/bloc/event_event.dart';
+import '../features/retailer_negotiation/presentation/bloc/retailer_negotiation_bloc.dart';
+import '../features/retailer_negotiation/presentation/bloc/retailer_negotiation_event.dart';
 
 class RetailerShellLayout extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -26,6 +35,12 @@ class _RetailerShellLayoutState extends State<RetailerShellLayout> {
       index,
       initialLocation: index == widget.navigationShell.currentIndex,
     );
+    if (index == 0) {
+      context.read<RetailerDashboardBloc>().add(const GetShopAnalyticsRequested());
+      context.read<RetailerCampaignBloc>().add(const GetMyCampaignsRequested());
+      context.read<EventBloc>().add(const GetShopEventsRequested());
+      context.read<RetailerNegotiationBloc>().add(const GetShopNegotiationsRequested());
+    }
   }
 
   @override
@@ -37,7 +52,7 @@ class _RetailerShellLayoutState extends State<RetailerShellLayout> {
         
         // If not on the first tab, go back to the first tab instead of exiting
         if (widget.navigationShell.currentIndex != 0) {
-          widget.navigationShell.goBranch(0);
+          _goBranch(0);
           return;
         }
 

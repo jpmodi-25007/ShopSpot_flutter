@@ -31,32 +31,34 @@ import '../../../dashboard/presentation/bloc/event_state.dart';
 import '../../../../core/widgets/shimmer/skeletons/dashboard_stat_skeleton.dart';
 import '../../../subscription/presentation/pages/my_subscription_page.dart';
 
-class RetailerDashboardScreen extends StatelessWidget {
+class RetailerDashboardScreen extends StatefulWidget {
   const RetailerDashboardScreen({super.key});
 
   @override
+  State<RetailerDashboardScreen> createState() =>
+      _RetailerDashboardScreenState();
+}
+
+class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardData();
+    });
+  }
+
+  Future<void> _loadDashboardData() async {
+    if (!mounted) return;
+    context.read<RetailerDashboardBloc>().add(const GetShopAnalyticsRequested());
+    context.read<RetailerCampaignBloc>().add(const GetMyCampaignsRequested());
+    context.read<EventBloc>().add(const GetShopEventsRequested());
+    context.read<RetailerNegotiationBloc>().add(const GetShopNegotiationsRequested());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (context) =>
-              getIt<EventBloc>()..add(const GetShopEventsRequested()),
-        ),
-        BlocProvider(
-          create: (context) =>
-              getIt<RetailerDashboardBloc>()..add(const GetShopAnalyticsRequested()),
-        ),
-        BlocProvider(
-          create: (context) => getIt<RetailerNegotiationBloc>()
-            ..add(const GetShopNegotiationsRequested()),
-        ),
-        BlocProvider(
-          create: (context) => getIt<RetailerCampaignBloc>()
-            ..add(const GetMyCampaignsRequested()),
-        ),
-      ],
-      child: Builder(
-        builder: (context) => Scaffold(
+    return Scaffold(
           backgroundColor: AppColors.neutral50,
           appBar: AppBar(
             backgroundColor: AppColors.white.withValues(alpha: 0.9),
@@ -134,32 +136,70 @@ class RetailerDashboardScreen extends StatelessWidget {
 
               final NumberFormat compactFormat = NumberFormat.compact();
 
-              // Generate dynamic chart spots based on current active orders and ordersTrend
-              // If ordersTrend is positive, the line should trend upwards.
-              // If negative, it trends downwards.
-              final double currentOrders =
-                  inquiries.toDouble() > 0 ? inquiries.toDouble() : 10.0;
-              final double previousOrders =
-                  currentOrders / (1 + (ordersTrend / 100.0));
+              // Extract 7-day data from analytics if available
+              List<double> sevenDayViews = [];
+              List<String> chartDayLabels = [];
+              if (state is RetailerDashboardLoaded && state.analytics != null) {
+                final rawDaily = state.analytics!['dailyViews'];
+                if (rawDaily is List && rawDaily.length == 7) {
+                  sevenDayViews = rawDaily
+                      .map((e) => (double.tryParse(e.toString()) ?? 0.0))
+                      .toList();
+                }
+                final rawLabels = state.analytics!['dayLabels'];
+                if (rawLabels is List && rawLabels.length == 7) {
+                  chartDayLabels = rawLabels.map((e) => e.toString()).toList();
+                }
+              }
 
-              final List<FlSpot> dynamicSpots = List.generate(7, (index) {
-                // Create a gentle curve from previousOrders (day 0) to currentOrders (day 6)
-                final progress = index / 6.0;
-                // Add a little jitter so it looks like a real chart
-                final randomJitter =
-                    (index % 2 == 0 ? 1 : -1) * (currentOrders * 0.05);
-                double val = previousOrders +
-                    ((currentOrders - previousOrders) * progress) +
-                    randomJitter;
-                if (val < 0) val = 0;
-                return FlSpot(index.toDouble(), val);
+              // Fallback day labels if not provided by backend
+              if (chartDayLabels.length != 7) {
+                final now = DateTime.now();
+                const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                chartDayLabels = List.generate(7, (i) {
+                  final d = now.subtract(Duration(days: 6 - i));
+                  return days[d.weekday - 1];
+                });
+              }
+
+              // Fallback values if daily breakdown is not yet available but views exist
+              if (sevenDayViews.length != 7) {
+                if (views > 0) {
+                  final avgDaily = views / 7.0;
+                  sevenDayViews = List.generate(7, (i) {
+                    final progress = i / 6.0;
+                    return (avgDaily * (0.7 + 0.6 * progress))
+                        .clamp(0.0, double.infinity);
+                  });
+                } else {
+                  sevenDayViews = List.filled(7, 0.0);
+                }
+              }
+
+              final bool hasPerformanceActivity = views > 0 ||
+                  inquiries > 0 ||
+                  sevenDayViews.any((v) => v > 0);
+              final double maxVal = sevenDayViews.isEmpty
+                  ? 5.0
+                  : sevenDayViews.reduce((a, b) => a > b ? a : b);
+              final double chartMaxY = maxVal > 0
+                  ? (maxVal * 1.3).ceilToDouble().clamp(5.0, double.infinity)
+                  : 5.0;
+
+              final List<FlSpot> performanceSpots = List.generate(7, (index) {
+                return FlSpot(index.toDouble(), sevenDayViews[index]);
               });
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 24.0),
-                physics: const BouncingScrollPhysics(),
-                child: Column(
+              return RefreshIndicator(
+                color: AppColors.roleRetailer,
+                onRefresh: _loadDashboardData,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 24.0),
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AnimatedFadeSlide(
@@ -309,7 +349,7 @@ class RetailerDashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Performance Chart Placeholder
+                    // Performance Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -321,43 +361,252 @@ class RetailerDashboardScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      height: 220,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.neutral900.withValues(alpha: 0.04),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          )
-                        ],
-                      ),
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: dynamicSpots,
-                              isCurved: true,
-                              color: AppColors.roleRetailer,
-                              barWidth: 3,
-                              isStrokeCapRound: true,
-                              dotData: const FlDotData(show: false),
-                              belowBarData: BarAreaData(
-                                show: true,
+                    if (!hasPerformanceActivity)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 28),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: AppColors.neutral200.withValues(alpha: 0.6)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.neutral900.withValues(alpha: 0.03),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
                                 color: AppColors.roleRetailer
                                     .withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                LucideIcons.trendingUp,
+                                color: AppColors.roleRetailer,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              'No Store Views Yet',
+                              style: AppTextStyles.h4.copyWith(
+                                color: AppColors.neutral900,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Performance metrics will automatically track your views and orders once customers start exploring your store.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.neutral500,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            InkWell(
+                              onTap: () => context.go('/retailer/inventory'),
+                              borderRadius: BorderRadius.circular(100),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.roleRetailerLight
+                                      .withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(100),
+                                  border: Border.all(
+                                    color: AppColors.roleRetailer
+                                        .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      LucideIcons.package,
+                                      size: 16,
+                                      color: AppColors.roleRetailer,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Add Products to Get Discovered',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.roleRetailer,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
+                      )
+                    else
+                      Container(
+                        height: 240,
+                        padding: const EdgeInsets.fromLTRB(16, 24, 20, 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.neutral900.withValues(alpha: 0.04),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            )
+                          ],
+                        ),
+                        child: LineChart(
+                          LineChartData(
+                            minX: 0,
+                            maxX: 6,
+                            minY: 0,
+                            maxY: chartMaxY,
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: (chartMaxY / 4)
+                                  .clamp(1.0, double.infinity),
+                              getDrawingHorizontalLine: (value) => FlLine(
+                                color: AppColors.neutral200.withValues(alpha: 0.7),
+                                strokeWidth: 1,
+                                dashArray: [4, 4],
+                              ),
+                            ),
+                            titlesData: FlTitlesData(
+                              topTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: const AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false)),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 28,
+                                  interval: (chartMaxY / 4)
+                                      .clamp(1.0, double.infinity),
+                                  getTitlesWidget: (value, meta) {
+                                    if (value == 0 || value > chartMaxY) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Text(
+                                      compactFormat.format(value.toInt()),
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.neutral400,
+                                        fontSize: 10,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 24,
+                                  interval: 1,
+                                  getTitlesWidget: (value, meta) {
+                                    final idx = value.toInt();
+                                    if (idx < 0 ||
+                                        idx >= chartDayLabels.length) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final isToday = idx == 6;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        chartDayLabels[idx],
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: isToday
+                                              ? AppColors.roleRetailer
+                                              : AppColors.neutral500,
+                                          fontWeight: isToday
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            borderData: FlBorderData(show: false),
+                            lineTouchData: LineTouchData(
+                              enabled: true,
+                              touchTooltipData: LineTouchTooltipData(
+                                getTooltipColor: (_) => AppColors.neutral900,
+                                tooltipRoundedRadius: 8,
+                                tooltipPadding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                getTooltipItems: (touchedSpots) {
+                                  return touchedSpots.map((spot) {
+                                    final idx = spot.x.toInt();
+                                    final day = (idx >= 0 &&
+                                            idx < chartDayLabels.length)
+                                        ? chartDayLabels[idx]
+                                        : '';
+                                    return LineTooltipItem(
+                                      '$day: ${spot.y.toInt()} views',
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                              ),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: performanceSpots,
+                                isCurved: true,
+                                curveSmoothness: 0.35,
+                                color: AppColors.roleRetailer,
+                                barWidth: 3,
+                                isStrokeCapRound: true,
+                                dotData: FlDotData(
+                                  show: true,
+                                  checkToShowDot: (spot, barData) {
+                                    return spot.x == 6 || spot.y == maxVal;
+                                  },
+                                  getDotPainter:
+                                      (spot, percent, barData, index) {
+                                    return FlDotCirclePainter(
+                                      radius: 4,
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                      strokeColor: AppColors.roleRetailer,
+                                    );
+                                  },
+                                ),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      AppColors.roleRetailer
+                                          .withValues(alpha: 0.25),
+                                      AppColors.roleRetailer
+                                          .withValues(alpha: 0.0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 40),
 
                     // Action Items
@@ -428,10 +677,8 @@ class RetailerDashboardScreen extends StatelessWidget {
                         GestureDetector(
                           onTap: () async {
                             await context.push('/retailer/create-campaign');
-                            if (context.mounted) {
-                              context
-                                  .read<RetailerCampaignBloc>()
-                                  .add(const GetMyCampaignsRequested());
+                            if (mounted) {
+                              _loadDashboardData();
                             }
                           },
                           child: Container(
@@ -460,10 +707,8 @@ class RetailerDashboardScreen extends StatelessWidget {
                           return GestureDetector(
                             onTap: () async {
                               await context.push('/retailer/create-campaign');
-                              if (context.mounted) {
-                                context
-                                    .read<RetailerCampaignBloc>()
-                                    .add(const GetMyCampaignsRequested());
+                              if (mounted) {
+                                _loadDashboardData();
                               }
                             },
                             child: Container(
@@ -518,10 +763,8 @@ class RetailerDashboardScreen extends StatelessWidget {
                         GestureDetector(
                           onTap: () async {
                             await context.push('/retailer/events/create');
-                            if (context.mounted) {
-                              context
-                                  .read<EventBloc>()
-                                  .add(const GetShopEventsRequested());
+                            if (mounted) {
+                              _loadDashboardData();
                             }
                           },
                           child: Container(
@@ -550,10 +793,8 @@ class RetailerDashboardScreen extends StatelessWidget {
                           return GestureDetector(
                             onTap: () async {
                               await context.push('/retailer/events/create');
-                              if (context.mounted) {
-                                context
-                                    .read<EventBloc>()
-                                    .add(const GetShopEventsRequested());
+                              if (mounted) {
+                                _loadDashboardData();
                               }
                             },
                             child: Container(
@@ -685,12 +926,11 @@ class RetailerDashboardScreen extends StatelessWidget {
                     const SizedBox(height: 80), // Bottom padding
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildPremiumStatCard(

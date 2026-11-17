@@ -7,6 +7,7 @@ import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_bell.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/network/api_client.dart';
@@ -23,6 +24,7 @@ import '../../../retailer_negotiation/presentation/bloc/retailer_negotiation_eve
 import '../../../retailer_campaigns/presentation/bloc/retailer_campaign_bloc.dart';
 import '../../../retailer_campaigns/presentation/bloc/retailer_campaign_state.dart';
 import '../../../retailer_campaigns/presentation/bloc/retailer_campaign_event.dart';
+import '../../../influencer/domain/entities/influencer_campaign_entity.dart';
 
 import '../../../dashboard/presentation/bloc/event_bloc.dart';
 import '../../../dashboard/presentation/bloc/event_event.dart';
@@ -83,10 +85,7 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
                     AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
             centerTitle: true,
             actions: [
-              IconButton(
-                  icon:
-                      const Icon(LucideIcons.bell, color: AppColors.neutral900),
-                  onPressed: () => context.push('/notifications')),
+              const NotificationBell(),
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Container(
@@ -1207,15 +1206,15 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
 
   Widget _buildPremiumCampaignCard({
     required BuildContext context,
-    required dynamic campaign,
+    required InfluencerCampaignEntity campaign,
   }) {
-    final title = campaign.title ?? 'Untitled Campaign';
-    final status = campaign.status ?? 'DRAFT';
+    final title = campaign.title;
+    final statusLabel = campaign.displayStatus;
+    final isExpired = statusLabel == 'Expired';
     final budgetText =
         '₹${campaign.budgetMin.toStringAsFixed(0)} - ₹${campaign.budgetMax.toStringAsFixed(0)}';
 
-    // Check if campaign is active
-    final isActive = status == 'ACTIVE' || status == 'PUBLISHED';
+    final isActive = statusLabel == 'Active';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1245,16 +1244,20 @@ class _RetailerDashboardScreenState extends State<RetailerDashboardScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.success500.withValues(alpha: 0.1)
-                      : AppColors.neutral100,
+                  color: isExpired
+                      ? AppColors.error500.withValues(alpha: 0.1)
+                      : isActive
+                          ? AppColors.success500.withValues(alpha: 0.1)
+                          : AppColors.neutral100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(status,
+                child: Text(statusLabel,
                     style: AppTextStyles.caption.copyWith(
-                        color: isActive
-                            ? AppColors.success600
-                            : AppColors.neutral600,
+                        color: isExpired
+                            ? AppColors.error500
+                            : isActive
+                                ? AppColors.success600
+                                : AppColors.neutral600,
                         fontWeight: FontWeight.w700)),
               )
             ],

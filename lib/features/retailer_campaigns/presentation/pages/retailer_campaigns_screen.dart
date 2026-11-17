@@ -4,9 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_bell.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
@@ -41,8 +41,8 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
         ),
         title: Text('Influencer Campaigns', style: AppTextStyles.h3),
         centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(LucideIcons.bell), onPressed: () => context.push('/notifications')),
+        actions: const [
+          NotificationBell(),
         ],
       ),
       body: RefreshIndicator(
@@ -76,7 +76,7 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
                     )),
                   );
                 } else if (state is RetailerCampaignLoaded) {
-                  final activeCampaigns = state.campaigns.where((c) => c.status != 'COMPLETED' && c.status != 'CANCELLED').length;
+                  final activeCampaigns = state.campaigns.where((c) => c.displayStatus == 'Active').length;
                   final totalBudget = state.campaigns.fold<double>(0, (sum, c) => sum + c.budgetMax);
 
                   return Column(
@@ -162,8 +162,10 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
       'CANCELLED': AppColors.error500,
       'CREATOR_SELECTED': AppColors.info500,
     };
-    final statusColor = statusColors[campaign.status] ?? AppColors.neutral500;
-    final statusLabel = campaign.status == 'PUBLISHED' ? 'Active' : campaign.status.replaceAll('_', ' ');
+    final statusLabel = campaign.displayStatus;
+    final statusColor = campaign.isApplicationClosed
+        ? AppColors.error500
+        : statusColors[campaign.status] ?? AppColors.neutral500;
 
     return GestureDetector(
       onTap: () => context.push('/retailer/campaigns/${campaign.id}'),
@@ -214,7 +216,10 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
                     ),
                     const SizedBox(width: 6),
                     GestureDetector(
-                      onTap: () => _showEditCampaignSheet(context, campaign),
+                      onTap: () => context.push(
+                        '/retailer/create-campaign',
+                        extra: campaign,
+                      ),
                       child: const Icon(LucideIcons.pencil, size: 16, color: AppColors.neutral500),
                     ),
                     const SizedBox(width: 6),
@@ -377,80 +382,4 @@ class _RetailerCampaignsScreenState extends State<RetailerCampaignsScreen> {
     );
   }
 
-  void _showEditCampaignSheet(BuildContext context, InfluencerCampaignEntity campaign) {
-    final titleController = TextEditingController(text: campaign.title);
-    final descController = TextEditingController(text: campaign.description);
-    final budgetController = TextEditingController(text: campaign.budgetMax.toStringAsFixed(0));
-    final formKey = GlobalKey<FormState>();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          left: 20, right: 20, top: 20,
-        ),
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Edit Campaign', style: AppTextStyles.h2),
-              const SizedBox(height: 20),
-              AppTextField(
-                label: 'Campaign Title',
-                hintText: 'Enter title',
-                controller: titleController,
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Description',
-                hintText: 'Enter description',
-                controller: descController,
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              AppTextField(
-                label: 'Max Budget (₹)',
-                hintText: 'Enter budget',
-                controller: budgetController,
-                keyboardType: TextInputType.number,
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  text: 'Save Changes',
-                  onPressed: () {
-                    if (formKey.currentState!.validate()) {
-                      Navigator.pop(ctx);
-                      context.read<RetailerCampaignBloc>().add(UpdateCampaignRequested(
-                        campaignId: campaign.id,
-                        data: {
-                          'title': titleController.text.trim(),
-                          'description': descController.text.trim(),
-                          'budgetMax': double.tryParse(budgetController.text.trim()) ?? 0,
-                          'budgetMin': 0,
-                        },
-                      ));
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

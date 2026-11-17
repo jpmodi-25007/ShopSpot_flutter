@@ -4,9 +4,10 @@ import '../../../../core/widgets/animated_fade_slide.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/utils/open_contact.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_bell.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_network_image.dart';
 import '../bloc/influencer_bloc.dart';
@@ -132,10 +133,8 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
               style:
                   AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
           centerTitle: true,
-          actions: [
-            IconButton(
-                icon: const Icon(LucideIcons.bell, color: AppColors.neutral900),
-                onPressed: () => context.push('/notifications')),
+          actions: const [
+            NotificationBell(),
             const SizedBox(width: 8),
           ],
         ),
@@ -747,12 +746,12 @@ class _InfluencerDashboardScreenState extends State<InfluencerDashboardScreen>
                     children: [
                       if (bid.shopEmail != null)
                         GestureDetector(
-                          onTap: () => launchUrl(Uri.parse('mailto:${bid.shopEmail}')),
+                          onTap: () => openEmailApp(bid.shopEmail!),
                           child: _ContactChip(icon: LucideIcons.mail, text: bid.shopEmail!),
                         ),
                       if (bid.shopPhone != null)
                         GestureDetector(
-                          onTap: () => launchUrl(Uri.parse('tel:${bid.shopPhone}')),
+                          onTap: () => openPhoneDialer(bid.shopPhone!),
                           child: _ContactChip(icon: LucideIcons.phone, text: bid.shopPhone!),
                         ),
                     ],

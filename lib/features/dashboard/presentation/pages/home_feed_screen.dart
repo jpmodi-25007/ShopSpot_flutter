@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_bell.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -153,30 +154,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      if (GuestHelper.checkGuestAndPrompt(context)) return;
-                      context.push('/notifications');
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.neutral900
-                                .withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          )
-                        ],
-                      ),
-                      child: const Badge(
-                          child: Icon(LucideIcons.bell,
-                              size: 20, color: AppColors.neutral900)),
-                    ),
-                  ),
+                  const NotificationBell(),
                 ],
               ),
               bottom: PreferredSize(

@@ -7,6 +7,7 @@ import '../../../../core/widgets/shimmer/shimmer.dart';
 import '../../../../core/widgets/animated_fade_slide.dart';
 import 'dart:ui';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/notification_bell.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/influencer_campaign_entity.dart';
 import '../bloc/influencer_bloc.dart';
@@ -111,11 +112,9 @@ class _InfluencerDiscoverScreenState extends State<InfluencerDiscoverScreen> {
         title: Text('Discover',
             style: AppTextStyles.h3.copyWith(color: AppColors.roleInfluencer)),
         centerTitle: true,
-        actions: [
-          IconButton(
-              icon: const Icon(LucideIcons.bell, color: AppColors.neutral900),
-              onPressed: () => context.push('/notifications')),
-          const SizedBox(width: 8),
+        actions: const [
+          NotificationBell(),
+          SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(

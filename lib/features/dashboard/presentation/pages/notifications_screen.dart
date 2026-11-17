@@ -10,6 +10,7 @@ import '../../../authentication/presentation/bloc/authentication_state.dart';
 import '../bloc/notification_bloc.dart';
 import '../bloc/notification_event.dart';
 import '../bloc/notification_state.dart';
+import 'notification_targets.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -137,43 +138,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       context.read<NotificationBloc>().add(MarkNotificationAsReadRequested(notification.id));
                     }
                     
-                    final type = notification.type;
-                    final data = notification.data ?? {};
-                    
-                    if (type != null) {
-                      if (type.startsWith('NEGOTIATION_')) {
-                        final id = data['negotiationId'];
-                        if (userRole == 'SHOPKEEPER') {
-                          context.go(id != null ? '/retailer/negotiations/$id' : '/retailer/negotiations');
-                        } else {
-                          context.go(id != null ? '/negotiations/$id' : '/negotiations');
-                        }
-                      } else if (type.startsWith('RESERVATION_')) {
-                        if (userRole == 'SHOPKEEPER') {
-                          context.go('/retailer/reservations'); // or wherever reservations are
-                        } else {
-                          context.go('/profile'); // or wherever reservations are for customer
-                        }
-                      } else if (type == 'NEW_ORDER' || type == 'ORDER_STATUS_CHANGED') {
-                        if (userRole == 'SHOPKEEPER') {
-                          context.go('/retailer/orders');
-                        } else {
-                          context.go('/orders');
-                        }
-                      } else if (type == 'CAMPAIGN_PUBLISHED' && userRole == 'INFLUENCER') {
-                        final id = data['campaignId'];
-                        if (id != null) {
-                          context.go('/influencer/campaigns/$id');
-                        }
-                      } else if (type.startsWith('BID_')) {
-                        final id = data['campaignId'];
-                        if (userRole == 'SHOPKEEPER') {
-                          if (id != null) context.go('/retailer/campaigns/$id/bids');
-                        } else if (userRole == 'INFLUENCER') {
-                          if (id != null) context.go('/influencer/campaigns/$id');
-                        }
-                      }
-                    }
+                    openNotification(context, notification, userRole);
                   },
                 );
               },

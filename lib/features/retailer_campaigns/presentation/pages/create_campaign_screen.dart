@@ -10,6 +10,7 @@ import '../bloc/retailer_campaign_bloc.dart';
 import '../bloc/retailer_campaign_event.dart';
 import '../bloc/retailer_campaign_state.dart';
 import '../../domain/repositories/retailer_campaign_repository.dart';
+import '../../../influencer/domain/entities/influencer_campaign_entity.dart';
 
 import '../../../retailer_inventory/presentation/bloc/retailer_inventory_bloc.dart';
 import '../../../retailer_inventory/presentation/bloc/retailer_inventory_event.dart';
@@ -17,7 +18,9 @@ import '../../../retailer_inventory/presentation/bloc/retailer_inventory_state.d
 import '../../../../core/widgets/app_network_image.dart';
 
 class CreateCampaignScreen extends StatefulWidget {
-  const CreateCampaignScreen({super.key});
+  final InfluencerCampaignEntity? existing;
+
+  const CreateCampaignScreen({super.key, this.existing});
 
   @override
   State<CreateCampaignScreen> createState() => _CreateCampaignScreenState();
@@ -34,9 +37,28 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   DateTime? _applicationDeadline;
   DateTime? _publishByDate;
 
+  bool get _isEditing => widget.existing != null;
+
+  DateTime? _dateOnly(DateTime? value) {
+    if (value == null) return null;
+    final local = value.toLocal();
+    return DateTime(local.year, local.month, local.day);
+  }
+
   @override
   void initState() {
     super.initState();
+    final existing = widget.existing;
+    if (existing != null) {
+      _titleController.text = existing.title;
+      _descriptionController.text = existing.description;
+      _budgetController.text = existing.budgetMax.toStringAsFixed(0);
+      _applicationDeadline = _dateOnly(existing.applicationDeadline);
+      _publishByDate = _dateOnly(existing.publishByDate);
+      _isSpecificProduct =
+          existing.productId != null && existing.productId!.isNotEmpty;
+      _selectedProductId = existing.productId ?? '';
+    }
     context.read<RetailerInventoryBloc>().add(const GetMyProductsRequested());
   }
 
@@ -49,11 +71,15 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
   }
 
   Future<void> _selectDate(BuildContext context, {required bool isApplicationDeadline}) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final current = isApplicationDeadline ? _applicationDeadline : _publishByDate;
+    final initial = current != null && !current.isBefore(today) ? current : today;
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -127,9 +153,16 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Create Influencer\nCampaign', style: AppTextStyles.h1),
+                Text(
+                    _isEditing
+                        ? 'Edit Influencer\nCampaign'
+                        : 'Create Influencer\nCampaign',
+                    style: AppTextStyles.h1),
                 const SizedBox(height: 8),
-                Text('Step 1 of 4: Define what you want to promote.',
+                Text(
+                    _isEditing
+                        ? 'Update the product, budget, and dates for this campaign.'
+                        : 'Step 1 of 4: Define what you want to promote.',
                     style: AppTextStyles.body
                         .copyWith(color: AppColors.neutral500)),
                 const SizedBox(height: 32),
@@ -459,12 +492,20 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                       width: double.infinity,
                       child: AppButton(
                         text: state is RetailerCampaignLoading
-                            ? 'Creating...'
-                            : 'Create Campaign',
+                            ? 'Saving...'
+                            : _isEditing
+                                ? 'Save Changes'
+                                : 'Create Campaign',
                         onPressed: state is RetailerCampaignLoading
                             ? null
                             : () {
                                 if (!_formKey.currentState!.validate()) return;
+                                if (_isSpecificProduct && _selectedProductId.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Select a product to promote')),
+                                  );
+                                  return;
+                                }
 
                                 String? categoryName;
                                 if (_isSpecificProduct) {
@@ -477,14 +518,19 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                   }
                                 }
 
+                                final existing = widget.existing;
                                 final params = CreateCampaignParams(
                                   title: _titleController.text.trim(),
                                   description:
                                       _descriptionController.text.trim(),
-                                  platforms: const ['Instagram', 'YouTube'],
-                                  contentTypes: const ['REEL', 'STORY'],
-                                  budgetType: 'PER_CREATOR',
-                                  budgetMin: 0,
+                                  platforms: existing != null && existing.platforms.isNotEmpty
+                                      ? existing.platforms
+                                      : const ['Instagram', 'YouTube'],
+                                  contentTypes: existing != null && existing.contentTypes.isNotEmpty
+                                      ? existing.contentTypes
+                                      : const ['REEL', 'STORY'],
+                                  budgetType: existing?.budgetType ?? 'PER_CREATOR',
+                                  budgetMin: existing?.budgetMin ?? 0,
                                   budgetMax: double.tryParse(_budgetController.text) ?? 0,
                                   productId: _isSpecificProduct ? _selectedProductId : null,
                                   targetCategories: categoryName == null || categoryName.isEmpty
@@ -493,9 +539,24 @@ class _CreateCampaignScreenState extends State<CreateCampaignScreen> {
                                   applicationDeadline: _applicationDeadline,
                                   publishByDate: _publishByDate,
                                 );
-                                context
-                                    .read<RetailerCampaignBloc>()
-                                    .add(CreateCampaignRequested(params));
+                                final data = params.toJson();
+                                if (!_isSpecificProduct) {
+                                  data['productId'] = null;
+                                  data['targetCategories'] = <String>[];
+                                }
+                                if (existing != null) {
+                                  data['creatorCount'] = existing.creatorCount;
+                                  context.read<RetailerCampaignBloc>().add(
+                                        UpdateCampaignRequested(
+                                          campaignId: existing.id,
+                                          data: data,
+                                        ),
+                                      );
+                                } else {
+                                  context
+                                      .read<RetailerCampaignBloc>()
+                                      .add(CreateCampaignRequested(params));
+                                }
                               },
                       ),
                     );

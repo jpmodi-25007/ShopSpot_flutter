@@ -66,6 +66,7 @@ import '../../features/influencer/presentation/pages/influencer_all_campaigns_sc
 import '../../features/influencer/presentation/pages/influencer_all_bids_screen.dart';
 import '../../features/influencer/presentation/pages/bid_detail_screen.dart';
 import '../../features/influencer/presentation/pages/influencer_pending_screen.dart';
+import '../../features/dashboard/presentation/pages/notification_targets.dart';
 import '../../features/influencer/domain/entities/influencer_campaign_entity.dart';
 import '../../features/influencer/presentation/pages/coming_soon_screen.dart';
 import '../../features/chat/presentation/pages/direct_chat_screen.dart';
@@ -405,7 +406,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/retailer/create-campaign',
-      builder: (context, state) => const CreateCampaignScreen(),
+      builder: (context, state) => CreateCampaignScreen(
+        existing: state.extra is InfluencerCampaignEntity
+            ? state.extra as InfluencerCampaignEntity
+            : null,
+      ),
     ),
     GoRoute(
       path: '/retailer/campaigns/:id',
@@ -507,11 +512,23 @@ final appRouter = GoRouter(
       builder: (context, state) => const InfluencerAllBidsScreen(),
     ),
     GoRoute(
+      path: '/influencer/bid-detail/:id',
+      builder: (context, state) => InfluencerBidByIdScreen(
+        bidId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
       path: '/influencer/bid-detail',
       builder: (context, state) {
         final bid = state.extra as InfluencerBidEntity;
         return BidDetailScreen(bid: bid);
       },
+    ),
+    GoRoute(
+      path: '/influencer/campaign-details/:id',
+      builder: (context, state) => InfluencerCampaignByIdScreen(
+        campaignId: state.pathParameters['id']!,
+      ),
     ),
     GoRoute(
       path: '/subscription/plans',

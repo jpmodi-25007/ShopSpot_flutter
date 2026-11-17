@@ -54,6 +54,27 @@ class InfluencerCampaignEntity extends Equatable {
 
   bool get isHighBudget => budgetMax >= 10000;
 
+  /// The last date to apply counts for that whole local day. The next day
+  /// the campaign is expired even if the stored status is still published.
+  bool get isApplicationClosed {
+    final deadline = applicationDeadline;
+    if (deadline == null) return false;
+    if (status == 'COMPLETED' || status == 'CANCELLED' || status == 'DRAFT') {
+      return false;
+    }
+    final local = deadline.toLocal();
+    final deadlineDay = DateTime(local.year, local.month, local.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return deadlineDay.isBefore(today);
+  }
+
+  String get displayStatus {
+    if (isApplicationClosed) return 'Expired';
+    if (status == 'PUBLISHED' || status == 'ACTIVE') return 'Active';
+    return status.replaceAll('_', ' ');
+  }
+
   @override
   List<Object?> get props => [
         id, shopkeeperId, shopId, productId, title, description,

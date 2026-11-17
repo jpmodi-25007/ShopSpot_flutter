@@ -53,6 +53,12 @@
 	<string>This app needs camera access so you can take photos for your profile, shop and products.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access so you can choose photos for your profile, shop and products.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>mailto</string>
+		<string>tel</string>
+		<string>googlegmail</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>FlutterDeepLinkingEnabled</key>

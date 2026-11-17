@@ -129,6 +129,18 @@ class InfluencerCampaignModel {
       );
 }
 
+String? _socialHandle(dynamic value) {
+  final raw = value?.toString().trim() ?? '';
+  if (raw.isEmpty) return null;
+  final withScheme = raw.startsWith('http') ? raw : 'https://$raw';
+  final uri = Uri.tryParse(withScheme);
+  if (uri != null && uri.pathSegments.isNotEmpty) {
+    final handle = uri.pathSegments.last.replaceAll('@', '');
+    if (handle.isNotEmpty) return handle;
+  }
+  return raw.replaceAll('@', '');
+}
+
 class InfluencerBidModel {
   final String id;
   final String campaignId;
@@ -141,13 +153,18 @@ class InfluencerBidModel {
   final bool isShortlisted;
   final DateTime createdAt;
 
+  final String? influencerUserId;
+  final String? influencerPhone;
   final String? influencerName;
   final String? influencerAvatar;
   final String? influencerInstagram;
   final String? influencerBio;
+  final String? influencerCity;
   final int? influencerFollowers;
   final double? influencerEngagement;
   final String? influencerNiche;
+  final String? influencerYoutube;
+  final String? influencerFacebook;
 
   // Campaign info
   final String? campaignTitle;
@@ -179,13 +196,18 @@ class InfluencerBidModel {
     required this.status,
     required this.isShortlisted,
     required this.createdAt,
+    this.influencerUserId,
+    this.influencerPhone,
     this.influencerName,
     this.influencerAvatar,
     this.influencerInstagram,
     this.influencerBio,
+    this.influencerCity,
     this.influencerFollowers,
     this.influencerEngagement,
     this.influencerNiche,
+    this.influencerYoutube,
+    this.influencerFacebook,
     this.campaignTitle,
     this.campaignStatus,
     this.productName,
@@ -226,6 +248,13 @@ class InfluencerBidModel {
       }
     }
 
+    final influencer = json['influencer'] as Map<String, dynamic>?;
+    final user = influencer?['user'] as Map<String, dynamic>?;
+    final categories = influencer?['categories'];
+    final niche = categories is List && categories.isNotEmpty
+        ? categories.map((item) => item.toString()).where((item) => item.isNotEmpty).join(', ')
+        : influencer?['niche']?.toString();
+
     return InfluencerBidModel(
       id: json['id'],
       campaignId: json['campaignId'],
@@ -237,17 +266,22 @@ class InfluencerBidModel {
       status: json['status'] ?? 'SUBMITTED',
       isShortlisted: json['isShortlisted'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
-      influencerName: json['influencer']?['displayName'] ?? json['influencer']?['name'],
-      influencerAvatar: json['influencer']?['profileImage'] ?? json['influencer']?['profileImageUrl'],
-      influencerInstagram: json['influencer']?['instagramHandle'],
-      influencerBio: json['influencer']?['bio'],
-      influencerFollowers: json['influencer']?['followersCount'] != null
-          ? int.tryParse(json['influencer']!['followersCount'].toString())
-          : null,
-      influencerEngagement: json['influencer']?['engagementRate'] != null
-          ? double.tryParse(json['influencer']!['engagementRate'].toString())
-          : null,
-      influencerNiche: json['influencer']?['niche'],
+      influencerUserId: influencer?['userId']?.toString() ?? user?['id']?.toString(),
+      influencerPhone: user?['mobile']?.toString(),
+      influencerName: influencer?['displayName'] ?? influencer?['name'] ?? user?['name'],
+      influencerAvatar: influencer?['profileImage'] ??
+          influencer?['profileImageUrl'] ??
+          user?['avatarUrl'],
+      influencerInstagram: _socialHandle(influencer?['instagramUrl'] ?? influencer?['instagramHandle']),
+      influencerBio: influencer?['bio']?.toString(),
+      influencerCity: influencer?['city']?.toString(),
+      influencerFollowers: int.tryParse(
+        (influencer?['followers'] ?? influencer?['followersCount'])?.toString() ?? '',
+      ),
+      influencerEngagement: double.tryParse(influencer?['engagementRate']?.toString() ?? ''),
+      influencerNiche: niche,
+      influencerYoutube: influencer?['youtubeUrl']?.toString(),
+      influencerFacebook: influencer?['facebookUrl']?.toString(),
       // Campaign fields
       campaignTitle: campaign?['title'],
       campaignStatus: campaign?['status'],
@@ -278,13 +312,18 @@ class InfluencerBidModel {
         status: status,
         isShortlisted: isShortlisted,
         createdAt: createdAt,
+        influencerUserId: influencerUserId,
+        influencerPhone: influencerPhone,
         influencerName: influencerName,
         influencerAvatar: influencerAvatar,
         influencerInstagram: influencerInstagram,
         influencerBio: influencerBio,
+        influencerCity: influencerCity,
         influencerFollowers: influencerFollowers,
         influencerEngagement: influencerEngagement,
         influencerNiche: influencerNiche,
+        influencerYoutube: influencerYoutube,
+        influencerFacebook: influencerFacebook,
         campaignTitle: campaignTitle,
         campaignStatus: campaignStatus,
         productName: productName,

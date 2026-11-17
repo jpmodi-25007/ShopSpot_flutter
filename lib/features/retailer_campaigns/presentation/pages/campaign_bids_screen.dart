@@ -145,12 +145,18 @@ class _CampaignBidsScreenState extends State<CampaignBidsScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(bid.influencerName ?? 'Influencer', style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text('View Profile', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                  ],
+                child: GestureDetector(
+                  onTap: () async {
+                    await context.push('/retailer/influencer-profile/${bid.influencerId}', extra: bid);
+                    if (mounted) _refresh();
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(bid.influencerName ?? 'Influencer', style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text('View Profile', style: AppTextStyles.caption.copyWith(color: AppColors.roleRetailer, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                 ),
               ),
               Container(

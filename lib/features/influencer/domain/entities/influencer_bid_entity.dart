@@ -13,13 +13,18 @@ class InfluencerBidEntity extends Equatable {
   final DateTime createdAt;
 
   // Influencer info (used in shopkeeper view)
+  final String? influencerUserId;
+  final String? influencerPhone;
   final String? influencerName;
   final String? influencerAvatar;
   final String? influencerInstagram;
   final String? influencerBio;
+  final String? influencerCity;
   final int? influencerFollowers;
   final double? influencerEngagement;
   final String? influencerNiche;
+  final String? influencerYoutube;
+  final String? influencerFacebook;
 
   // Campaign info (populated from nested campaign in GET /influencer/bids)
   final String? campaignTitle;
@@ -51,13 +56,18 @@ class InfluencerBidEntity extends Equatable {
     required this.status,
     required this.isShortlisted,
     required this.createdAt,
+    this.influencerUserId,
+    this.influencerPhone,
     this.influencerName,
     this.influencerAvatar,
     this.influencerInstagram,
     this.influencerBio,
+    this.influencerCity,
     this.influencerFollowers,
     this.influencerEngagement,
     this.influencerNiche,
+    this.influencerYoutube,
+    this.influencerFacebook,
     this.campaignTitle,
     this.campaignStatus,
     this.productName,
@@ -77,8 +87,9 @@ class InfluencerBidEntity extends Equatable {
   List<Object?> get props => [
         id, campaignId, influencerId, proposedAmount, availableDate,
         deliveryDate, proposal, status, isShortlisted, createdAt,
-        influencerName, influencerAvatar, influencerInstagram, influencerBio,
-        influencerFollowers, influencerEngagement, influencerNiche,
+        influencerUserId, influencerPhone, influencerName, influencerAvatar, influencerInstagram, influencerBio,
+        influencerCity, influencerFollowers, influencerEngagement, influencerNiche,
+        influencerYoutube, influencerFacebook,
         campaignTitle, campaignStatus, productName, productImageUrl,
         shopName, shopEmail, shopPhone, shopLogoUrl, shopAddress,
         assignmentId, submittedContentUrl, counterAmount, counterMessage,

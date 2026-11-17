@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/utils/open_contact.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_network_image.dart';
@@ -382,14 +382,14 @@ class _BidDetailScreenState extends State<BidDetailScreen> {
                             icon: LucideIcons.mail,
                             label: 'Email',
                             value: bid.shopEmail!,
-                            onTap: () => launchUrl(Uri.parse('mailto:${bid.shopEmail}')),
+                            onTap: () => openEmailApp(bid.shopEmail!),
                           ),
                         if (bid.shopPhone != null)
                           _ContactRow(
                             icon: LucideIcons.phone,
                             label: 'Phone',
                             value: bid.shopPhone!,
-                            onTap: () => launchUrl(Uri.parse('tel:${bid.shopPhone}')),
+                            onTap: () => openPhoneDialer(bid.shopPhone!),
                           ),
                       ],
                     ),

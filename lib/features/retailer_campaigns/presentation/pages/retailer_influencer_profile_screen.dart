@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../core/dependency_injection/injection.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../influencer/domain/entities/influencer_bid_entity.dart';
 import '../../../../core/widgets/app_network_image.dart';
+import '../../domain/repositories/retailer_campaign_repository.dart';
 
 class RetailerInfluencerProfileScreen extends StatelessWidget {
   final String influencerId;
@@ -64,21 +66,11 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                             children: [
                               const Icon(LucideIcons.mapPin, size: 14, color: AppColors.neutral500),
                               const SizedBox(width: 4),
-                              Text('Global', style: AppTextStyles.caption.copyWith(color: AppColors.neutral500)),
-                              const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(LucideIcons.zap, size: 12, color: AppColors.success600),
-                                    const SizedBox(width: 4),
-                                    Text('Match', style: AppTextStyles.caption.copyWith(color: AppColors.success600, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
+                              Text(
+                                bid?.influencerCity?.trim().isNotEmpty == true
+                                    ? bid!.influencerCity!
+                                    : 'City not set',
+                                style: AppTextStyles.caption.copyWith(color: AppColors.neutral500),
                               ),
                             ],
                           ),
@@ -88,12 +80,29 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildStat(bid?.influencerFollowers?.toString() ?? '--', 'Followers'),
-                              _buildStat('${bid?.influencerEngagement?.toStringAsFixed(1) ?? '--'}%', 'Engagement'),
-                              _buildStat(bid?.influencerNiche ?? 'General', 'Niche'),
+                              _buildStat(
+                                bid?.influencerFollowers?.toString() ?? '--',
+                                'Followers',
+                              ),
+                              _buildStat(
+                                bid?.influencerEngagement == null
+                                    ? '--'
+                                    : '${bid!.influencerEngagement!.toStringAsFixed(1)}%',
+                                'Engagement',
+                              ),
+                              _buildStat(
+                                bid?.influencerNiche?.trim().isNotEmpty == true
+                                    ? bid!.influencerNiche!
+                                    : 'Not set',
+                                'Niche',
+                              ),
                             ],
                           ),
                           const SizedBox(height: 24),
+                          if (bid != null) ...[
+                            _buildBidDetails(bid!),
+                            const SizedBox(height: 24),
+                          ],
 
                           // Bio
                           Container(
@@ -109,7 +118,9 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                                 Text('About ${bid?.influencerName ?? 'Influencer'}', style: AppTextStyles.h4),
                                 const SizedBox(height: 12),
                                 Text(
-                                  bid?.influencerBio ?? 'No bio provided.',
+                                  bid?.influencerBio?.trim().isNotEmpty == true
+                                      ? bid!.influencerBio!
+                                      : 'No bio provided.',
                                   style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600, height: 1.5),
                                 ),
                               ],
@@ -135,18 +146,7 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          GridView.count(
-                            crossAxisCount: 3,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            children: [
-                              Container(color: AppColors.neutral200, child: const Icon(LucideIcons.image, color: AppColors.neutral400)),
-                              Container(color: AppColors.neutral200, child: const Icon(LucideIcons.image, color: AppColors.neutral400)),
-                              Container(color: AppColors.neutral200, child: const Icon(LucideIcons.image, color: AppColors.neutral400)),
-                            ],
-                          ),
+                          _buildPortfolio(bid),
                           const SizedBox(height: 100), // padding for sticky bottom bar
                         ],
                       ),
@@ -195,9 +195,17 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
             Expanded(
               child: OutlinedButton(
                 onPressed: () {
-                  context.push('/chat/${bid?.influencerId}', extra: {
+                  final userId = bid?.influencerUserId;
+                  if (userId == null || userId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('This creator has no user account to message')),
+                    );
+                    return;
+                  }
+                  context.push('/chat/$userId', extra: {
                     'targetUserName': bid?.influencerName ?? 'Influencer',
                     'targetUserAvatar': bid?.influencerAvatar,
+                    'targetUserPhone': bid?.influencerPhone,
                     'contextType': 'CAMPAIGN',
                     'contextId': bid?.campaignId,
                   });
@@ -220,19 +228,32 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Bid accepted successfully!'),
-                      backgroundColor: AppColors.roleRetailer,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  );
-                  Future.delayed(const Duration(seconds: 1), () {
-                    if (context.mounted) context.pop();
-                  });
-                },
+                onPressed: bid == null || bid!.status == 'ACCEPTED'
+                    ? null
+                    : () async {
+                        try {
+                          await getIt<RetailerCampaignRepository>().acceptBid(bid!.id);
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Bid accepted'),
+                              backgroundColor: AppColors.roleRetailer,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                          context.pop();
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error.toString()),
+                              backgroundColor: AppColors.error500,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: AppColors.roleRetailer,
@@ -245,6 +266,92 @@ class RetailerInfluencerProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    return '${local.day}/${local.month}/${local.year}';
+  }
+
+  Widget _buildBidDetails(InfluencerBidEntity bid) {
+    final proposal = bid.proposal?.trim() ?? '';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.neutral200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('This bid', style: AppTextStyles.h4),
+          const SizedBox(height: 12),
+          Text('₹${bid.proposedAmount.toStringAsFixed(0)}', style: AppTextStyles.h3.copyWith(color: AppColors.roleRetailer)),
+          const SizedBox(height: 8),
+          Text('${bid.status.replaceAll('_', ' ')} · ${_formatDate(bid.availableDate)} to ${_formatDate(bid.deliveryDate)}',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral600)),
+          if (proposal.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(proposal, style: AppTextStyles.body.copyWith(height: 1.5)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortfolio(InfluencerBidEntity? bid) {
+    final links = <(IconData, String, String)>[
+      if (bid?.influencerInstagram?.trim().isNotEmpty == true)
+        (LucideIcons.camera, 'Instagram', 'https://instagram.com/${bid!.influencerInstagram}'),
+      if (bid?.influencerYoutube?.trim().isNotEmpty == true)
+        (LucideIcons.play, 'YouTube', bid!.influencerYoutube!),
+      if (bid?.influencerFacebook?.trim().isNotEmpty == true)
+        (LucideIcons.link, 'Facebook', bid!.influencerFacebook!),
+    ];
+    if (links.isEmpty) {
+      return Text(
+        'No portfolio links yet.',
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
+      );
+    }
+    return Column(
+      children: links
+          .map(
+            (link) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
+                onTap: () async {
+                  final uri = Uri.tryParse(link.$3.startsWith('http') ? link.$3 : 'https://${link.$3}');
+                  if (uri != null && await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.neutral200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(link.$1, size: 18, color: AppColors.roleRetailer),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(link.$2, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+                      ),
+                      const Icon(LucideIcons.externalLink, size: 16, color: AppColors.neutral400),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 

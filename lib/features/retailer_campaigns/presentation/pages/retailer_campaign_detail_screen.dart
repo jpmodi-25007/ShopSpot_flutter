@@ -46,7 +46,9 @@ class _RetailerCampaignDetailScreenState extends State<RetailerCampaignDetailScr
             try {
               final campaign = state.campaigns.firstWhere((c) => c.id == widget.campaignId);
               
-              final isPublished = campaign.status == 'PUBLISHED' || campaign.status == 'ACTIVE';
+              final statusLabel = campaign.displayStatus;
+              final isPublished = statusLabel == 'Active';
+              final isExpired = statusLabel == 'Expired';
               
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -56,13 +58,21 @@ class _RetailerCampaignDetailScreenState extends State<RetailerCampaignDetailScr
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isPublished ? AppColors.success50 : AppColors.neutral100,
+                        color: isExpired
+                            ? AppColors.error50
+                            : isPublished
+                                ? AppColors.success50
+                                : AppColors.neutral100,
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
-                        campaign.status,
+                        statusLabel,
                         style: AppTextStyles.caption.copyWith(
-                          color: isPublished ? AppColors.success600 : AppColors.neutral600,
+                          color: isExpired
+                              ? AppColors.error500
+                              : isPublished
+                                  ? AppColors.success600
+                                  : AppColors.neutral600,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

@@ -256,7 +256,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                       const SizedBox(height: 16),
                       BlocBuilder<ShopBloc, ShopState>(
                         builder: (context, state) {
-                          if (state.isLoading) {
+                          if (state.isLoading && state.nearbyShops == null) {
                             return Column(
                               children: List.generate(
                                 3,
@@ -284,6 +284,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
                                           '1.2 km away',
                                           'View Collection',
                                           AppBadgeType.inStock,
+                                          onViewCollection: () =>
+                                              _openShopDetails(shop.id),
                                         ),
                                       ))
                                   .toList(),
@@ -399,8 +401,14 @@ class _MapViewScreenState extends State<MapViewScreen> {
   }
 
   Widget _buildPremiumShopListItem(String name, String category, String rating,
-      String distance, String topProduct, AppBadgeType badgeType) {
-    return Container(
+      String distance, String topProduct, AppBadgeType badgeType,
+      {required VoidCallback onViewCollection}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onViewCollection,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -511,6 +519,8 @@ class _MapViewScreenState extends State<MapViewScreen> {
             ],
           )
         ],
+      ),
+        ),
       ),
     );
   }
